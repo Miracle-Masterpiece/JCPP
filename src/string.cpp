@@ -67,7 +67,7 @@ namespace jstd {
                 throw_except<utf_format_exception>("Invalid UTF-16 sequence!: The symbol begins with a minor surrogate");
             if (ch == 0)
                 break;
-            codepoint_t cp;
+            codepoint_t cp = 0;
             if (utf16_t::is_high_surrogate(ch)) {
                 uint16_t ch2 = str[i++];
                 if (utf16_t::is_low_surrogate(ch2)) {
@@ -212,7 +212,7 @@ namespace jstd {
 
     /*static*/ int utf16_t::codepoint_to_chars(uint16_t buf[], codepoint_t cp, byte_order out) {
         if (cp < 0x10000) {
-            write_with_ordering(buf, {(uint16_t) cp}, out);
+            write_with_ordering(buf, (uint16_t) cp, out);
             return 1;
         } else {
             cp -= 0x10000;

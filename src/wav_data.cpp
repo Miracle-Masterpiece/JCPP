@@ -102,8 +102,8 @@ namespace jstd
     
     int32_t wav_data::to_string(char buf[], int32_t bufsize) const {
         return std::snprintf(buf, bufsize, 
-        "chunkId = 0x%lx\nchunkSize = %lu\nformat = 0x%lx\nsubchunk1Id = 0x%lx\nsubchunk1Size = %lu\naudioFormat = %li\nnumChannels = %li\nsampleRate = %li\nbyteRate = %li\nblockAlign = %li\nbitsPerSample = %li\nsubchunk2Id = 0x%lx\nsubchunk2Size = %lu\ndata = %llx",
-         chunkId,     chunkSize,     format,     subchunk1Id,     subchunk1Size,     audioFormat,     numChannels,     sampleRate,     byteRate,    blockAlign,     bitsPerSample,     subchunk2Id,     subchunk2Size,     (unsigned long long) data);
+        "chunkId = 0x%llx\nchunkSize = %llu\nformat = 0x%llx\nsubchunk1Id = 0x%llx\nsubchunk1Size = %llu\naudioFormat = %lli\nnumChannels = %lli\nsampleRate = %lli\nbyteRate = %lli\nblockAlign = %lli\nbitsPerSample = %lli\nsubchunk2Id = 0x%llx\nsubchunk2Size = %llu\ndata = %llx",
+         (long long) chunkId,     (long long) chunkSize,     (long long) format,     (long long) subchunk1Id,     (long long) subchunk1Size,     (unsigned long long) audioFormat,     (long long) numChannels,     (long long) sampleRate,     (long long) byteRate,    (long long) blockAlign,     (long long) bitsPerSample,     (long long) subchunk2Id,     (unsigned long long) subchunk2Size,     (unsigned long long) data);
     }
 
 }

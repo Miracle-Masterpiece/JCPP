@@ -132,5 +132,6 @@
     "sstream": "cpp",
     "text_encoding": "cpp",
     "variant": "cpp"
-  }
+  },
+  "markdown.validate.enabled": true
 }
