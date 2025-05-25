@@ -1,0 +1,109 @@
+#include <cpp/lang/utils/audio/wav_data.hpp>
+#include <cpp/lang/exceptions.hpp>
+#include <cpp/lang/io/bytebuffer.hpp>
+#include <cpp/lang/utils/unique_ptr.hpp>
+#include <cpp/lang/io/ifstream.hpp>
+#include <iostream>
+
+namespace jstd 
+{
+
+    wav_data::wav_data() : m_allocator(nullptr), data(nullptr) {
+
+    }
+
+    wav_data::wav_data(const char* path, tca::base_allocator* allocator) {
+#ifndef NDEBUG
+        if (path == nullptr)
+            throw_except<illegal_argument_exception>("in must be != null");
+        if (allocator == nullptr)
+            throw_except<illegal_argument_exception>("allocator must be != null");
+#endif
+        m_allocator = allocator;
+        ifstream in(path);
+        load_from(&in);
+        in.close();        
+    }
+
+    wav_data::wav_data(istream* in, tca::base_allocator* allocator) : wav_data() {
+#ifndef NDEBUG
+        if (in == nullptr)
+            throw_except<illegal_argument_exception>("in must be != null");
+        if (allocator == nullptr)
+            throw_except<illegal_argument_exception>("allocator must be != null");
+#endif
+        m_allocator = allocator;
+        load_from(in);
+    }
+
+    void wav_data::load_from(/*!non null!*/istream* in) {
+        const int HEADER_SIZE = 44;
+        char header[HEADER_SIZE];    
+        int64_t readed = in->read(header, HEADER_SIZE);
+        if (readed != HEADER_SIZE)
+            throw_except<eof_exception>("Invalid wav data!");
+        byte_buffer header_buffer(header, HEADER_SIZE);
+        header_buffer.order(byte_order::BE);
+        
+        //0…3 (4 байта)	chunkId	Содержит символы "RIFF" в ASCII кодировке 0x52494646. Является началом RIFF-цепочки.
+        chunkId = header_buffer.get<int32_t>();
+        if (chunkId != 0x52494646)
+            throw_except<illegal_state_exception>("Invalid chunkId wav data!");
+
+        //4…7 (4 байта)	chunkSize	Это оставшийся размер цепочки, начиная с этой позиции. Иначе говоря, это размер файла минус 8, то есть, исключены поля chunkId и chunkSize.
+        chunkSize = header_buffer.get<uint32_t>();
+
+        //8…11 (4 байта)	format	Содержит символы "WAVE" 0x57415645
+        format = header_buffer.get<int32_t>();
+        if (format != 0x57415645)
+            throw_except<illegal_state_exception>("Invalid format wav data!");
+
+        //12…15 (4 байта)	subchunk1Id	Содержит символы "fmt " 0x666d7420
+        subchunk1Id = header_buffer.get<int32_t>();
+        if (subchunk1Id != 0x666d7420)
+            throw_except<illegal_state_exception>("Invalid subchunk1Id wav data!");
+
+        header_buffer.order(byte_order::LE);
+        subchunk1Size   = header_buffer.get<uint32_t>();
+        audioFormat     = header_buffer.get<int16_t>();
+        numChannels     = header_buffer.get<int16_t>();
+        sampleRate      = header_buffer.get<int32_t>();
+        byteRate        = header_buffer.get<int32_t>();
+        blockAlign      = header_buffer.get<int16_t>();
+        bitsPerSample   = header_buffer.get<int16_t>();
+        header_buffer.order(byte_order::BE);
+
+        subchunk2Id     = header_buffer.get<int32_t>();
+        if (subchunk2Id != 0x64617461)
+            throw_except<illegal_state_exception>("Invalid subchunk2Id wav data!");
+
+        header_buffer.order(byte_order::LE);        
+        subchunk2Size   = header_buffer.get<uint32_t>();
+
+        unique_ptr<char> l_data(m_allocator, reinterpret_cast<char*>(m_allocator->allocate(subchunk2Size)));
+        if (l_data.is_null())
+            throw_except<out_of_memory_error>("Out of memory");
+        readed = in->read(l_data.raw_ptr(), subchunk2Size);
+        if (readed != subchunk2Size)
+            throw_except<illegal_state_exception>("EOF wav data!");
+        data = l_data.release();
+    }
+
+    void wav_data::cleanup() {
+        if (m_allocator != nullptr && data != nullptr) {
+            m_allocator->deallocate(data, subchunk2Size);
+            data = nullptr;
+        }
+    }
+
+    wav_data::~wav_data() {
+        cleanup();
+    }
+    
+    int32_t wav_data::to_string(char buf[], int32_t bufsize) const {
+        return std::snprintf(buf, bufsize, 
+        "chunkId = 0x%lx\nchunkSize = %lu\nformat = 0x%lx\nsubchunk1Id = 0x%lx\nsubchunk1Size = %lu\naudioFormat = %li\nnumChannels = %li\nsampleRate = %li\nbyteRate = %li\nblockAlign = %li\nbitsPerSample = %li\nsubchunk2Id = 0x%lx\nsubchunk2Size = %lu\ndata = %llx",
+         chunkId,     chunkSize,     format,     subchunk1Id,     subchunk1Size,     audioFormat,     numChannels,     sampleRate,     byteRate,    blockAlign,     bitsPerSample,     subchunk2Id,     subchunk2Size,     (unsigned long long) data);
+    }
+
+}

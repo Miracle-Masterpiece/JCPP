@@ -1,0 +1,10 @@
+#ifndef JSTD_CPP_LANG_UTILS_COND_COMPILATION_H
+#define JSTD_CPP_LANG_UTILS_COND_COMPILATION_H
+
+#if !defined(NDEBUG)
+#   define JSTD_DEBUG_CODE(code) code
+#else
+#   define JSTD_DEBUG_CODE(code)
+#endif
+
+#endif//JSTD_CPP_LANG_UTILS_COND_COMPILATION_H
