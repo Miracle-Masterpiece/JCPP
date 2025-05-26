@@ -86,14 +86,12 @@ namespace bsd_socket {
     }
 
     void socket_impl::connect(const inet_address& host, int32_t port) {
-        std::cout << "CONNECT BEGIN" << std::endl;
         bsd_socket::connect(_ID.ID, host, port);
         socket_address addr;
         bsd_socket::get_sock_name(_ID.ID, addr);
         set_port(port);
         set_address(host);
         set_localport(addr.get_port());
-        std::cout << "CONNECT END" << std::endl;
     }
     
     void socket_impl::bind(const inet_address& address, int32_t port) {
