@@ -50,7 +50,6 @@ namespace bsd_socket {
         int64_t result = 0;
         result += tv->tv_sec * 1000;
         result += tv->tv_usec / 1000;
-        std::cout << "out ms: " << result << std::endl;
         return result;
     }
 
