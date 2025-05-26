@@ -75,9 +75,24 @@ Specializations of these structures are used to define an implicit pattern in pl
 - `struct hash_for` (A functor object for defining a standard hash code)
 - `struct equal_to` (A functor object for defining a standard comparison)
 
+In file **#include <cpp/lang/utils/comparator.hpp>**
+- `struct compare_to` (A functor object for defining a starndard compare)
+
 </details>
 
-# How Build?
+
+<details>
+<summary> 🏞 Image </summary>
+
+**using namespace jstd;**
+
+- `image` (A class for representing an image (RGBA, RGB, GRAY))
+- `image_packer` (To generate texture atlases)
+- `#include <cpp/lang/utils/images/imageio.hpp>` (For load/write images)
+
+</details>
+
+# How to build?
 
 <details> 
 <summary>📌 Depended</summary>
@@ -93,7 +108,7 @@ The entire project was originally based on `-std=c++11`, but eventually it was d
 
 
 <details>
-<summary> 🔧 How compile? </summary>
+<summary> 🔧 How to compile? </summary>
 
 _Yes, compiling this library manually is a dark ritual. Good luck._ :D
 
