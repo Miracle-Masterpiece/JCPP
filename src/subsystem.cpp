@@ -1024,4 +1024,5 @@ int main() {
         e.print_stack_trace();
     }
     std::cout << "end" << std::endl;
+	std::cout << "cpp: " << __cplusplus << std::endl;
 }

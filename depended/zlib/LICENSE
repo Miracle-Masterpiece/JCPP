@@ -28,6 +28,8 @@ Modifications to the zlib library:
 1. In the gzlib.c file, within the gz_open() function, type casts were added (from const void* to const wchar_t*) to ensure compatibility with C++ compilers. 
 These modifications were made to allow successful compilation with a C++ compiler (MinGW, GCC).
 
-2. The changes do not affect the core functionality of the library and are solely for compatibility with C++ compilation.
+2. Added #include <unistd.h> in files gzwrite.c, gzread.c, gzlib.c
+
+3. The changes do not affect the core functionality of the library and are solely for compatibility with C++ compilation.
 
 These modifications are provided as an adaptation and do not alter the original logic of the library.
