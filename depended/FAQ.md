@@ -5,11 +5,11 @@
 
 ### Windows
 
-`gcc -Wall -o libzlib.dll -shared zlib/gzlib.c zlib/trees.c zlib/uncompr.c zlib/zutil.c zlib/adler32.c zlib/compress.c zlib/crc32.c zlib/deflate.c zlib/gzclose.c zlib/gzread.c zlib/gzwrite.c zlib/infback.c zlib/inffast.c zlib/inflate.c zlib/inftrees.c`
+`gcc -O2 -o libzlib.dll -shared zlib/*.c`
 
 ### Linux
 
-`gcc -Wall -o libzlib.so -shared -fPIC zlib/gzlib.c zlib/trees.c zlib/uncompr.c zlib/zutil.c zlib/adler32.c zlib/compress.c zlib/crc32.c zlib/deflate.c zlib/gzclose.c zlib/gzread.c zlib/gzwrite.c zlib/infback.c zlib/inffast.c zlib/inflate.c zlib/inftrees.c`
+`gcc -O2 -o libzlib.so -shared -fPIC zlib/*.c`
 
 The compilation was also tested on clang.
 

@@ -80,7 +80,7 @@ Specializations of these structures are used to define an implicit pattern in pl
 # How Build?
 
 <details> 
-<summary>Depended</summary>
+<summary>📌 Depended</summary>
 
 #### Needed depended
 ##### Total: <a href="https://github.com/madler/zlib.git"> `zlib` </a>
@@ -93,20 +93,32 @@ The entire project was originally based on `-std=c++11`, but eventually it was d
 
 
 <details>
-<summary> How compile? </summary>
+<summary> 🔧 How compile? </summary>
 
 _Yes, compiling this library manually is a dark ritual. Good luck._ :D
 
 
-### Windows:
+<details>
+<summary> Windows </summary>
 
 ##### C++11
-`g++ -std=c++11 -O0 -o jcpp.exe -I"include" src/base_allocator.cpp src/base_socket.cpp src/bsd_socket.cpp src/bsd_socket_class.cpp src/bytebuffer.cpp src/cstr.cpp src/date.cpp src/deflater.cpp src/deflater_inflater_funcs.cpp src/deflstream.cpp src/exceptions.cpp src/file.cpp src/filesystem.cpp src/iastream.cpp src/ibstream.cpp src/idstream.cpp src/ifstream.cpp src/image.cpp src/image_packer.cpp src/image_tree.cpp src/imageio.cpp src/inet.cpp src/inetaddr.cpp src/inflater.cpp src/inflstream.cpp src/internal_funcs.cpp src/iostream.cpp src/linear_allocator.cpp src/linear_compact_allocator.cpp src/malloc_free_allocator.cpp src/mutex.cpp src/null_allocator.cpp src/numbers.cpp src/oastream.cpp src/objects.cpp src/obstream.cpp src/odstream.cpp src/ofstream.cpp src/os_allocator.cpp src/pool_allocator.cpp src/properties.cpp src/shared_allocator.cpp src/shared_control_block.cpp src/shared_ptr.cpp src/stacktrace.cpp src/string.cpp src/subsystem.cpp src/system.cpp src/thread.cpp src/utils.cpp src/wav_data.cpp -lws2_32 -lzlib`
+`g++ -g -std=c++11 -O2 -shared -L. -o libjcpp.dll -I"include" ./src/*.cpp -lws2_32 -lzlib`
 
 ##### C++23
-`g++ -std=c++23 -O0 -o jcpp.exe -I"include" src/base_allocator.cpp src/base_socket.cpp src/bsd_socket.cpp src/bsd_socket_class.cpp src/bytebuffer.cpp src/cstr.cpp src/date.cpp src/deflater.cpp src/deflater_inflater_funcs.cpp src/deflstream.cpp src/exceptions.cpp src/file.cpp src/filesystem.cpp src/iastream.cpp src/ibstream.cpp src/idstream.cpp src/ifstream.cpp src/image.cpp src/image_packer.cpp src/image_tree.cpp src/imageio.cpp src/inet.cpp src/inetaddr.cpp src/inflater.cpp src/inflstream.cpp src/internal_funcs.cpp src/iostream.cpp src/linear_allocator.cpp src/linear_compact_allocator.cpp src/malloc_free_allocator.cpp src/mutex.cpp src/null_allocator.cpp src/numbers.cpp src/oastream.cpp src/objects.cpp src/obstream.cpp src/odstream.cpp src/ofstream.cpp src/os_allocator.cpp src/pool_allocator.cpp src/properties.cpp src/shared_allocator.cpp src/shared_control_block.cpp src/shared_ptr.cpp src/stacktrace.cpp src/string.cpp src/subsystem.cpp src/system.cpp src/thread.cpp src/utils.cpp src/wav_data.cpp -lws2_32 -lzlib -lstdc++exp`
+`g++ -g -std=c++23 -O2 -shared -L. -o libjcpp.dll -I"include" ./src/*.cpp -lws2_32 -lzlib -lstdc++exp`
 
-### Linux
+</details>
+
+
+
+<details>
+<summary> Linux </summary>
+
+##### C++11
+`g++ -g -std=c++11 -O2 -shared -fPIC -L. -o libjcpp.so -Wl,-rpath='$ORIGIN' -I"include" ./src/*.cpp -lzlib`
+
+##### C++23
+`g++ -g -std=c++23 -O2 -shared -fPIC -L. -o libjcpp.so -Wl,-rpath='$ORIGIN' -I"include" ./src/*.cpp -lzlib -lstdc++exp`
 
 </details>
 
