@@ -77,13 +77,13 @@ Specializations of these structures are used to define an implicit pattern in pl
 
 </details>
 
-
 # How Build?
 
 <details> 
 <summary>Depended</summary>
 
-#### Special depended
+#### Needed depended
+##### Total: <a href="https://github.com/madler/zlib.git"> `zlib` </a>
 ##### Windows: `WinSock2`
 
 #### Optional depended
@@ -100,11 +100,11 @@ _Yes, compiling this library manually is a dark ritual. Good luck._ :D
 
 ### Windows:
 
-#### C++11
-`g++ -Wall -g -std=c++11 -I"include" -O2 -shared -fPIC -o libjcpp.dll (ls -r *.cpp).FullName (ls -r *.c).FullName -lws2_32`
+##### C++11
+`g++ -std=c++11 -O0 -o jcpp.exe -I"include" src/base_allocator.cpp src/base_socket.cpp src/bsd_socket.cpp src/bsd_socket_class.cpp src/bytebuffer.cpp src/cstr.cpp src/date.cpp src/deflater.cpp src/deflater_inflater_funcs.cpp src/deflstream.cpp src/exceptions.cpp src/file.cpp src/filesystem.cpp src/iastream.cpp src/ibstream.cpp src/idstream.cpp src/ifstream.cpp src/image.cpp src/image_packer.cpp src/image_tree.cpp src/imageio.cpp src/inet.cpp src/inetaddr.cpp src/inflater.cpp src/inflstream.cpp src/internal_funcs.cpp src/iostream.cpp src/linear_allocator.cpp src/linear_compact_allocator.cpp src/malloc_free_allocator.cpp src/mutex.cpp src/null_allocator.cpp src/numbers.cpp src/oastream.cpp src/objects.cpp src/obstream.cpp src/odstream.cpp src/ofstream.cpp src/os_allocator.cpp src/pool_allocator.cpp src/properties.cpp src/shared_allocator.cpp src/shared_control_block.cpp src/shared_ptr.cpp src/stacktrace.cpp src/string.cpp src/subsystem.cpp src/system.cpp src/thread.cpp src/utils.cpp src/wav_data.cpp -lws2_32 -lzlib`
 
-#### C++23
-`g++ -Wall -g -std=c++23 -I"include" -O2 -shared -fPIC -o libjcpp.dll (ls -r *.cpp).FullName (ls -r *.c).FullName -lws2_32 -lstdc++exp`
+##### C++23
+`g++ -std=c++23 -O0 -o jcpp.exe -I"include" src/base_allocator.cpp src/base_socket.cpp src/bsd_socket.cpp src/bsd_socket_class.cpp src/bytebuffer.cpp src/cstr.cpp src/date.cpp src/deflater.cpp src/deflater_inflater_funcs.cpp src/deflstream.cpp src/exceptions.cpp src/file.cpp src/filesystem.cpp src/iastream.cpp src/ibstream.cpp src/idstream.cpp src/ifstream.cpp src/image.cpp src/image_packer.cpp src/image_tree.cpp src/imageio.cpp src/inet.cpp src/inetaddr.cpp src/inflater.cpp src/inflstream.cpp src/internal_funcs.cpp src/iostream.cpp src/linear_allocator.cpp src/linear_compact_allocator.cpp src/malloc_free_allocator.cpp src/mutex.cpp src/null_allocator.cpp src/numbers.cpp src/oastream.cpp src/objects.cpp src/obstream.cpp src/odstream.cpp src/ofstream.cpp src/os_allocator.cpp src/pool_allocator.cpp src/properties.cpp src/shared_allocator.cpp src/shared_control_block.cpp src/shared_ptr.cpp src/stacktrace.cpp src/string.cpp src/subsystem.cpp src/system.cpp src/thread.cpp src/utils.cpp src/wav_data.cpp -lws2_32 -lzlib -lstdc++exp`
 
 ### Linux
 
