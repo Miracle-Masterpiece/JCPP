@@ -99,7 +99,31 @@ namespace jstd
     wav_data::~wav_data() {
         cleanup();
     }
+
+    const char* wav_data::get_data() const {
+        return data;
+    }
     
+    int32_t wav_data::get_format() const {
+        return format;
+    }
+    
+    int32_t wav_data::get_sample_rate() const {
+        return sampleRate;
+    }
+    
+    int32_t wav_data::get_byte_rate() const {
+        return byteRate;
+    }
+    
+    uint32_t wav_data::get_length() const {
+        return subchunk2Size;
+    }
+    
+    int16_t wav_data::get_num_channels() const {
+        return numChannels;
+    }
+
     int32_t wav_data::to_string(char buf[], int32_t bufsize) const {
         return std::snprintf(buf, bufsize, 
         "chunkId = 0x%llx\nchunkSize = %llu\nformat = 0x%llx\nsubchunk1Id = 0x%llx\nsubchunk1Size = %llu\naudioFormat = %lli\nnumChannels = %lli\nsampleRate = %lli\nbyteRate = %lli\nblockAlign = %lli\nbitsPerSample = %lli\nsubchunk2Id = 0x%llx\nsubchunk2Size = %llu\ndata = %llx",

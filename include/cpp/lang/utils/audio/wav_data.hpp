@@ -62,6 +62,13 @@ public:
     ~wav_data();
     static const int32_t TO_STRING_MIN_BUFFER_SIZE = 256 + 128;
     int32_t to_string(char buf[], int32_t bufsize) const;
+    
+    const char* get_data() const;
+    int32_t get_format() const;
+    int32_t get_sample_rate() const;
+    int32_t get_byte_rate() const;
+    uint32_t get_length() const;
+    int16_t get_num_channels() const;
 };
 
 }
