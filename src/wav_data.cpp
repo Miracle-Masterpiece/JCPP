@@ -124,6 +124,10 @@ namespace jstd
         return numChannels;
     }
 
+    int16_t wav_data::get_bits_per_sample() const {
+        return bitsPerSample;
+    }
+
     int32_t wav_data::to_string(char buf[], int32_t bufsize) const {
         return std::snprintf(buf, bufsize, 
         "chunkId = 0x%llx\nchunkSize = %llu\nformat = 0x%llx\nsubchunk1Id = 0x%llx\nsubchunk1Size = %llu\naudioFormat = %lli\nnumChannels = %lli\nsampleRate = %lli\nbyteRate = %lli\nblockAlign = %lli\nbitsPerSample = %lli\nsubchunk2Id = 0x%llx\nsubchunk2Size = %llu\ndata = %llx",

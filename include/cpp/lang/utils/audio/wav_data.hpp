@@ -69,6 +69,7 @@ public:
     int32_t get_byte_rate() const;
     uint32_t get_length() const;
     int16_t get_num_channels() const;
+    int16_t get_bits_per_sample() const;
 };
 
 }
