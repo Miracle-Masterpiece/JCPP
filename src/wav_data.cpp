@@ -48,7 +48,7 @@ namespace jstd
         //0…3 (4 байта)	chunkId	Содержит символы "RIFF" в ASCII кодировке 0x52494646. Является началом RIFF-цепочки.
         chunkId = header_buffer.get<int32_t>();
         if (chunkId != 0x52494646)
-            throw_except<illegal_state_exception>("Invalid chunkId wav data!");
+            throw_except<invalid_data_format_exception>("Invalid chunkId wav data!");
 
         //4…7 (4 байта)	chunkSize	Это оставшийся размер цепочки, начиная с этой позиции. Иначе говоря, это размер файла минус 8, то есть, исключены поля chunkId и chunkSize.
         chunkSize = header_buffer.get<uint32_t>();
@@ -56,12 +56,12 @@ namespace jstd
         //8…11 (4 байта)	format	Содержит символы "WAVE" 0x57415645
         format = header_buffer.get<int32_t>();
         if (format != 0x57415645)
-            throw_except<illegal_state_exception>("Invalid format wav data!");
+            throw_except<invalid_data_format_exception>("Invalid format wav data!");
 
         //12…15 (4 байта)	subchunk1Id	Содержит символы "fmt " 0x666d7420
         subchunk1Id = header_buffer.get<int32_t>();
         if (subchunk1Id != 0x666d7420)
-            throw_except<illegal_state_exception>("Invalid subchunk1Id wav data!");
+            throw_except<invalid_data_format_exception>("Invalid subchunk1Id wav data!");
 
         header_buffer.order(byte_order::LE);
         subchunk1Size   = header_buffer.get<uint32_t>();
@@ -75,7 +75,7 @@ namespace jstd
 
         subchunk2Id     = header_buffer.get<int32_t>();
         if (subchunk2Id != 0x64617461)
-            throw_except<illegal_state_exception>("Invalid subchunk2Id wav data!");
+            throw_except<invalid_data_format_exception>("Invalid subchunk2Id wav data!");
 
         header_buffer.order(byte_order::LE);        
         subchunk2Size   = header_buffer.get<uint32_t>();
@@ -85,7 +85,7 @@ namespace jstd
             throw_except<out_of_memory_error>("Out of memory");
         readed = in->read(l_data.raw_ptr(), subchunk2Size);
         if (readed != subchunk2Size)
-            throw_except<illegal_state_exception>("EOF wav data!");
+            throw_except<eof_exception>("EOF wav data!");
         data = l_data.release();
     }
 
