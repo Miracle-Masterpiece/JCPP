@@ -64,7 +64,7 @@ namespace tca {
     }
     
     void* linear_allocator::allocate(std::size_t sz) {
-        if (_offset + sz > _capacity){
+        if ((_offset + sz > _capacity) || _buffer == nullptr){
             return nullptr;
         }
         char* buf = ((char*) _buffer) + _offset;
@@ -74,7 +74,7 @@ namespace tca {
 
     void* linear_allocator::allocate_align(std::size_t sz, std::size_t align) {
         std::size_t off = calcAlignAddedSize(_offset, align);
-        if (_offset + off + sz > _capacity)
+        if ((_offset + off + sz > _capacity) || _buffer == nullptr)
             return nullptr;
         _offset += off;
         char* buf = ((char*) _buffer) + _offset;

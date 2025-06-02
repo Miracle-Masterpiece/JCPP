@@ -8,17 +8,6 @@
 
 namespace jstd {
 
-    byte_buffer::byte_buffer() : 
-    _allocator(nullptr), 
-    _data(nullptr), 
-    _cap(0), 
-    _pos(0), 
-    _limit(0), 
-    _mark(-1),
-    _order(system::native_byte_order()) {
-
-    }
-
     byte_buffer::byte_buffer(char* buf, int64_t bufsize) : 
     _allocator(nullptr), 
     _data(buf), 
@@ -30,26 +19,27 @@ namespace jstd {
 
     }
     
-    byte_buffer::byte_buffer(tca::base_allocator* allocator, int64_t capacity) : 
-    _allocator(nullptr), 
+    byte_buffer::byte_buffer(int64_t capacity, tca::base_allocator* allocator) : 
+    _allocator(allocator), 
     _data(nullptr), 
     _cap(0), 
     _pos(0), 
     _limit(0), 
     _mark(-1),
     _order(system::native_byte_order())  {
-        assert(allocator != nullptr);
-        char* data = (char*) allocator->allocate_align(capacity, alignof(char));
-        if (data == nullptr)
-            throw std::bad_alloc();
-        _allocator  = allocator;
-        _data       = data;
-        _cap        = capacity;
-        _limit      = _cap;
-        _pos        = 0;
+        if (capacity > 0) {
+            char* data = (char*) allocator->allocate_align(capacity, alignof(char));
+            if (data == nullptr)
+                throw std::bad_alloc();
+            _allocator  = allocator;
+            _data       = data;
+            _cap        = capacity;
+            _limit      = _cap;
+            _pos        = 0;
+        }
     }
     
-    byte_buffer::byte_buffer(const byte_buffer& buf) : byte_buffer() {
+    byte_buffer::byte_buffer(const byte_buffer& buf) : byte_buffer(0) {
         assert(true);
     }
     

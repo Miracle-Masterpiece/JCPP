@@ -17,7 +17,7 @@ namespace jstd {
 
     }
     
-    image::image(tca::base_allocator* allocator, int32_t width, int32_t height, int8_t channels) : image() {
+    image::image(int32_t width, int32_t height, int8_t channels, tca::base_allocator* allocator) : image() {
         byte* pixels = reinterpret_cast<byte*>(allocator->allocate_align(width * height * channels, alignof(byte)));
         if (pixels == nullptr)
             throw_except<out_of_memory_error>("Out of memory!");
@@ -167,7 +167,7 @@ namespace jstd {
                 return image();
             allocator = m_allocator;
         }
-        image resized_image(allocator, neww, newh, m_channels);
+        image resized_image(neww, newh, m_channels, allocator);
         int error = stbir_resize_uint8(reinterpret_cast<const unsigned char*>(m_pixels), m_width, m_height, 0, resized_image.pixels(), neww, newh, 0, m_channels);
         if (error == 0)
             throw_except<illegal_state_exception>("stbi_resize error: %i", error);
@@ -180,7 +180,7 @@ namespace jstd {
                 return image();
             allocator = m_allocator;
         }
-        image img(allocator, m_width, m_height, m_channels);
+        image img(m_width, m_height, m_channels, allocator);
         std::memcpy(img.m_pixels, m_pixels, sizeof(byte) * (m_width * m_height * m_channels));
         return image(std::move(img));
     }

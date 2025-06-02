@@ -67,9 +67,15 @@ namespace utf {
 template<typename CHAR_TYPE> 
 class tustring : public tstring<CHAR_TYPE> {
 public:
-    tustring();
-    tustring(tca::base_allocator* allocator);
+
+    tustring(tca::base_allocator* allocator = tca::get_scoped_or_default());
+ 
+    /**
+     * @deprecated
+     */
     tustring(tca::base_allocator* allocator, const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order());
+    tustring(const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order(), tca::base_allocator* allocator = nullptr);
+ 
     tustring(const tustring<CHAR_TYPE>& str);
     tustring(tstring<CHAR_TYPE>&& str);
     tustring(tustring<CHAR_TYPE>&& str);
@@ -91,18 +97,20 @@ public:
     template<typename OUT_CHAR_TYPE>
     tustring<OUT_CHAR_TYPE> recode(tca::base_allocator* allocator = nullptr, byte_order out = system::native_byte_order()) const;
 };
-
-    template<typename CHAR_TYPE>
-    tustring<CHAR_TYPE>::tustring::tustring() : tstring<CHAR_TYPE>() {
-    }
     
     template<typename CHAR_TYPE>
-    tustring<CHAR_TYPE>::tustring(tca::base_allocator* allocator) : tstring<CHAR_TYPE>(allocator) {
+    tustring<CHAR_TYPE>::tustring(tca::base_allocator* allocator) : tstring<CHAR_TYPE>(allocator != nullptr ? allocator : tca::get_scoped_or_default()) {
     }
     
     template<typename CHAR_TYPE>
     tustring<CHAR_TYPE>::tustring(tca::base_allocator* allocator, const CHAR_TYPE* str, byte_order in, byte_order out) :
     tstring<CHAR_TYPE>(allocator, str, in, out) {
+    }
+
+    template<typename CHAR_TYPE>
+    tustring<CHAR_TYPE>::tustring(const CHAR_TYPE* str, byte_order in, byte_order out, tca::base_allocator* allocator) :
+    tustring<CHAR_TYPE>(allocator != nullptr ? allocator : tca::get_scoped_or_default(), str, in, out) {
+
     }
     
     template<typename CHAR_TYPE>

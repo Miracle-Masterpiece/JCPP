@@ -110,7 +110,7 @@ namespace jstd {
             create_tree();
 #endif//NDEBUG
         
-        image result(m_allocator, m_root->get_rect().w / scale_factor, m_root->get_rect().h / scale_factor, out_image_channels);
+        image result(m_root->get_rect().w / scale_factor, m_root->get_rect().h / scale_factor, out_image_channels, m_allocator);
 
         /**
          * Размер временного буфера, куда будет сохранено масштабированное изображение.

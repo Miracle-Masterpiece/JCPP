@@ -41,7 +41,7 @@ namespace jstd {
          * 
          * Выбрасываемые исключения, такие-же, как и у функции {@code load_image(istream*, tca::base_allocator*)}.
          */
-        image load_image(const file& file , tca::base_allocator* allocator);
+        image load_image(const file& file , tca::base_allocator* allocator = tca::get_scoped_or_default());
 
         /**
          * Сохраняет изображение в поток вывода.

@@ -57,7 +57,7 @@ public:
      * @param sz 
      *      Количество элементов в массиве.
      */
-    array(tca::base_allocator* allocator, int64_t sz);
+    array(int64_t sz, tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Создаёт массив размером инициализирующего листа. 
@@ -69,7 +69,7 @@ public:
      * @param init_list
      *      Список для инициализации массива.
      */
-    array(tca::base_allocator* allocator, const std::initializer_list<T>& init_list);
+    array(const std::initializer_list<T>& init_list, tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * @brief Конструктор копирования.
@@ -257,7 +257,7 @@ public:
     }
 
     template<typename T>
-    array<T>::array(tca::base_allocator* allocator, int64_t sz) : array<T>() {
+    array<T>::array(int64_t sz, tca::base_allocator* allocator) : array<T>() {
 #ifndef NDEBUG
         if (allocator == nullptr)
             throw_except<null_pointer_exception>("allocator == null");
@@ -274,7 +274,7 @@ public:
     }
 
     template<typename T>
-    array<T>::array(tca::base_allocator* allocator, const std::initializer_list<T>& init_list) : array<T>() {
+    array<T>::array(const std::initializer_list<T>& init_list, tca::base_allocator* allocator) : array<T>() {
         if (init_list.size() > 0) {
 #ifndef NDEBUG
             if (allocator == nullptr)

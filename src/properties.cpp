@@ -3,12 +3,6 @@
 
 namespace jstd {
 
-    properties::properties() : 
-    _allocator(nullptr), 
-    _props() {
-
-    }
-    
     properties::properties(tca::base_allocator* allocator) : 
     _allocator(allocator), 
     _props(allocator) {

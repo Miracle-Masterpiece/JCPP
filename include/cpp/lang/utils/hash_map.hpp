@@ -237,7 +237,7 @@ public:
      * @brief Конструктор по умолчанию.
      *  Создаёт пустую хеш-таблицу.
      */
-    hash_map();
+    hash_map(tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * @brief Создаёт hash_map с указанным аллокатором, ёмкостью и коэффициентом загрузки.
@@ -251,7 +251,7 @@ public:
      * @param loadfactor   
      *      Коэффициент загрузки (по умолчанию 0.75).
      */
-    hash_map(tca::base_allocator* allocator, int64_t init_capacity = DEFAULT_CAPACITY, float loadfactor = 0.75f);
+    hash_map(tca::base_allocator* allocator, int64_t init_capacity, float loadfactor = 0.75f);
     
     /**
      * @brief Конструктор копирования.
@@ -500,7 +500,8 @@ public:
 };
 
     template<typename K, typename V, typename KEY_HASH, typename KEY_EQUAL>
-    hash_map<K, V, KEY_HASH, KEY_EQUAL>::hash_map() : _allocator(nullptr), _buckets(), _size(0), _loadfactor(0) {
+    hash_map<K, V, KEY_HASH, KEY_EQUAL>::hash_map(tca::base_allocator* allocator) : 
+    _allocator(allocator), _buckets(), _size(0), _loadfactor(0.75f) {
         
     }
 
@@ -546,7 +547,7 @@ public:
     template<typename K, typename V, typename KEY_HASH, typename KEY_EQUAL>
     hash_map<K, V, KEY_HASH, KEY_EQUAL>::hash_map(tca::base_allocator* allocator, int64_t init_capacity, float loadfactor) :
     _allocator(allocator),
-    _buckets(allocator, init_capacity),
+    _buckets(init_capacity, allocator),
     _size(0),
     _loadfactor(loadfactor) {
         _buckets.set(nullptr);
@@ -597,7 +598,7 @@ public:
         if (_buckets.length == 0) {
             if (_allocator == nullptr)
                 throw_except<illegal_state_exception>("allocator must be != null");
-            _buckets = array<map_node<K, V>*>(_allocator, DEFAULT_CAPACITY);
+            _buckets = array<map_node<K, V>*>(DEFAULT_CAPACITY, _allocator);
             _buckets.set(nullptr);
         }
         
@@ -791,7 +792,7 @@ public:
         array<map_node<K, V>*> old_array;
         
         assert(_buckets.length > 0);
-        array<map_node<K, V>*> new_array = array<map_node<K, V>*>(_allocator, _buckets.length * 1.5);    
+        array<map_node<K, V>*> new_array = array<map_node<K, V>*>(_buckets.length * 1.5, _allocator);    
         new_array.set(nullptr);
         old_array   = std::move(_buckets);
         _buckets    = std::move(new_array);

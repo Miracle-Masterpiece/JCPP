@@ -5,6 +5,24 @@
 
 namespace tca {
 
+
+    
+class base_allocator;
+namespace internal 
+{
+    extern thread_local base_allocator* scoped_allocator;
+}
+
+    /**
+     * Возвращает аллокатор по-умолчанию.
+     */
+    base_allocator* get_default_allocator();
+
+    /**
+     * Возвращает значение scoped_allocator, или get_default_allocator(), если scoped_allocator == nullptr
+     */
+    base_allocator* get_scoped_or_default();
+
 /**
  * Базовый тип полиморфного распределителя.
  */
@@ -98,5 +116,18 @@ public:
      */
     virtual void deallocate(void* ptr, std::size_t sz) = 0;
 };
+
+class scope_allocator {
+    base_allocator* m_prev;
+    scope_allocator(const scope_allocator&) = delete;
+    scope_allocator& operator= (const scope_allocator&) = delete;
+    scope_allocator(scope_allocator&&) = delete;
+    scope_allocator& operator= (scope_allocator&&) = delete;
+public:
+    scope_allocator(base_allocator* allocator);
+    ~scope_allocator();
+    base_allocator* get_prev() const;
+};
+
 }
 #endif//_ALLOCATORS_BASE_ALLOCATOR_H

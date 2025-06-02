@@ -517,7 +517,7 @@ public:
     }
 
     template<typename T, typename _T>
-    shared_ptr<T> make_shared(tca::base_allocator* allocator, _T&& obj) {
+    shared_ptr<T> make_shared(_T&& obj, tca::base_allocator* allocator = tca::get_scoped_or_default()) {
         return shared_ptr<T>(allocator, std::forward<_T>(obj));
     }
 

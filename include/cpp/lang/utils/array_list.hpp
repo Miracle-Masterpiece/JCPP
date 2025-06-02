@@ -72,7 +72,7 @@ public:
     /**
      * Создаёт пустой список без аллокатора.
      */
-    array_list();
+    array_list(tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Создаёт список с заданным аллокатором и начальной вместимостью.
@@ -83,7 +83,7 @@ public:
      * @param init_capacity 
      *      Начальная вместимость (по умолчанию — 10).
      */
-    array_list(tca::base_allocator* allocator, int64_t init_capacity = DEFAULT_CAPACITY);
+    explicit array_list(int64_t init_capacity = DEFAULT_CAPACITY, tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Создаёт список с заданным аллокатором и инициализирующим листом.
@@ -94,7 +94,7 @@ public:
      * @param init_list
      *      Инициилизирующий список из которого будут добавлены элементы в этот список.
      */
-    array_list(tca::base_allocator* allocator, const std::initializer_list<E>& init_list);
+    array_list(const std::initializer_list<E>& init_list, tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Создаёт новый список, копируя содержимое из переданного списка.
@@ -478,12 +478,12 @@ public:
 };
 
     template<typename E>
-    array_list<E>::array_list() : m_allocator(nullptr), m_data(nullptr), m_capacity(0), m_size(0) {
+    array_list<E>::array_list(tca::base_allocator* allocator) : m_allocator(allocator), m_data(nullptr), m_capacity(0), m_size(0) {
 
     }
 
     template<typename E>
-    array_list<E>::array_list(tca::base_allocator* allocator, int64_t init_capacity) : 
+    array_list<E>::array_list(int64_t init_capacity, tca::base_allocator* allocator) : 
     m_allocator(allocator), 
     m_data(nullptr), 
     m_capacity(0), 
@@ -493,7 +493,7 @@ public:
     }
 
     template<typename E>
-    array_list<E>::array_list(tca::base_allocator* allocator, const std::initializer_list<E>& init_list) : array_list<E>(allocator, 0) {
+    array_list<E>::array_list(const std::initializer_list<E>& init_list, tca::base_allocator* allocator) : array_list<E>(0, allocator) {
         if (init_list.size() > 0)
             reserve(init_list.size());
         for (const E& e : init_list)

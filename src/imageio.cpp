@@ -48,7 +48,6 @@ namespace jstd {
 
 namespace imageio {
 
-
     /**
      * Загружает изображение из потока ввода.
      * 
@@ -82,7 +81,7 @@ namespace imageio {
         if (pixels.is_null())
             throw_except<illegal_state_exception>("%s", stbi_failure_reason());
         
-        image img(allocator, width, heigth, channels);
+        image img(width, heigth, channels, allocator);
         
         image::byte* img_raw_data = img.pixels();
         int32_t len = width * heigth * channels;

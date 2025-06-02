@@ -20,18 +20,14 @@ class properties {
     //Хеш-таблица для хранения свойств
     hash_map<string, string>    _props;
 public:
-    /**
-     * @brief Создает пустой объект свойств.
-     */
-    properties();
-
+    
     /**
      * @brief Создает объект свойств с заданным аллокатором.
      * 
      * @param allocator 
      *      Указатель на пользовательский аллокатор.
      */
-    properties(tca::base_allocator* allocator);
+    properties(tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * @brief Устанавливает значение свойства по ключу.

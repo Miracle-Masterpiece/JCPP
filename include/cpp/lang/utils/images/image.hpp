@@ -68,7 +68,7 @@ public:
      * @param channels 
      *      Количество каналов (например, 3 = RGB, 4 = RGBA).
      */
-    image(tca::base_allocator* allocator, int32_t width, int32_t height, int8_t channels);
+    image(int32_t width, int32_t height, int8_t channels, tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Конструктор копирования.

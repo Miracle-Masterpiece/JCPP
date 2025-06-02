@@ -132,7 +132,9 @@
     "sstream": "cpp",
     "text_encoding": "cpp",
     "variant": "cpp",
-    "zconf.h": "c"
+    "zconf.h": "c",
+    "__config": "cpp",
+    "execution": "cpp"
   },
   "markdown.validate.enabled": true
 }

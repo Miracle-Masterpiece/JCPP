@@ -79,7 +79,7 @@ public:
      * @throws invalid_data_format_exception
      *      Если формат WAV недопустим
      */
-    wav_data(const char* path, tca::base_allocator* allocator);
+    explicit wav_data(const char* path, tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Загружает WAV-данные из указанного входного потока.
@@ -100,7 +100,7 @@ public:
      * @throws invalid_data_format_exception
      *      Если формат WAV недопустим
      */
-    wav_data(istream* in, tca::base_allocator* allocator);
+    wav_data(istream* in, tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Освобождает все ресурсы, связанные с WAV-данными.
