@@ -22,6 +22,7 @@ class tsocket {
     static const int32_t IS_CLOSED          = 1 << 4;
     static const int32_t IS_SHUTDOWN_IN     = 1 << 5;
     static const int32_t IS_SHUTDOWN_OUT    = 1 << 6;
+    static const int32_t IS_LISTENING       = 1 << 7;
     
     //сокет, реализующий функции
     SOCK_T _impl;
@@ -147,7 +148,7 @@ public:
      *      Если сокет уже подключен.
      *      Если сокет не привязан.
      */
-    void listen(int32_t backlog);
+    void listen(int32_t backlog = DEFAULT_BACKLOG);
     
     /**
      * @throws socket_exception 
@@ -1021,6 +1022,7 @@ public:
         if (!get_config(IS_BINDED))
             throw_except<illegal_state_exception>("Socket is not bound");
         _impl.listen(backlog);
+        set_config(IS_LISTENING, true);
     }
 
     template<typename SOCK_T>
@@ -1080,14 +1082,16 @@ public:
 
     template<typename SOCK_T>
     bool tsocket<SOCK_T>::accept(tsocket<SOCK_T>* client) {
-#ifndef NDEBUG
-        if (client == nullptr)
-            throw_except<null_pointer_exception>("client is null");
-#endif//NDEBUG
+        JSTD_DEBUG_CODE(
+            if (client == nullptr)
+                throw_except<null_pointer_exception>("client is null");
+        );
         if (get_config(IS_CLOSED))
             throw_except<illegal_state_exception>("Socket is closed");
         if (!get_config(IS_BINDED))
             throw_except<illegal_state_exception>("Socket is not bound");
+        if (!get_config(IS_LISTENING))
+            throw_except<illegal_state_exception>("Socket is not listening");
         SOCK_T client_impl;
         bool accepted = _impl.accept(&client_impl);
         if (accepted) {

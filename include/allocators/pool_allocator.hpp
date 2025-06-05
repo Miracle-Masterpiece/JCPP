@@ -65,7 +65,7 @@ public:
 }
 
 class pool_allocator : public base_allocator {
-    static const std::size_t    COUNT_POOL_BUCKETS = 64;
+    static const std::size_t    COUNT_POOL_BUCKETS = 1024;
     
     tca::base_allocator*        m_allocator;
     array_list<internal::pool>  m_pool;

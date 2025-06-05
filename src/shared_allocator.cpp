@@ -22,14 +22,8 @@ using namespace internal;
     freelist_(nullptr), 
     allocator_(allocator),
     allocs_(0)  {
-        const std::size_t OFFSET = HEADER_SIZE;
-        if (sz >= OFFSET) {
-            const std::size_t free_size = sz - OFFSET;
-            freelist_           = new(data_) memblock();
-            freelist_->len_     = free_size;
-            freelist_->next_    = nullptr;
-            freelist_->prev_    = nullptr;
-            //freelist_->is_free  = true;
+        if (sz >= HEADER_SIZE) {
+            reset();
         } 
 
         else {
@@ -242,6 +236,15 @@ using namespace internal;
         return reinterpret_cast<void*>(reinterpret_cast<byte_t*>(best_block) + HEADER_SIZE);
     }
     
+    void chunk::reset() {
+        const std::size_t OFFSET = HEADER_SIZE;
+        const std::size_t free_size = chunk_size_ - OFFSET;
+        freelist_           = new(data_) memblock();
+        freelist_->len_     = free_size;
+        freelist_->next_    = nullptr;
+        freelist_->prev_    = nullptr;
+    }
+
     void chunk::compact() {
         memblock* start = reinterpret_cast<memblock*>(data_);
         memblock* end   = reinterpret_cast<memblock*>(reinterpret_cast<byte_t*>(data_) + chunk_size_);
@@ -362,6 +365,7 @@ using namespace internal;
     }
 
     void* shared_allocator::allocate(std::size_t sz) {
+        jstd::unique_lock lock(m_global_lock);
         void* p = nullptr;
         for (int32_t i = 0, size = chunk_list_.size(); i < size; ++i) {
             chunk& ch =  chunk_list_.at(i);
@@ -389,6 +393,7 @@ using namespace internal;
     }
     
     void shared_allocator::release_unused() {
+        jstd::unique_lock lock(m_global_lock);
         for (int64_t i = 0; i < (int64_t) chunk_list_.size(); ++i) {
             chunk& c = chunk_list_.at(i);
             if (c.is_empty())
@@ -397,6 +402,7 @@ using namespace internal;
     }
 
     void shared_allocator::merge_free_blocks() {
+        jstd::unique_lock lock(m_global_lock);
         for (int64_t i = 0, size = chunk_list_.size(); i < size; ++i) {
             chunk_list_.at(i).compact();
         } 
@@ -405,7 +411,7 @@ using namespace internal;
     void shared_allocator::deallocate(void* p, std::size_t sz) {
         if (p == nullptr)
             return;
-                    
+        jstd::unique_lock lock(m_global_lock);
 #ifdef NDEBUG
         memblock* block = chunk::data_to_mem(p);
         chunk* c = block->owner_;
@@ -430,8 +436,8 @@ using namespace internal;
                     std::abort();
                 } else {
                     c.free(p);
-                    if (c.is_empty())
-                        chunk_list_.remove_at(i);
+                    //if (c.is_empty())
+                    //   chunk_list_.remove_at(i);
                 }
                 break;
             }
@@ -439,12 +445,12 @@ using namespace internal;
 #endif
     }
 
-
     void shared_allocator::print_log() const {
+        m_global_lock.lock();
         for (int64_t i = 0, size = chunk_list_.size(); i < size; ++i) {
             chunk_list_.at(i).print_log();
             std::printf("\n\n");
         }
+        m_global_lock.unlock();
     }
-
 }

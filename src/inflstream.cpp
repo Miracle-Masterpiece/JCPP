@@ -3,12 +3,12 @@
 
 namespace jstd {
 
-    inflstream::inflstream() : m_allocator(nullptr), m_buffer(), m_in(nullptr), m_inf() {
+    inflstream::inflstream() : m_buffer(), m_in(nullptr), m_inf() {
 
     }
 
     inflstream::inflstream(istream* in, tca::base_allocator* allocator, int64_t buf_size) :
-    m_allocator(allocator), m_buffer(allocator, buf_size), m_in(in), m_inf() {
+    m_buffer(buf_size, allocator), m_in(in), m_inf() {
 #ifndef NDEBUG
         if (in == nullptr)
             throw_except<null_pointer_exception>("Input buffer must be != null!");

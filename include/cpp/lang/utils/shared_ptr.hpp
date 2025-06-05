@@ -170,7 +170,7 @@ class shared_ptr {
     void cleanup();
     void check_access() const;
 
-    shared_ptr(internal::sptr::shared_control_block* ctrl_block, T*);
+    shared_ptr(internal::sptr::shared_control_block* ctrl_block);
 
 public:
     /**
@@ -275,6 +275,14 @@ public:
     operator bool() const;
 
     /**
+     * Возвращает weak_ptr для этого shared_ptr
+     * 
+     * @return 
+     *      weak_ptr, указывающий на этот объект.
+     */
+    operator weak_ptr<T>() const;
+
+    /**
      * Возвращает количество shared_ptr, владеющих объектом.
      * 
      * @return 
@@ -338,6 +346,7 @@ public:
     template<typename E>
     shared_ptr<E> const_pointer_cast() const;
 
+    const static int32_t TO_STRING_MIN_BUFFER_SIZE = 48;
     /**
      * Возвращает отладочную строку о состоянии shared_ptr.
      * 
@@ -360,7 +369,7 @@ public:
     }
     
     template<typename T>
-    shared_ptr<T>::shared_ptr(internal::sptr::shared_control_block* ctrl_block, T*) : m_block(ctrl_block) {
+    shared_ptr<T>::shared_ptr(internal::sptr::shared_control_block* ctrl_block) : m_block(ctrl_block) {
         if (m_block != nullptr)
             m_block->inc_strong_ref();
     }
@@ -461,6 +470,11 @@ public:
     template<typename T>
     shared_ptr<T>::operator bool() const {
         return get() != nullptr;
+    }
+
+    template<typename T>
+    shared_ptr<T>::operator weak_ptr<T>() const {
+        return get_weak();
     }
 
     template<typename T>

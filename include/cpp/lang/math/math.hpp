@@ -15,36 +15,36 @@ namespace jstd {
 namespace math {
 
     template<typename T>
-    constexpr T lerp(const T& a, const T& b, double t) {
+    constexpr T lerp(const T a, const T b, double t) {
         return (b - a) * t + a;
     }
 
     template<typename T>
-    constexpr T lerp(const T& a, const T& b, float t) {
+    constexpr T lerp(const T a, const T b, float t) {
         return (b - a) * t + a;
     }
 
-    inline double to_radians(double angle) {
+    constexpr double to_radians(double angle) {
         return angle * (M_PI / 180.0);
     }
 
-    inline double to_degrees(double rad) {
+    constexpr double to_degrees(double rad) {
         return rad * (180.0 / M_PI);
     }
 
-    inline float to_radians(float angle) {
+    constexpr float to_radians(float angle) {
         return angle * (M_PI / 180.0);
     }
 
-    inline float to_degrees(float rad) {
+    constexpr float to_degrees(float rad) {
         return rad * (180.0 / M_PI);
     }
 
-    inline long double to_radians(long double angle) {
+    constexpr long double to_radians(long double angle) {
         return angle * (M_PI / 180.0);
     }
 
-    inline long double to_degrees(long double rad) {
+    constexpr long double to_degrees(long double rad) {
         return rad * (180.0 / M_PI);
     }
 
@@ -135,7 +135,41 @@ namespace math {
     inline float atan2(float y, float x) {
         return ::atan2f(y, x);
     }
-  
+
+    constexpr uint64_t hash2d(int64_t x, int64_t y) {
+        const uint64_t ux = (uint64_t) x;
+        const uint64_t uy = (uint64_t) y;
+        uint64_t hash = (ux * 0x0B00B135U) + (uy * 0x50FFC001U);
+        hash ^= hash >> 13U;
+        hash += hash & 832749825U;
+        hash ^= hash >> 16U;
+        return hash;
+    }
+
+    constexpr double quintic(double x) {
+        return x * x * x * (x * (x * 6 - 15) + 10);
+    }
+
+    constexpr float quintic(float x) {
+        return x * x * x * (x * (x * 6 - 15) + 10);
+    }
+
+    constexpr long double quintic(long double x) {
+        return x * x * x * (x * (x * 6 - 15) + 10);
+    }
+
+    constexpr double cosine(double x) {
+        return (1 - cos(M_PI * x)) / 2;
+    }
+
+    constexpr float cosine(float x) {
+        return (1 - cos((float) M_PI * x)) / 2;
+    }
+
+    constexpr long double cosine(long double x) {
+        return (1 - cos(M_PI * x)) / 2;
+    }
+
 }//namespace math
 }//namespace jstd
 

@@ -258,10 +258,8 @@ namespace bsd_socket {
 
     int32_t open_tcp(inet_family family) {
         int sock = socket(family, SOCK_STREAM, 0);
-
         if (sock == -1)
             throw_except<socket_exception>("Socket open error: %s", __sock_error_str__);
-        
         return sock;
     }
 
@@ -281,7 +279,7 @@ namespace bsd_socket {
             std::memset(&addr, 0, sizeof(addr));
             addr.sin_family = address.get_family();
             addr.sin_port   = htons(port);
-            addr.sin_addr   = *address.get_IPv4();
+            address.get_in_addr(&addr.sin_addr);
             if (::bind(sock, (sockaddr*) &addr, sizeof(addr)) != 0)
                 throw_except<bind_exception>("Socket bind error: %s", __sock_error_str__);
         } 
@@ -291,7 +289,7 @@ namespace bsd_socket {
             std::memset(&addr, 0, sizeof(addr));
             addr.sin6_family = address.get_family();
             addr.sin6_port   = htons(port);
-            addr.sin6_addr   = *address.get_IPv6();
+            address.get_in6_addr(&addr.sin6_addr);
             if (::bind(sock, (sockaddr*) &addr, sizeof(addr)) != 0)
                 throw_except<bind_exception>("Socket bind error: %s", __sock_error_str__);
         } else {
@@ -331,12 +329,12 @@ namespace bsd_socket {
         {
             if (size == sizeof(sockaddr_in)) {
                 sockaddr_in* a = reinterpret_cast<sockaddr_in*>(&addr_storage);
-                *client_addr = socket_address(inet_address(a->sin_addr), ntohs(a->sin_port));
+                *client_addr = socket_address(inet_address::as_in_addr(&a->sin_addr), ntohs(a->sin_port));
             } 
             
             else if (size == sizeof(sockaddr_in6)) {
                 sockaddr_in6* a = reinterpret_cast<sockaddr_in6*>(&addr_storage);
-                *client_addr = socket_address(inet_address(a->sin6_addr), ntohs(a->sin6_port));
+                *client_addr = socket_address(inet_address::as_in6_addr(&a->sin6_addr), ntohs(a->sin6_port));
             }
 
             else
@@ -369,8 +367,8 @@ namespace bsd_socket {
             sockaddr_in addr;
             std::memset(&addr, 0, sizeof(addr));
             addr.sin_family = address.get_family();
-            addr.sin_addr   = *address.get_IPv4();
             addr.sin_port   = htons(port);
+            address.get_in_addr(&addr.sin_addr);
             if (::connect(client_sock, (sockaddr*) &addr, sizeof(addr)) != 0)
                 throw_except<connect_exception>("Connect fail: %s", __sock_error_str__);
         } 
@@ -379,8 +377,8 @@ namespace bsd_socket {
             sockaddr_in6 addr;
             std::memset(&addr, 0, sizeof(addr));
             addr.sin6_family    = address.get_family();
-            addr.sin6_addr      = *address.get_IPv6();
             addr.sin6_port      = htons(port);
+            address.get_in6_addr(&addr.sin6_addr);
             if (::connect(client_sock, (sockaddr*)&addr, sizeof(addr)) != 0)
                 throw_except<connect_exception>("Connect fail: %s", __sock_error_str__);
         } 
@@ -456,7 +454,7 @@ namespace bsd_socket {
                     return 0;
                 }
                 throw_except<io_exception>(__sock_error_str__);
-            } 
+            }
             
             else if (received == 0) {
                 throw_except<connect_exception>("Connection is closed by remote side");
@@ -474,12 +472,12 @@ namespace bsd_socket {
 
         if (len == sizeof(sockaddr_in)) {
             sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(&addr_storage);
-            address = socket_address(inet_address(addr->sin_addr), ntohs(addr->sin_port));
+            address = socket_address(inet_address::as_in_addr(&addr->sin_addr), ntohs(addr->sin_port));
         } 
         
         else if (len == sizeof(sockaddr_in6)) {
             sockaddr_in6* addr = reinterpret_cast<sockaddr_in6*>(&addr_storage);
-            address = socket_address(inet_address(addr->sin6_addr), ntohs(addr->sin6_port));
+            address = socket_address(inet_address::as_in6_addr(&addr->sin6_addr), ntohs(addr->sin6_port));
         } 
         
         else {

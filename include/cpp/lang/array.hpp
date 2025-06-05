@@ -11,38 +11,40 @@
 #include <cpp/lang/utils/objects.hpp>
 #include <initializer_list>
 
-namespace jstd{
+namespace jstd
+{
     
 /**
- * @class array
- * @brief Динамический массив с поддержкой пользовательского аллокатора.
- *
+ *  Динамический массив с поддержкой пользовательского аллокатора.
+ *  Позволяет не только аллоцировать массив, 
+ *  но и оборачивать уже существующий указатель, предствляя его, как массив.
+ * 
  * @tparam T Тип элементов массива.
  */
 template<typename T>
 class array {
 protected:
-    tca::base_allocator* _allocator;    ///< Аллокатор, управляющий памятью.
-    T* _data;                           ///< Указатель на выделенный блок памяти.
+    tca::base_allocator* _allocator;    // Аллокатор, управляющий памятью.
+    T* _data;                           // Указатель на выделенный блок памяти.
     
     /**
-     * @brief Освобождает память, вызывает деструкторы элементов и сбрасывает всё в ноль.
+     * Освобождает память, вызывает деструкторы элементов и сбрасывает всё в ноль.
      *
      * Если массив пуст или уже освобождён, ничего не делает.
      */
     void free();    
 public:
-    int64_t length;                     ///< Количество элементов в массиве.
+    int64_t length;                     // Количество элементов в массиве.
     
     /**
-     * @brief Создаёт пустой массив.
+     * Создаёт пустой массив.
      *
      * Память не выделяется, данные отсутствуют, просто заглушка.
      */
     array();
 
     /**
-     * @brief Создаёт обёртку над уже выделенной памятью.
+     * Создаёт обёртку над уже выделенной памятью.
      * Новая память не выделяется, просто обёртка над уже существующим блоком памяти.
      * При уничтожении объектов деструкторы вызваны не будут.
      */
@@ -72,7 +74,7 @@ public:
     array(const std::initializer_list<T>& init_list, tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
-     * @brief Конструктор копирования.
+     * Конструктор копирования.
      *
      * Создаёт копию массива. Выделяет новую память и копирует элементы.
      *
@@ -82,7 +84,7 @@ public:
     array(const array<T>& a);
 
     /**
-     * @brief Конструктор перемещения.
+     * Конструктор перемещения.
      *
      * Забирает данные из другого массива, оставляя его пустым.
      * Быстро, потому что ничего не копирует.
@@ -92,7 +94,7 @@ public:
     array(array<T>&& a);
 
     /**
-     * @brief Оператор присваивания (копирование).
+     * Оператор присваивания (копирование).
      *
      * Освобождает текущие данные и создаёт копию переданного массива.
      * Если памяти не хватает — кидает исключение.
@@ -103,7 +105,7 @@ public:
     array<T>& operator=(const array<T>& a);
 
     /**
-     * @brief Оператор присваивания (перемещение).
+     * Оператор присваивания (перемещение).
      *
      * Освобождает текущие данные и просто забирает всё у другого массива.
      * Никакого копирования, просто перекидывание указателей.
@@ -114,7 +116,7 @@ public:
     array<T>& operator=(array<T>&& a);
 
     /**
-     * @brief Клонирует массив, используя переданный аллокатор.
+     * Клонирует массив, используя переданный аллокатор.
      *
      * Если аллокатор не указан, используется текущий.  
      * Создаёт новую копию данных.
@@ -125,25 +127,27 @@ public:
     array<T> clone(tca::base_allocator* allocator = nullptr) const;
 
     /**
-     * @brief Деструктор.
+     * Деструктор.
      *
      * Освобождает память, уничтожает элементы.
      */
     ~array();
 
     /**
-     * @brief Оператор доступа по индексу.
+     * Оператор доступа по индексу.
      *
      * Возвращает элемент массива. Если индекс неверный — будет плохо.
      *
      * @param idx Индекс элемента.
+     * 
      * @return Ссылка на элемент.
+     * 
      * @throws index_out_of_bound_exception Если индекс выходит за границы массива.
      */
     T& operator[](int64_t idx);
 
     /**
-     * @brief Оператор доступа по индексу (константный).
+     * Оператор доступа по индексу (константный).
      *
      * Возвращает элемент, но не даёт его изменять.
      *
@@ -154,22 +158,13 @@ public:
     const T& operator[](int64_t idx) const;
 
     /**
-     * @brief Возвращает указатель на начало массива.
+     * Возвращает указатель на начало массива.
      *
      * Можно использовать для низкоуровневой работы с памятью.
      *
      * @return Указатель на первый элемент массива.
      */
-    T* data();
-
-    /**
-     * @brief Возвращает указатель на начало массива (константный).
-     *
-     * Даёт доступ только для чтения.
-     *
-     * @return Константный указатель на первый элемент массива.
-     */
-    const T* data() const;
+    T* data() const;
 
     /**
      * Устанавливает весь массив в переданное значение.
@@ -235,6 +230,16 @@ public:
      *      Количество записанных символов. (Не включая нуль-терминатор)
      */
     int32_t to_string(char buf[], int32_t bufsize) const;
+
+    /**
+     * Возвращает итератор на первый элемент.
+     */
+    T* begin() const;
+    
+    /**
+     * Возвращает итератор на последний элемент.
+     */
+    T* end() const;
 };
 
     template<typename T>
@@ -258,10 +263,9 @@ public:
 
     template<typename T>
     array<T>::array(int64_t sz, tca::base_allocator* allocator) : array<T>() {
-#ifndef NDEBUG
-        if (allocator == nullptr)
-            throw_except<null_pointer_exception>("allocator == null");
-#endif
+        JSTD_DEBUG_CODE(
+            check_non_null(allocator);  
+        );
         if (sz > 0) {
             T* data = (T*) allocator->allocate_align(sizeof(T) * sz, alignof(T));
             if (data == nullptr)
@@ -276,10 +280,10 @@ public:
     template<typename T>
     array<T>::array(const std::initializer_list<T>& init_list, tca::base_allocator* allocator) : array<T>() {
         if (init_list.size() > 0) {
-#ifndef NDEBUG
-            if (allocator == nullptr)
-                throw_except<null_pointer_exception>("allocator == null");
-
+            JSTD_DEBUG_CODE(
+                if (allocator == nullptr)
+                    throw_except<null_pointer_exception>("allocator == null");
+            );
             T* data = (T*) allocator->allocate_align(sizeof(T) * init_list.size(), alignof(T));
             if (data == nullptr)
                 throw_except<out_of_memory_error>("Out of memory!");
@@ -287,8 +291,7 @@ public:
             placement_copy(const_cast<typename remove_const<T>::type*>(data), init_list);
             _allocator  = allocator;
             _data       = data;
-            length      = init_list.size();
-#endif      
+            length      = init_list.size();  
         }
     }
 
@@ -336,7 +339,7 @@ public:
                 return array<T>();
             allocator = _allocator;
         }
-        array<T> new_array(allocator, length);
+        array<T> new_array(length, allocator);
         placement_copy(const_cast<typename remove_const<T>::type*>(new_array.data()), _data, length);
         return array<T>( std::move(new_array) );
     }
@@ -359,12 +362,11 @@ public:
     }
 
     template<typename T>
-    const T* array<T>::data() const {
-        return _data;
-    }
-    
-    template<typename T>
-    T* array<T>::data() {
+    T* array<T>::data() const {
+        JSTD_DEBUG_CODE(
+            if (_data == nullptr)
+                throw_except<null_pointer_exception>("_data == null");
+        );
         return _data;
     }
 
@@ -395,6 +397,16 @@ public:
         } else {
             return data() == a.data();
         }
+    }
+
+    template<typename T>
+    T* array<T>::begin() const {
+        return _data;
+    }
+    
+    template<typename T>
+    T* array<T>::end() const {
+        return _data + length;
     }
 }
 #endif//JSTDLIB_CPP_LANG_ARRAY_H_

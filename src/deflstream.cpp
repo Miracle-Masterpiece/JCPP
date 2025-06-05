@@ -3,21 +3,19 @@
 
 namespace jstd {
 
-    deflstream::deflstream() : m_allocator(nullptr), m_buffer(), m_out(nullptr), m_def() {
+    deflstream::deflstream() : m_buffer(), m_out(nullptr), m_def() {
 
     }
 
     deflstream::deflstream(ostream* out, tca::base_allocator* allocator, int64_t buf_size) :
-    m_allocator(allocator), m_buffer(allocator, buf_size), m_out(out), m_def() {
+    m_buffer(buf_size, allocator), m_out(out), m_def() {
         
     }
 
     deflstream::deflstream(deflstream&& def) : 
-    m_allocator(def.m_allocator), 
     m_buffer(std::move(def.m_buffer)),
     m_out(def.m_out),
     m_def(std::move(def.m_def)) {
-        def.m_allocator = nullptr;
         def.m_out       = nullptr;
     }
     
@@ -25,36 +23,35 @@ namespace jstd {
         if (&def != this) {
             if (m_out != nullptr)
                 close();
-            m_allocator = def.m_allocator;
             m_buffer    = std::move(def.m_buffer);
             m_out       = def.m_out;
             m_def       = std::move(def.m_def);
-            def.m_allocator = nullptr;
             def.m_out       = nullptr;
         }
         return *this;
     }
 
     deflstream::deflstream(ostream* out, char* buffer, int64_t buf_size) :
-    m_allocator(nullptr), m_buffer(), m_out(out), m_def() {
-#ifndef NDEBUG        
-        if (buffer == nullptr)
-            throw_except<null_pointer_exception>("Buffer must be != null");
-        if (buf_size < 0)
-            throw_except<illegal_argument_exception>("Invalid buffer size: %li", (long int) buf_size);
-#endif//NDEBUG
+    m_buffer(), m_out(out), m_def() {
+        JSTD_DEBUG_CODE(
+            if (buffer == nullptr)
+                throw_except<null_pointer_exception>("Buffer must be != null");
+            if (buf_size < 0)
+                throw_except<illegal_argument_exception>("Invalid buffer size: %li", (long int) buf_size);
+        );
         m_def.set_input(buffer, buf_size);
     }
 
     void deflstream::write(const char* data, int64_t sz) {
-#ifndef NDEBUG
-        if (m_out == nullptr)
-            throw_except<io_exception>("Stream is null!");
-        if (m_def.is_finished())
-            throw_except<io_exception>("Write beyond end of stream");
-        if (sz < 0)
-            throw_except<illegal_argument_exception>("Invalid buffer size: %li", (long int) sz);
-#endif//NDEBUG
+        JSTD_DEBUG_CODE(
+            if (m_out == nullptr)
+                throw_except<io_exception>("Stream is null!");
+            if (m_def.is_finished())
+                throw_except<io_exception>("Write beyond end of stream");
+            if (sz < 0)
+                throw_except<illegal_argument_exception>("Invalid buffer size: %li", (long int) sz);
+        );
+
         if (sz == 0)
             return;
 

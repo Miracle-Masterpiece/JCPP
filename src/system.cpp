@@ -19,8 +19,8 @@ namespace jstd::system {
         return *ip != 0 ? byte_order::LE : byte_order::BE;
     }
     
+    const byte_order system_order = init_native_byte_order();
     byte_order native_byte_order() {
-        static const byte_order system_order = init_native_byte_order();
         return system_order;
     }
 

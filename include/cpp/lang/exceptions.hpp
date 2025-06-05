@@ -6,10 +6,13 @@
 #include <cstdio>
 #include <cpp/lang/utils/traits.hpp>
 #include <cpp/lang/stacktrace/stacktrace.hpp>
+#include <iostream>
+
 
 #define JSTD_THROWABLE_CAUSE_SIZE 256
 
-namespace jstd {
+namespace jstd 
+{
 
 class throwable {
     calltrace m_calltrace;
@@ -26,6 +29,7 @@ public:
     const char* cause() const;
     void print_stack_trace() const;
     const calltrace& get_calltrace() const;
+    void set_calltrace(calltrace&& calltrace);
 };
 
 #define ___MAKE_EXCEPT_CLASS__(clazz_name, _extends)                                                    \
@@ -110,7 +114,9 @@ ___MAKE_EXCEPT_CLASS__(socket_timeout_exception,            socket_exception)
         va_start(args, format);
         std::vsnprintf(buf, sizeof(buf), format, args);
         va_end(args);
-        throw T(buf);
+        T except(buf);
+        except.set_calltrace(calltrace::current());
+        throw T(std::move(except));
     }
 
     template<typename T>

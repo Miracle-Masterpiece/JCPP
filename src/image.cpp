@@ -106,43 +106,67 @@ namespace jstd {
     }
 
     image::rgb& image::get_rgb(int32_t x, int32_t y) {
-        check_index(x, m_width);
-        check_index(y, m_height);
+        JSTD_DEBUG_CODE(
+            if (m_channels != 3)
+                throw_except<illegal_state_exception>("image is not rgb");
+            check_index(x, m_width);
+            check_index(y, m_height);
+        );
         int idx = x + y * m_width;
         return m_rgb[idx];
     }
 
     const image::rgb& image::get_rgb(int32_t x, int32_t y) const {
-        check_index(x, m_width);
-        check_index(y, m_height);
+        JSTD_DEBUG_CODE(
+            if (m_channels != 3)
+                throw_except<illegal_state_exception>("image is not rgb");
+            check_index(x, m_width);
+            check_index(y, m_height);
+        );
         int idx = x + y * m_width;
         return m_rgb[idx];
     }
 
     image::rgba& image::get_rgba(int32_t x, int32_t y) {
-        check_index(x, m_width);
-        check_index(y, m_height);
+        JSTD_DEBUG_CODE(
+            if (m_channels != 4)
+                throw_except<illegal_state_exception>("image is not rgba");
+            check_index(x, m_width);
+            check_index(y, m_height);
+        );
         int idx = x + y * m_width;
         return m_rgba[idx];
     }
 
     const image::rgba& image::get_rgba(int32_t x, int32_t y) const {
-        check_index(x, m_width);
-        check_index(y, m_height);
+        JSTD_DEBUG_CODE(
+            if (m_channels != 4)
+                throw_except<illegal_state_exception>("image is not rgba");
+            check_index(x, m_width);
+            check_index(y, m_height);
+        );
         int idx = x + y * m_width;
         return m_rgba[idx];
     }
 
     image::gray& image::get_gray(int32_t x, int32_t y) {
-        check_index(x, m_width);
-        check_index(y, m_height);
+        JSTD_DEBUG_CODE(
+            if (m_channels != 1)
+                throw_except<illegal_state_exception>("image is not gray");
+            check_index(x, m_width);
+            check_index(y, m_height);
+        );
         int idx = x + y * m_width;
         return m_gray[idx];
     }
 
     const image::gray& image::get_gray(int32_t x, int32_t y) const {
-        check_index(x, m_width);
-        check_index(y, m_height);
+        JSTD_DEBUG_CODE(
+            if (m_channels != 1)
+                throw_except<illegal_state_exception>("image is not gray");
+            check_index(x, m_width);
+            check_index(y, m_height);
+        );
         int idx = x + y * m_width;
         return m_gray[idx];
     }

@@ -9,14 +9,7 @@ namespace jstd {
 
 class deflstream : public ostream {
     static const int32_t DEFAULT_BUFFER_SIZE = 1024;
-    /**
-     * Распределитель для временного буфера.
-     * 
-     * @remark
-     *      Если аллокатор нулевой, но при это буфер не нулевой, значит массив просто оборачивает уже существующий блок пямяти.
-     */
-    tca::base_allocator* m_allocator; 
-    
+
     /**
      * Временный буфер для сжимаемых данных.
      */
@@ -50,7 +43,7 @@ public:
      * @param buf_size
      *      Размер буфера для сжимаемых данных.
      */
-    deflstream(ostream* out, tca::base_allocator* allocator, int64_t buf_size = DEFAULT_BUFFER_SIZE);
+    deflstream(ostream* out, tca::base_allocator* allocator = tca::get_scoped_or_default(), int64_t buf_size = DEFAULT_BUFFER_SIZE);
     
     /**
      *  Констуктор для инициализации потока сжатия с внешним буфером.

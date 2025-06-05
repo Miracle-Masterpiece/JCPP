@@ -1,11 +1,35 @@
 #include <cpp/lang/net/inetaddr.hpp>
 #define __PUSH_STACK__
+
+#if defined(__linux__) || defined(__APPLE__)
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/fcntl.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#elif _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#else 
+#error Unsupported platform!
+#endif
+
 #include <cstring>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/string.hpp>
 #include <allocators/inline_linear_allocator.hpp>
 #include <allocators/ArrayList.h>
 #include <cpp/lang/array.hpp>
+
+#if defined(_linux_) || defined(__APPLE__)
+#define UNIX_CODE(code) code
+#define WIN_CODE(code)
+#elif defined(_WIN32)
+#define UNIX_CODE(code)
+#define WIN_CODE(code) code
+#endif
 
 namespace jstd {
 
@@ -67,7 +91,7 @@ public:
     void ip_parser::tokineze(inet_family family) {
         char c = next();
         tca::inline_linear_allocator<64> allocator;
-        jstd::array<char> numbers(&allocator, 64);
+        jstd::array<char> numbers(64, &allocator);
         while (!eof()) {
             if (c == ':') {
                 if (family == inet_family::IPV4)
@@ -108,7 +132,7 @@ public:
     
     inet_address ip_parser::make_v4() const {
         tca::inline_linear_allocator<4> allocator;
-        jstd::array<uint8_t> ip(&allocator, 4);
+        jstd::array<uint8_t> ip(4, &allocator);
         int offset = 0;
         for (int i = 0, len = _ip_tokens.size(); i < len; ++i) {
             if (_ip_tokens.at(i).m_ip_token == ip_token::L_NUMBER)
@@ -129,7 +153,7 @@ public:
         int end_sections    = 0;
 
         tca::inline_linear_allocator<16> allocator;
-        array<uint16_t> ip(&allocator, 8);
+        array<uint16_t> ip(8, &allocator);
         ip.set(0);
 
         for (int i = 0, len = _ip_tokens.size(); i < len; ++i) {
@@ -180,7 +204,7 @@ public:
 
 
 
-  /*static */ const char* inet_address::getStringError() {
+  /*static */ const char* getStringError() {
     __PUSH_STACK__
     #ifdef __linux__
             return strerror(errno);
@@ -200,7 +224,7 @@ public:
     
     //У меня нет ни малейшего понятия, что значит Gai в названии функции.
     //Two tausen years later: Gai = это GetAddrInfo
-    /*static*/ const char* inet_address::getGaiStringError(int errorCode) {
+    /*static*/ const char* getGaiStringError(int errorCode) {
 #if defined(__linux__)
         return gai_strerror(errorCode);
 #elif _WIN32
@@ -230,10 +254,15 @@ public:
 #endif
     }
 
+
+    /*static*/ const inet_family inet_family::NONE = {0};
+    /*static*/ const inet_family inet_family::IPV4(AF_INET);
+    /*static*/ const inet_family inet_family::IPV6(AF_INET6);
+
     inet_address::inet_address() : IPv4(), family(inet_family::IPV4) {
         __PUSH_STACK__
-        std::memset(_addrBuf, 0, sizeof(_addrBuf));
-        hostName[0] = '\0';
+        std::memset(m_data_buffer, 0, sizeof(m_data_buffer));
+        m_host_name[0] = '\0';
     }
 
     inet_address::inet_address(inet_family family) : inet_address() {
@@ -241,49 +270,23 @@ public:
         this->family = family;
     }
 
-    inet_address::inet_address(const in6_addr& IPv6, const char* hostName) : IPv6(IPv6), family(inet_family::IPV6){
-        __PUSH_STACK__
-        if (hostName != nullptr){
-            int stringLength = std::strlen(hostName);
-            if (stringLength >= (int) sizeof(this->hostName))
-                throw_except<overflow_exception>("host_name is very large");
-            std::memcpy(this->hostName, hostName, stringLength);
-            this->hostName[stringLength] = '\0';
-        }else{
-            this->hostName[0] = '\0';
-        }
-    }
-
-    inet_address::inet_address(const in_addr& IPv4, const char* hostName) : IPv4(IPv4), family(inet_family::IPV4){
-        __PUSH_STACK__
-        if (hostName != nullptr){
-            int stringLength = std::strlen(hostName);
-        if (stringLength >= (int) sizeof(this->hostName))
-        throw_except<overflow_exception>("host_name is very large");
-            this->hostName[stringLength] = '\0';
-            std::memcpy(this->hostName, hostName, stringLength);
-        }else{
-            this->hostName[0] = '\0';
-        }
-    }
-
     inet_address::inet_address(const inet_address& addr) : IPv4(), family(addr.family) {
         __PUSH_STACK__
-        std::memcpy(hostName, addr.hostName, sizeof(addr.hostName));
-        std::memcpy(_addrBuf, addr._addrBuf, sizeof(addr._addrBuf));
+        std::memcpy(m_host_name, addr.m_host_name, sizeof(addr.m_host_name));
+        std::memcpy(m_data_buffer, addr.m_data_buffer, sizeof(addr.m_data_buffer));
     }
     
     inet_address::inet_address(inet_address&& addr) : IPv4(), family(addr.family) {
         __PUSH_STACK__
-        std::memcpy(hostName, addr.hostName, sizeof(addr.hostName));
-        std::memcpy(_addrBuf, addr._addrBuf, sizeof(addr._addrBuf));
+        std::memcpy(m_host_name, addr.m_host_name, sizeof(addr.m_host_name));
+        std::memcpy(m_data_buffer, addr.m_data_buffer, sizeof(addr.m_data_buffer));
     }
 
     inet_address& inet_address::operator= (const inet_address& addr) {
         __PUSH_STACK__
         if (&addr != this){
-            std::memcpy(hostName, addr.hostName, sizeof(addr.hostName));
-            std::memcpy(_addrBuf, addr._addrBuf, sizeof(addr._addrBuf));
+            std::memcpy(m_host_name, addr.m_host_name, sizeof(addr.m_host_name));
+            std::memcpy(m_data_buffer, addr.m_data_buffer, sizeof(addr.m_data_buffer));
             family = addr.family;
         }
         return *this;
@@ -292,8 +295,8 @@ public:
     inet_address& inet_address::operator= (inet_address&& addr) {
         __PUSH_STACK__
         if (&addr != this){
-            std::memcpy(hostName, addr.hostName, sizeof(addr.hostName));
-            std::memcpy(_addrBuf, addr._addrBuf, sizeof(addr._addrBuf));
+            std::memcpy(m_host_name, addr.m_host_name, sizeof(addr.m_host_name));
+            std::memcpy(m_data_buffer, addr.m_data_buffer, sizeof(addr.m_data_buffer));
             family = addr.family;
         }
         return *this;
@@ -317,7 +320,7 @@ public:
 
     inet_address::inet_address(const char* ip) {
         __PUSH_STACK__
-        std::memset(hostName, 0, sizeof(hostName));
+        std::memset(m_host_name, 0, sizeof(m_host_name));
         if (contains(ip, '.')){
             family = inet_family::IPV4;
             (*this) = parse_IPv4(ip);
@@ -335,32 +338,34 @@ public:
 
     /*static*/ inet_address inet_address::as_IPv4(const uint8_t buf[], int bufsize) {
         __PUSH_STACK__
+        if (bufsize < 4)
+            throw_except<illegal_argument_exception>("bufsize must be >= 4");
         inet_address ip4;
-        ip4.family      = inet_family::IPV4;
-        std::memcpy(&ip4.IPv4.s_addr, buf, bufsize);
+        ip4.family = inet_family::IPV4;
+        for (int i = 0; i < 4; ++i) {
+            ip4.IPv4.m_byte_view[i] = buf[i];
+        }
         return ip4;
     }
 
     /*static*/ inet_address inet_address::as_IPv6(const uint16_t buf[], int bufsize) {
         __PUSH_STACK__
-        
-        inet_address::jsl_in6_addr tmpAddr;
-        for (int i = 0; i < 8; ++i)
-            tmpAddr._short[i] = htons(buf[i]);
-        
-#ifndef NDEBUG
-            if (sizeof(tmpAddr) != sizeof(in6_addr))
-                throw_except<error>("sizeof(tmpAddr) != sizeof(in6_addr)");
-#endif
-
-        in6_addr addr;
-        memcpy(&addr, &tmpAddr, sizeof(tmpAddr));
-
-        return inet_address(addr);
+        if (bufsize < 8)
+            throw_except<illegal_argument_exception>("bufsize must be >= 8");
+        inet_address ip6;
+        ip6.family = inet_family::IPV6;
+        for (int32_t i = 0; i < 8; ++i) {
+            ip6.IPv6.m_short_view[i] = htons(buf[i]);
+        }
+        return ip6;
     }
 
     inet_address inet_address::parse_IPv4(const char* ip_string) {
         __PUSH_STACK__
+        JSTD_DEBUG_CODE(
+            if (ip_string == nullptr)
+                throw_except<illegal_argument_exception>("ip_string == null");
+        );
         tca::inline_linear_allocator<512> allocator;
         ip_parser parser(&allocator, ip_string);
         parser.tokineze(inet_family::IPV4);
@@ -370,6 +375,10 @@ public:
 
     inet_address inet_address::parse_IPv6(const char* ip_string) {
         __PUSH_STACK__
+        JSTD_DEBUG_CODE(
+            if (ip_string == nullptr)
+                throw_except<illegal_argument_exception>("ip_string == null");
+        );
         tca::inline_linear_allocator<1024> allocator;
         ip_parser parser(&allocator, ip_string);
         parser.tokineze(inet_family::IPV6);
@@ -425,17 +434,7 @@ public:
     }
 
     const char* inet_address::get_host_name() const {
-        return hostName;
-    }
-
-    const in_addr* inet_address::get_IPv4() const {
-        __PUSH_STACK__
-        return &IPv4;
-    }
-
-    const in6_addr* inet_address::get_IPv6() const {
-        __PUSH_STACK__
-        return &IPv6;
+        return m_host_name;
     }
 
     /*static*/ int inet_address::IPv4ToString(char buf[], int bufsize, const inet_address& address){
@@ -444,7 +443,7 @@ public:
             throw_except<null_pointer_exception>("buf is null!");
         const int BUF_SIZE = 16;
         char tmpBuf[BUF_SIZE];
-        const uint32_t addr = (uint32_t) address.get_IPv4()->s_addr;
+        const uint32_t addr = address.IPv4.m_int_view;
         const uint8_t b1 =  addr          & 0xff;
         const uint8_t b2 = (addr >> 8)    & 0xff;
         const uint8_t b3 = (addr >> 16)   & 0xff;
@@ -459,27 +458,16 @@ public:
         
     /*static*/ int inet_address::IPv6ToString(char buf[], int bufsize, const inet_address& address){
         __PUSH_STACK__
-        const int BUF_SIZE = 40;
-        char tmpBuf[BUF_SIZE];
-        const in6_addr* addr = address.get_IPv6();
+        const internal::net::ipv6_addr* addr = &address.IPv6;
         uint16_t values[8];
-        inet_address::jsl_in6_addr tmpAddr;
-
-#ifndef NDEBUG
-        if (sizeof(tmpAddr) != sizeof(in6_addr))
-            throw_except<error>("sizeof(tmpAddr) != sizeof(in6_addr)");
-#endif
-
-        memcpy(&tmpAddr, addr, sizeof(tmpAddr));
-        
+    
         for (int i = 0; i < 8; ++i)
-            values[i] = ntohs(tmpAddr._short[i]);
+            values[i] = ntohs(addr->m_short_view[i]);
 
-        const int length = snprintf(tmpBuf, sizeof(tmpBuf), "%x:%x:%x:%x:%x:%x:%x:%x", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
+        const int length = snprintf(buf, bufsize, "%x:%x:%x:%x:%x:%x:%x:%x", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
         if (bufsize < (length + 1))
             throw_except<overflow_exception>("bufsize < result length! [%i : %i]", bufsize, length + 1);
-        memcpy(buf, tmpBuf, length);
-        buf[length] = '\0';
+
         return length;
     }
 
@@ -488,6 +476,50 @@ public:
         inet_address addr;
         int count = get_all_by_name(&addr, 1, domain);
         return count > 0 ? addr : optional<inet_address>::null_opt();
+    }
+
+    inet_address inet_address::as_in_addr(const in_addr* addr_in) {
+        JSTD_DEBUG_CODE(
+            if (addr_in == nullptr)
+                throw_except<illegal_argument_exception>("addr_in == null");
+        );
+        inet_address addr;
+        addr.family             = inet_family::IPV4;
+        addr.IPv4.m_int_view    = addr_in->s_addr;
+        return addr;
+    }
+    
+    inet_address inet_address::as_in6_addr(const in6_addr* addr_in) {
+        JSTD_DEBUG_CODE(
+            if (addr_in == nullptr)
+                throw_except<illegal_argument_exception>("addr_in == null");
+        );
+        inet_address addr;
+        addr.family = inet_family::IPV6;
+        for (int i = 0; i < 16; ++i)
+            addr.IPv4.m_byte_view[i] = addr_in->s6_addr[i];
+        return addr;
+    }
+
+    void inet_address::get_in_addr(in_addr* addr_out) const {
+        JSTD_DEBUG_CODE(
+            if (addr_out == nullptr)
+                throw_except<illegal_argument_exception>("addr_out == null");
+            if (family != inet_family::IPV4)
+                throw_except<illegal_state_exception>("family is not IPv4");
+        );
+        addr_out->s_addr = IPv4.m_int_view;
+    }
+
+    void inet_address::get_in6_addr(in6_addr* addr_out) const {
+        JSTD_DEBUG_CODE(
+            if (addr_out == nullptr)
+                throw_except<illegal_argument_exception>("addr_out == null");
+            if (family != inet_family::IPV6)
+                throw_except<illegal_state_exception>("family is not IPv6");
+        );
+        for (int i = 0; i < 16; ++i) 
+            addr_out->s6_addr[i] = IPv6.m_byte_view[i];
     }
 
     /*static*/ int inet_address::get_all_by_name(inet_address dst[], int bufsize, const char* domain) {
@@ -502,7 +534,7 @@ public:
         int errcode   = getaddrinfo(domain, null, &addrInf, &begin);
         
         if (errcode != 0)
-            throw_except<illegal_state_exception>(inet_address::getGaiStringError(errcode));    
+            throw_except<illegal_state_exception>(getGaiStringError(errcode));    
 
         int off = 0;
         for (addrinfo* i = begin; i != nullptr && off < bufsize; i = i->ai_next) {
@@ -510,12 +542,12 @@ public:
             inet_address addr;
             if (i->ai_family == inet_family::IPV4){
                 const sockaddr_in* sock4  = (const sockaddr_in*) i->ai_addr;
-                addr = inet_address(sock4->sin_addr);
+                addr = inet_address::as_in_addr(&sock4->sin_addr);
             }
             
             else if(i->ai_family == inet_family::IPV6){
                 const sockaddr_in6* sock6  = (const sockaddr_in6*) i->ai_addr;
-                addr = inet_address(sock6->sin6_addr);
+                addr = inet_address::as_in6_addr(&sock6->sin6_addr);
             } 
             
             else {
@@ -550,62 +582,62 @@ public:
     }
 
 
-    socket_address::socket_address() : _address(), _port(0) {
+    socket_address::socket_address() : m_address(), m_port(0) {
 
     }
 
-    socket_address::socket_address(const inet_address& address, int32_t port) : _address(address), _port(port) {
+    socket_address::socket_address(const inet_address& address, int32_t port) : m_address(address), m_port(port) {
 
     }
 
-    socket_address::socket_address(const socket_address& sa) : _address(sa._address), _port(sa._port) {
+    socket_address::socket_address(const socket_address& sa) : m_address(sa.m_address), m_port(sa.m_port) {
 
     }
 
-    socket_address::socket_address(socket_address&& sa) : _address(std::move(sa._address)), _port(sa._port) {
+    socket_address::socket_address(socket_address&& sa) : m_address(std::move(sa.m_address)), m_port(sa.m_port) {
 
     }
 
     socket_address& socket_address::operator= (const socket_address& sa) {
         if (&sa != this) {
-            _address    = sa._address;
-            _port       = sa._port;
+            m_address    = sa.m_address;
+            m_port       = sa.m_port;
         }
         return *this;
     }
     
     socket_address& socket_address::operator= (socket_address&& sa) {
         if (&sa != this) {
-            _address    = std::move(sa._address);
-            _port       = sa._port;
+            m_address    = std::move(sa.m_address);
+            m_port       = sa.m_port;
         }
         return *this;
     }
 
     const inet_address& socket_address::get_address() const {
-        return _address;
+        return m_address;
     }
     
     int32_t socket_address::get_port() const {
-        return _port;
+        return m_port;
     }
 
     int64_t socket_address::hashcode() const {
-        int64_t hash = _address.hashcode();
-        hash = hash + 233 * _port;
+        int64_t hash = m_address.hashcode();
+        hash = hash + 233 * m_port;
         return hash;
     }
     
     bool socket_address::equals(const socket_address& sock_addr) const {
         if (&sock_addr == this)
             return true;
-        return _port == sock_addr._port && _address.equals(sock_addr._address);
+        return m_port == sock_addr.m_port && m_address.equals(sock_addr.m_address);
     }
 
     int socket_address::to_string(char buf[], int bufsize) {
-        int off = _address.to_string(buf, bufsize);
+        int off = m_address.to_string(buf, bufsize);
         if (bufsize - off > 0)
-            off += snprintf(buf + off, bufsize - off, " port: %i", _port);
+            off += snprintf(buf + off, bufsize - off, " port: %i", m_port);
         return off;
     }
     

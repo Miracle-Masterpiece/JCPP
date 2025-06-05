@@ -130,7 +130,7 @@ public:
 
 /**
  * @class linked_list
- * @brief Шаблонный класс двусвязного списка с поддержкой пользовательского аллокатора.
+ * Шаблонный класс двусвязного списка с поддержкой пользовательского аллокатора.
  * 
  * Предоставляет функциональность стандартного двусвязного списка, включая вставку, удаление,
  * доступ по индексу, а также стековые операции. Поддерживает выделение памяти через внешний аллокатор.
@@ -152,7 +152,7 @@ class linked_list {
     int64_t                 _size;
 
     /**
-     * @brief Выделяет память и создаёт новый узел списка.
+     * Выделяет память и создаёт новый узел списка.
      * 
      * @tparam _T 
      *      Тип значения (поддерживает perfect forwarding).
@@ -167,7 +167,7 @@ class linked_list {
     list_node<T>* new_node(_T&& value);
 
     /**
-     * @brief Удаляет узел и освобождает память.
+     * Удаляет узел и освобождает память.
      * 
      * @param node 
      *      Узел, который следует удалить.
@@ -175,7 +175,7 @@ class linked_list {
     void delete_node(list_node<T>* node);
 
     /**
-     * @brief Возвращает указатель на узел по индексу.
+     * Возвращает указатель на узел по индексу.
      * 
      * @param idx 
      *      Индекс (0-based).
@@ -185,7 +185,7 @@ class linked_list {
     list_node<T>* node_at(int64_t idx);
 
     /**
-     * @brief Константная версия node_at.
+     * Константная версия node_at.
      * 
      * @param idx 
      *      Индекс (0-based).
@@ -195,7 +195,7 @@ class linked_list {
     const list_node<T>* node_at(int64_t idx) const;
 
     /**
-     * @brief Удаляет узел из связей (не освобождает память).
+     * Удаляет узел из связей (не освобождает память).
      * 
      * @param node 
      *      Узел, который необходимо удалить из списка.
@@ -203,21 +203,28 @@ class linked_list {
     void unlink(list_node<T>* node);
 
 public:
-    /**
-     * @brief Конструктор по умолчанию.
-     */
-    linked_list();
 
     /**
-     * @brief Конструктор с пользовательским аллокатором.
+     * Конструктор с пользовательским аллокатором.
      * 
      * @param allocator 
      *      Указатель на пользовательский аллокатор.
      */
-    linked_list(tca::base_allocator* allocator);
+    linked_list(tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
-     * @brief Копирующий конструктор.
+     * Конструктор с инициализирующим листом..
+     * 
+     * @param init_list
+     *      Ссылка на инициализирующий список для заполнения этого связного списка.
+     * 
+     * @param allocator 
+     *      Указатель на пользовательский аллокатор.
+     */
+    linked_list(const std::initializer_list<T>& init_list, tca::base_allocator* allocator = tca::get_scoped_or_default());
+
+    /**
+     * Копирующий конструктор.
      * 
      * @param other 
      *      Список для копирования.
@@ -225,14 +232,14 @@ public:
     linked_list(const linked_list<T>& other);
 
     /**
-     * @brief Перемещающий конструктор.
+     * Перемещающий конструктор.
      * @param other 
      *      Список, ресурсы которого будут перемещены.
      */
     linked_list(linked_list<T>&& other);
 
     /**
-     * @brief Копирующее присваивание.
+     * Копирующее присваивание.
      * 
      * @param other 
      *      Список для копирования.
@@ -243,7 +250,7 @@ public:
     linked_list<T>& operator=(const linked_list<T>& other);
 
     /**
-     * @brief Перемещающее присваивание.
+     * Перемещающее присваивание.
      * 
      * @param other 
      *      Список, ресурсы которого будут перемещены.
@@ -254,18 +261,18 @@ public:
     linked_list& operator=(linked_list<T>&& other);
 
     /**
-     * @brief Деструктор. Очищает список и освобождает память.
+     * Деструктор. Очищает список и освобождает память.
      */
     ~linked_list();
 
     /**
-     * @brief 
+     * 
      *      Удаляет все элементы из списка.
      */
     void clear();
 
     /**
-     * @brief Добавляет элемент в конец списка.
+     * Добавляет элемент в конец списка.
      * 
      * @tparam _T 
      *      Тип передаваемого значения.
@@ -275,7 +282,7 @@ public:
     template<typename _T> void add(_T&& value);
 
     /**
-     * @brief Добавляет элемент в начало списка.
+     * Добавляет элемент в начало списка.
      * 
      * @tparam _T 
      *      Тип передаваемого значения.
@@ -286,7 +293,7 @@ public:
     template<typename _T> void add_first(_T&& value);
 
     /**
-     * @brief Добавляет элемент в конец списка (эквивалент add()).
+     * Добавляет элемент в конец списка (эквивалент add()).
      * 
      * @tparam _T 
      *      Тип передаваемого значения.
@@ -297,7 +304,7 @@ public:
     template<typename _T> void add_last(_T&& value);
 
     /**
-     * @brief Добавляет элемент по указанному индексу.
+     * Добавляет элемент по указанному индексу.
      * 
      * @tparam _T 
      *      Тип передаваемого значения.
@@ -311,7 +318,7 @@ public:
     template<typename _T> void add(int64_t idx, _T&& value);
 
     /**
-     * @brief Удаляет элемент по индексу.
+     * Удаляет элемент по индексу.
      * 
      * @param idx 
      *      Индекс элемента.
@@ -321,7 +328,7 @@ public:
     void remove_at(int64_t idx, T* _return = nullptr);
 
     /**
-     * @brief Удаляет первый элемент.
+     * Удаляет первый элемент.
      * 
      * @param _return 
      *      [optional] Указатель, куда будет записано удалённое значение.
@@ -329,7 +336,7 @@ public:
     void remove_first(T* _return = nullptr);
 
     /**
-     * @brief Удаляет последний элемент.
+     * Удаляет последний элемент.
      * 
      * @param _return 
      *      [optional] Указатель, куда будет записано удалённое значение.
@@ -337,7 +344,7 @@ public:
     void remove_last(T* _return = nullptr);
 
     /**
-     * @brief Удаляет первое вхождение значения из списка.
+     * Удаляет первое вхождение значения из списка.
      * 
      * @param v Значение для удаления.
      * 
@@ -347,7 +354,7 @@ public:
     void remove(const T& v, T* _return = nullptr);
 
     /**
-     * @brief Добавляет элемент в конец (аналог push_back).
+     * Добавляет элемент в конец (аналог push_back).
      * 
      * @tparam _T 
      *      Тип передаваемого значения.
@@ -357,7 +364,7 @@ public:
     template<typename _T> void push(_T&& value);
 
     /**
-     * @brief Удаляет последний элемент (аналог pop_back).
+     * Удаляет последний элемент (аналог pop_back).
      * 
      * @param _return 
      *      [optional] Указатель, куда будет записано удалённое значение.
@@ -365,7 +372,7 @@ public:
     void pop(T* _return = nullptr);
 
     /**
-     * @brief Возвращает количество элементов в списке.
+     * Возвращает количество элементов в списке.
      * 
      * @return 
      *      Размер списка.
@@ -373,7 +380,7 @@ public:
     int64_t size() const;
 
     /**
-     * @brief Проверяет, пуст ли список.
+     * Проверяет, пуст ли список.
      * 
      * @return 
      *      true, если список пуст.
@@ -381,7 +388,7 @@ public:
     bool is_empty() const;
 
     /**
-     * @brief Возвращает ссылку на элемент по индексу.
+     * Возвращает ссылку на элемент по индексу.
      * 
      * @param idx 
      *      Индекс (0-based).
@@ -391,7 +398,7 @@ public:
     T& at(int64_t idx);
 
     /**
-     * @brief Константная версия at().
+     * Константная версия at().
      * 
      * @param idx 
      *      Индекс (0-based).
@@ -401,7 +408,7 @@ public:
     const T& at(int64_t idx) const;
 
     /**
-     * @brief Проверяет, содержится ли значение в списке.
+     * Проверяет, содержится ли значение в списке.
      *
      * Для сравнения используется структура jstd::equal_to<T>. 
      * Чтобы метод работал корректно для пользовательских типов, 
@@ -416,7 +423,7 @@ public:
     bool contains(const T& value) const;
 
     /**
-     * @brief Возвращает индекс первого вхождения элемента в списке.
+     * Возвращает индекс первого вхождения элемента в списке.
      *
      * Для сравнения используется jstd::equal_to<T>. Если элемент не найден, возвращается -1.
      *
@@ -429,7 +436,7 @@ public:
     int64_t index_of(const T& value) const;
 
     /**
-     * @brief Создаёт глубокую копию списка.
+     * Создаёт глубокую копию списка.
      *
      * Все элементы копируются в новый список. Если передан пользовательский аллокатор,
      * он будет использован для выделения памяти в новом списке. В противном случае —
@@ -500,21 +507,18 @@ public:
     }
 
     template<typename T>
-    linked_list<T>::linked_list() :
-    _allocator(nullptr),
-    _head(nullptr),
-    _tail(nullptr), 
-    _size(0) {
-
-    }
-
-    template<typename T>
     linked_list<T>::linked_list(tca::base_allocator* allocator) :
     _allocator(allocator),
     _head(nullptr),
     _tail(nullptr),
     _size(0) {
 
+    }
+
+    template<typename T>
+    linked_list<T>::linked_list(const std::initializer_list<T>& init_list, tca::base_allocator* allocator) : linked_list<T>(allocator) {
+        for (const T& value : init_list)
+            add(value);
     }
 
     template<typename T>
@@ -570,7 +574,7 @@ public:
             for (list_node<T>* i = _head; i != nullptr; ) {
                 list_node<T>* current = i;
                 i = i->get_next();
-                _allocator->deallocate(current, sizeof(list_node<T>));
+                delete_node(current);
             }
             _head = nullptr;
             _tail = nullptr;

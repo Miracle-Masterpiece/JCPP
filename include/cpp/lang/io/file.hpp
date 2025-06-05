@@ -247,57 +247,20 @@ public:
      *      Сколько было скопировано символов. (Не включает нулевой).
      */
     int get_name(char buf[], int bufsize) const;
-
-    /**
-     * Если текущий файл описывает директорию, то возвращает список названий файлов внутри неё.
-     * Если файлов нет, возвращает nullptr.
-     * Если текущий файл описывает файл, метод так же возвращает nullptr.
-     * 
-     * @param allocator
-     *      Распределитель памяти, отвечающий за выделение памяти под строки.
-     * 
-     * @param filter [Опционально]
-     *      Указатель на объект фильтра файлов.
-     * 
-     * @return 
-     *      Массив строк названий файлов в текущей директории.
-     * 
-     * @throw 
-     *      sequrity_exception - если доступ к файлу запрещён.
-     * 
-     * @remark 
-     *      Для освобождения памяти результирующей строки, используйте функцию file::free_list(const char**, tca::base_allocator) const;
-     * 
-     * @deprecated
-     */
-    const char* const* list(tca::base_allocator* allocator, file_filter* filter = nullptr) const;
-    
-    /**
-     * Освобождает память, выделенную под строки в методе this->list(tca::base_allocator*) const;
-     * 
-     * @param files 
-     *      Массив имён файлов.
-     * 
-     * @param allocator
-     *      Распределитель памяти, отвечавший за выделение памяти под строки.
-     * 
-     * @deprecated
-     */
-    static void free_list(const char* const* files, tca::base_allocator* allocator);
     
     /**
      * Возвращает массив объектов файлов которые находятся в директории, описываемом этим файлом.
      * 
-     * @param allocator
-     *      Распределитель памяти, который используется для выделения памяти под результирующий массив.
-     * 
      * @param filter
      *      Фильтр для файлов.
+     * 
+     * @param allocator
+     *      Распределитель памяти, который используется для выделения памяти под результирующий массив.
      * 
      * @return
      *      Массив файлов, который находятся в этой директории описываемым этим файлом, и файлы, которые прошли фильтр.
      */
-    array<file> list_files(tca::base_allocator* allocator, file_filter* filter = nullptr) const;
+    array<file> list_files(file_filter* filter = nullptr, tca::base_allocator* allocator = tca::get_scoped_or_default()) const;
     
     /**
      * Возвращает объект файла, описывающий путь до папки с исполняемым файлом.

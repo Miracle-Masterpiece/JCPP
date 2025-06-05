@@ -278,7 +278,7 @@ namespace jstd {
             }
         };
 
-        callback_image callback ={
+        callback_image callback = {
             .m_array_of_image   = &m_images, 
             .m_atlas            = &result, 
             .m_rescale          = scale_factor, 
@@ -291,7 +291,7 @@ namespace jstd {
     }
 
     array<image_packer::uv> image_packer::get_uv() const {
-        array<image_packer::uv> uvs(m_allocator, m_images.length);
+        array<image_packer::uv> uvs(m_images.length, m_allocator);
         
         struct node_visitor {
             array<image_packer::uv>* m_array;

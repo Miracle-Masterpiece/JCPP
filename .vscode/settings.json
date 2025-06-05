@@ -134,7 +134,12 @@
     "variant": "cpp",
     "zconf.h": "c",
     "__config": "cpp",
-    "execution": "cpp"
+    "execution": "cpp",
+    "*.inc": "cpp",
+    "__hash_table": "cpp",
+    "__tree": "cpp",
+    "forward_list": "cpp",
+    "cfloat": "cpp"
   },
   "markdown.validate.enabled": true
 }

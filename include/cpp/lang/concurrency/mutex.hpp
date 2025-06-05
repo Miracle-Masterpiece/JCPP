@@ -20,6 +20,21 @@ public:
     bool try_lock();
 };
 
+class unique_lock {
+    mutex* m_mutex;
+    unique_lock(const unique_lock&)             = delete;
+    unique_lock& operator= (const unique_lock&) = delete;
+    unique_lock(unique_lock&&)                  = delete;
+    unique_lock& operator= (unique_lock&&)      = delete;
+public:
+    unique_lock(mutex& mutex)  : m_mutex(&mutex) {
+        m_mutex->lock();
+    }
+    ~unique_lock() {
+        m_mutex->unlock();
+    }
+};
+
 }// namespace jstd
 
 #endif//JSTD_CPP_LANG_CONCURRENCY_H

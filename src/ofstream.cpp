@@ -16,7 +16,7 @@ namespace jstd {
         
     }
     
-    ofstream::ofstream(const file& f, bool append) : _handle(nullptr) {
+    ofstream::ofstream(const file& f, bool append) : ofstream() {    
         _handle = filesystem::open(f.str_path(), append ? "ab" : "wb");
     }
 

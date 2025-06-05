@@ -83,7 +83,7 @@ public:
      * @param init_capacity 
      *      Начальная вместимость (по умолчанию — 10).
      */
-    explicit array_list(int64_t init_capacity = DEFAULT_CAPACITY, tca::base_allocator* allocator = tca::get_scoped_or_default());
+    explicit array_list(int64_t init_capacity, tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Создаёт список с заданным аллокатором и инициализирующим листом.
@@ -299,21 +299,7 @@ public:
      * @throws index_out_of_bound_exception 
      *      Если индекс не допустим.
      */
-    E& at(int64_t idx);
-
-    /**
-     * Возвращает константную ссылку на элемент по индексу.
-     *
-     * @param idx 
-     *      Индекс элемента.
-     * 
-     * @return 
-     *      Константная ссылка на элемент.
-     * 
-     * @throws index_out_of_bound_exception 
-     *      Если индекс не допустим.
-     */
-    const E& at(int64_t idx) const;
+    E& at(int64_t idx) const;
 
     /**
      * Возвращает количество элементов в списке.
@@ -621,17 +607,10 @@ public:
     }
 
     template<typename E>
-    E& array_list<E>::at(int64_t idx) {
+    E& array_list<E>::at(int64_t idx) const {
         check_index(idx, m_size);
         return m_data[idx];
     }
-    
-    template<typename E>
-    const E& array_list<E>::at(int64_t idx) const {
-        check_index(idx, m_size);
-        return m_data[idx];
-    }
-
     
     template<typename E>
     void array_list<E>::clear() {

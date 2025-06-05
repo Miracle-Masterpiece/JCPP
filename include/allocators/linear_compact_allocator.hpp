@@ -560,6 +560,7 @@ namespace tca {
             T* s = reinterpret_cast<T*>(src);
             for (std::size_t i = 0; i < count; ++i) {
                 new(d + i) T(std::move(*(s + i)));
+                s[i].~T();
             }
         }
     }

@@ -1,6 +1,7 @@
 #ifndef _TCA_ALLOCATORS_SHARED_ALLOCATOR_H
 #define _TCA_ALLOCATORS_SHARED_ALLOCATOR_H
 
+#include <cpp/lang/concurrency/mutex.hpp>
 #include <allocators/base_allocator.hpp>
 #include <allocators/ArrayList.h>
 #include <allocators/Helpers.hpp>
@@ -78,7 +79,8 @@ struct chunk {
     void free(void* p);
     void compact();
     bool is_empty() const;
-    
+    void reset();
+
     /**
      * Возвращает указатель на данные, добавляя смещение на размер заголовка к указателю на memblock
      * 
@@ -151,6 +153,10 @@ class shared_allocator : public base_allocator {
      */
     std::size_t min_chunk_aligned_;
 
+    /**
+     * Мьютекс для блокировки объекта для возможности многопоточного выделения памяти.
+     */
+    mutable jstd::mutex m_global_lock;
 public:
 
     /**
@@ -240,9 +246,6 @@ public:
      * Метод проходится по всем чанкам в списке и в каждом из них проверяет,
      * есть ли подряд идущие свободные блоки. Если такие блоки найдены,
      * они объединяются в один более крупный свободный блок.
-     *
-     * Это снижает фрагментацию внутри чанков и позволяет более эффективно
-     * использовать уже выделенную память.
      */
     void merge_free_blocks();
 

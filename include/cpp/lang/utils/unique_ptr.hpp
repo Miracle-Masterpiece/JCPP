@@ -59,7 +59,7 @@ public:
     }
 
     template<typename T>
-    unique_ptr<T> make_unique(T&& object, tca::base_allocator* allocator) {
+    unique_ptr<T> make_unique(T&& object, tca::base_allocator* allocator = tca::get_scoped_or_default()) {
         return unique_ptr<T>(allocator, std::forward<T>(object));
     }
 

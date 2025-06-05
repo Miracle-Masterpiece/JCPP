@@ -150,22 +150,14 @@ namespace jstd {
         return 0;
     }
 
-    const char* const* file::list(tca::base_allocator* allocator, file_filter* filter) const {
-        return filesystem::list_files(_path, allocator, filter);
-    }
-    
-    /*static*/ void file::free_list(const char* const* files, tca::base_allocator* allocator) {
-        filesystem::free_list_files(files, allocator);
-    }
-
-    array<file> file::list_files(tca::base_allocator* allocator, file_filter* filter /*= nullptr*/) const {
+    array<file> file::list_files(file_filter* filter /*= nullptr*/, tca::base_allocator* allocator) const {
         accept_all_filter accept_all;
         if (filter == nullptr)
             filter = &accept_all;
         
         int32_t count_files = filesystem::count_files_in_directory(_path, filter);
         
-        array<file> files(allocator, count_files);
+        array<file> files(count_files, allocator);
 
         directory_iterator begin(_path);
         directory_iterator end;

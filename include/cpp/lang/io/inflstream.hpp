@@ -10,7 +10,7 @@ namespace jstd {
 
 class inflstream : public istream {
     static const int64_t DEFAULT_BUFFER_SIZE = 1024;
-    tca::base_allocator* m_allocator;
+    
     array<char> m_buffer;
     istream*    m_in;
     inflater    m_inf;
@@ -22,7 +22,7 @@ public:
     
     inflstream();
 
-    inflstream(istream* in, tca::base_allocator* allocator, int64_t buf_size = DEFAULT_BUFFER_SIZE);
+    inflstream(istream* in, tca::base_allocator* allocator = tca::get_scoped_or_default(), int64_t buf_size = DEFAULT_BUFFER_SIZE);
 
     /**
      * Читает несколько байт из потока.
@@ -42,15 +42,9 @@ public:
      */
     int64_t read(char buf[], int64_t sz) override;
 
-    #warning change docs!
     /**
-     * @brief Возвращает количество доступных для чтения байт.
-     * 
-     * @return 
-     *      Количество доступных байт в потоке.
-     * 
-     * @throws io_exception 
-     *      Если произошла ошибка ввода/вывода
+     * Указывает, можно ли считать ещё из потока.
+     * Если поток is_finished(), возвращется 0, иначе 1
      */
     int64_t available() const override;
 

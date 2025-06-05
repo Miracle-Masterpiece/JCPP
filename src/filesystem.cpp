@@ -331,7 +331,8 @@ namespace jstd {
 
         FILE* handle = _wfopen(
             reinterpret_cast<const wchar_t*>(system_path.c_string()), 
-            reinterpret_cast<const wchar_t*>(system_mark.c_string()));   
+            reinterpret_cast<const wchar_t*>(system_mark.c_string())
+        );   
         
         if (handle == nullptr) {
             if (errno == EACCES)

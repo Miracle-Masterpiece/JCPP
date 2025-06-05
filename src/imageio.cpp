@@ -100,14 +100,14 @@ namespace imageio {
         ifstream in(file);
         return load_image(&in, allocator);
     }
-
+    
     static void save_contex(void* context, void* data, int size){
 		ostream* out = reinterpret_cast<ostream*>(context);
         out->write(reinterpret_cast<const char*>(data), size);
 	}
 
     void write_image(const file& file, const image* img, const char* ext) {
-        ofstream out(file, "w");
+        ofstream out(file);
         write_image(&out, img, ext);
     }
 

@@ -44,7 +44,7 @@ namespace jstd
     }
     
     /*static*/ calltrace calltrace::current() {
-        JSTD_CALLTRACE_CODE(
+        JSTD_CALLTRACE_CODE (
             calltrace current;
             current.m_stacktrace = std::stacktrace::current();
             return current;

@@ -8,7 +8,7 @@ namespace jstd {
         _cause[0] = 0;
     }
 
-    throwable::throwable(const char* cause) : m_calltrace(calltrace::current()) {
+    throwable::throwable(const char* cause) : m_calltrace() {
         int len      = std::strlen(cause);
         int max_size = sizeof(_cause);
         int max = len >= max_size ? max_size - 1 : len;
@@ -58,6 +58,10 @@ namespace jstd {
         return m_calltrace;
     }
     
+    void throwable::set_calltrace(calltrace&& calltrace) {
+        m_calltrace = std::move(calltrace);
+    }
+
     int throwable::to_string(char buf[], int bufsize) const {
         int len = std::strlen(_cause);
         int max = len >= bufsize ? bufsize - 1 : len;

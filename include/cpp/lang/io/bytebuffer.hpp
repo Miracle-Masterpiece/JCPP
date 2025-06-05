@@ -21,6 +21,7 @@ class byte_buffer {
     void dispose();
     void checkIndex(int64_t idx, int64_t sz) const;
 public:
+    byte_buffer();
     byte_buffer(char* buf, int64_t bufsize);
     explicit byte_buffer(int64_t capacity, tca::base_allocator* allocator = tca::get_scoped_or_default());
     byte_buffer(const byte_buffer&);
@@ -28,7 +29,8 @@ public:
     byte_buffer& operator= (const byte_buffer&);
     byte_buffer& operator= (byte_buffer&&);
     ~byte_buffer();
-
+    static byte_buffer allocate(int64_t capacity, tca::base_allocator* allocator = tca::get_scoped_or_default());
+    
     int64_t position() const;
     byte_buffer& position(int64_t newpos);
 

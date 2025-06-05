@@ -8,6 +8,17 @@
 
 namespace jstd {
 
+    byte_buffer::byte_buffer() :
+    _allocator(nullptr), 
+    _data(nullptr), 
+    _cap(0), 
+    _pos(0), 
+    _limit(0), 
+    _mark(-1),
+    _order(system::native_byte_order()) {
+
+    }
+
     byte_buffer::byte_buffer(char* buf, int64_t bufsize) : 
     _allocator(nullptr), 
     _data(buf), 
@@ -94,6 +105,10 @@ namespace jstd {
 
     byte_buffer::~byte_buffer() {
         dispose();
+    }
+
+    /*static*/ byte_buffer byte_buffer::allocate(int64_t capacity, tca::base_allocator* allocator) {
+        return byte_buffer(capacity, allocator);
     }
 
     int64_t byte_buffer::position() const {

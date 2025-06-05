@@ -1,111 +1,384 @@
 #ifndef _JSTD_CPP_LANG_NET_INET_ADDRESS_H_
 #define _JSTD_CPP_LANG_NET_INET_ADDRESS_H_
 
-#if defined(__linux__) || defined(__APPLE__)
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/fcntl.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#elif _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
-#else 
-#error Unsupported platform!
-#endif
 
-#include <cstdint>
 #include <cpp/lang/utils/optional.hpp>
+#include <cstdint>
+
+
+/**
+ * BSD types
+ */
+struct in_addr;
+struct in6_addr;
 
 namespace jstd {
 
-enum inet_family {
-    NONE = 0, IPV4 = AF_INET, IPV6 = AF_INET6
-};
-
-class inet_address {
-    struct jsl_in6_addr{
-        union{
-            uint8_t	    _byte[sizeof(in6_addr)];
-            uint16_t    _short[8];
-            uint32_t    _int[4];
-        };
-    };
-protected:
-    static const int64_t HOST_BUFFER_SIZE     = 64;
-    union {
-        union{
-            in_addr IPv4;
-            in6_addr IPv6;
-        };
-        char _addrBuf[(sizeof(IPv4) < sizeof(IPv6)) ? sizeof(IPv6) : sizeof(IPv4)];
-    };
-    char hostName[HOST_BUFFER_SIZE];
-    inet_family family;
-    static const char* getStringError();
-    static const char* getGaiStringError(int errorCode);
+class inet_family {
+    int32_t m_value;
 public:
-    inet_address();
-    inet_address(inet_family family);
-    inet_address(const char* ip);
-    inet_address(const in6_addr& IPv6, const char* hostname = nullptr);
-    inet_address(const in_addr& IPv4, const char* hostname = nullptr);
-    inet_address(const inet_address& addr);
-    inet_address(inet_address&& addr);
-    inet_address& operator= (const inet_address& addr);
-    inet_address& operator= (inet_address&& addr);
-    
-    virtual ~inet_address();
-    
-    inet_family get_family() const;
-    const in6_addr* get_IPv6() const;
-    const in_addr* get_IPv4() const;
-    int to_string(char buf[], int bufsize) const;
-	const char* get_host_name() const;
-
-    int64_t hashcode() const;
-    bool equals(const inet_address& addr) const;
-
-    static optional<inet_address> get_by_name(const char* domain);
+    constexpr inet_family(int32_t value = 0) : m_value(value) {}
+    inet_family(const inet_family& f) : m_value(f.m_value) {}
+    inet_family(inet_family&& f) : m_value(f.m_value) {}
+    inet_family& operator= (const inet_family& f) { m_value = f.m_value; return *this;}
+    inet_family& operator= (inet_family&& f) { m_value = f.m_value; return *this;}
+    bool operator==(const inet_family& f) const {return m_value == f.m_value;}
+    bool operator!=(const inet_family& f) const {return m_value != f.m_value;};
+    operator int32_t() const {return m_value;}
     
     /**
-     * @throws illegal_state_exception
-     *      Если произошла ошибка при получении адресов.
+     * NO IP
+     */
+    static const inet_family NONE;
+    
+    /**
+     * Internet protocol v4
+     */
+    static const inet_family IPV4;
+    
+    /**
+     * Internet protocol v6
+     */
+    static const inet_family IPV6;
+};
+
+namespace internal
+{
+namespace net
+{
+
+/**
+ * C-структура для представления IPv4-адреса.
+ * Обеспечивает доступ к данным как в виде массива байт, так и целого числа.
+ */
+struct ipv4_addr {
+    union {
+        /**
+         * Представление адреса как массива 4 байт.
+         */
+        uint8_t m_byte_view[4];
+
+        /**
+         * Представление адреса как одного 32-битного целого числа.
+         */
+        uint32_t m_int_view;
+    };
+};
+
+/**
+ * C-структура для представления IPv6-адреса.
+ * Обеспечивает доступ к данным в разных разрядностях.
+ */
+struct ipv6_addr {
+    union {
+        /**
+         * Представление адреса как массива из 16 байт.
+         */
+        uint8_t m_byte_view[16];
+
+        /**
+         * Представление адреса как массива из 8 16-битных слов.
+         */
+        uint16_t m_short_view[8];
+
+        /**
+         * Представление адреса как массива из 4 32-битных слов.
+         */
+        uint32_t m_int_view[4];
+    };
+};
+
+}//namespace net
+
+}//namespace internal
+
+/**
+ * Представляет IP-адрес (IPv4 или IPv6).
+ * Поддерживает преобразование, парсинг, доступ к имени хоста и сравнение.
+ */
+class inet_address {
+protected:
+    /**
+     * Размер буфера для хранения имени хоста.
+     */
+    static const int64_t HOST_BUFFER_SIZE = 64;
+
+    /**
+     * Объединение для хранения IPv4 или IPv6-адреса.
+     */
+    union {
+        union {
+            /**
+             * IPv4 представление адреса.
+             */
+            internal::net::ipv4_addr IPv4;
+
+            /**
+             * IPv6 представление адреса.
+             */
+            internal::net::ipv6_addr IPv6;
+        };
+
+        /**
+         * Универсальный буфер для хранения IP-данных.
+         */
+        char m_data_buffer[(sizeof(IPv4) < sizeof(IPv6)) ? sizeof(IPv6) : sizeof(IPv4)];
+    };
+
+    /**
+     * Имя хоста (если было разрешено).
+     */
+    char m_host_name[HOST_BUFFER_SIZE];
+
+    /**
+     * Семейство IP (IPv4, IPv6 или NONE).
+     */
+    inet_family family;
+
+public:
+    /**
+     * Конструктор по умолчанию.
+     * Все данные адреса равны нулю.
+     */
+    inet_address();
+
+    /**
+     * Конструктор с указанием семейства IP.
+     */
+    inet_address(inet_family family);
+
+    /**
+     * Конструктор, принимающий строку IP-адреса.
+     */
+    inet_address(const char* ip);
+
+    /**
+     * Конструктор копирования.
+     */
+    inet_address(const inet_address& addr);
+
+    /**
+     * Конструктор перемещения.
+     */
+    inet_address(inet_address&& addr);
+
+    /**
+     * Оператор копирующего присваивания.
+     */
+    inet_address& operator= (const inet_address& addr);
+
+    /**
+     * Оператор перемещающего присваивания.
+     */
+    inet_address& operator= (inet_address&& addr);
+
+    /**
+     * Деструктор.
+     */
+    ~inet_address();
+
+    /**
+     * Возвращает семейство IP (IPv4, IPv6 или NONE).
+     */
+    inet_family get_family() const;
+
+    /**
+     * Возвращает имя хоста, если оно определено.
+     */
+    const char* get_host_name() const;
+
+    /**
+     * Преобразует адрес в строку.
+     *
+     * @param buf 
+     *      Выходной буфер
+     * 
+     * @param bufsize 
+     *      Размер буфера
+     * 
+     * @return 
+     *      Количество записанных символов (без учёта завершающего '\0')
+     */
+    int to_string(char buf[], int bufsize) const;
+
+    /**
+     * Вычисляет хеш-код адреса.
+     */
+    int64_t hashcode() const;
+
+    /**
+     * Проверяет равенство двух адресов.
+     */
+    bool equals(const inet_address& addr) const;
+
+    /**
+     * Разрешает доменное имя в один IP-адрес.
+     */
+    static optional<inet_address> get_by_name(const char* domain);
+
+    /**
+     * Получает все IP-адреса по имени хоста.
+     *
+     * @param buf 
+     *      Массив для записи адресов
+     * 
+     * @param bufsize 
+     *      Размер массива
+     * 
+     * @param domain 
+     *      Имя хоста
+     * 
+     * @return 
+     *      Количество найденных адресов
+     *
+     * @throws illegal_state_exception 
+     *      Eсли не удалось получить адреса
      */
     static int get_all_by_name(inet_address buf[], int bufsize, const char* domain);
 
+    /**
+     * Создаёт IPv4-адрес из массива байт.
+     */
     static inet_address as_IPv4(const uint8_t buf[], int bufsize);
+
+    /**
+     * Создаёт IPv6-адрес из массива 16-битных значений.
+     */
     static inet_address as_IPv6(const uint16_t buf[], int bufsize);
-	
-	static inet_address parse_IPv4(const char* ip);
+
+    /**
+     * Парсит строку как IPv4-адрес.
+     */
+    static inet_address parse_IPv4(const char* ip);
+
+    /**
+     * Парсит строку как IPv6-адрес.
+     */
     static inet_address parse_IPv6(const char* ip);
-    
+
+    /**
+     * Возвращает адрес localhost.
+     *
+     * @param family семейство IP
+     */
     static inet_address localhost(inet_family family);
 
+    /**
+     * Преобразует IPv4-адрес в строку.
+     */
     static int IPv4ToString(char buf[], int bufsize, const inet_address& address);
+
+    /**
+     * Преобразует IPv6-адрес в строку.
+     */
     static int IPv6ToString(char buf[], int bufsize, const inet_address& address);
+
+    /**
+     * Создаёт объект из структуры in_addr.
+     */
+    static inet_address as_in_addr(const in_addr* addr_in);
+
+    /**
+     * Создаёт объект из структуры in6_addr.
+     */
+    static inet_address as_in6_addr(const in6_addr* addr_in);
+
+    /**
+     * Копирует IPv4-адрес в структуру in_addr.
+     */
+    void get_in_addr(in_addr* addr_out) const;
+
+    /**
+     * Копирует IPv6-адрес в структуру in6_addr.
+     */
+    void get_in6_addr(in6_addr* addr_out) const;
+
+    /**
+     * Минимальный рекомендуемый размер буфера для to_string.
+     */
+    static const int32_t TO_STRING_MIN_BUFFER_SIZE = 64;
 };
 
+/**
+ * Представляет сетевой адрес сокета: IP-адрес + порт.
+ * Используется для установления соединений и привязки.
+ */
 class socket_address {
-    inet_address _address;
-    int32_t      _port;
+    /**
+     * IP-адрес.
+     */
+    inet_address m_address;
+
+    /**
+     * Порт (от 0 до 65535).
+     */
+    int32_t m_port;
+
 public:
+    /**
+     * Конструктор по умолчанию.
+     */
     socket_address();
-    socket_address(const inet_address& address, int32_t port);  
+
+    /**
+     * Конструктор с IP-адресом и портом.
+     */
+    socket_address(const inet_address& address, int32_t port);
+
+    /**
+     * Конструктор копирования.
+     */
     socket_address(const socket_address&);
+
+    /**
+     * Конструктор перемещения.
+     */
     socket_address(socket_address&&);
+
+    /**
+     * Оператор копирующего присваивания.
+     */
     socket_address& operator= (const socket_address&);
+
+    /**
+     * Оператор перемещающего присваивания.
+     */
     socket_address& operator= (socket_address&&);
 
+    /**
+     * Возвращает порт.
+     */
     int32_t get_port() const;
-    const inet_address& get_address() const;
-    
-    int64_t hashcode() const;
-    bool equals(const socket_address& sock_addr) const;
-    int to_string(char buf[], int bufsize);
 
+    /**
+     * Возвращает IP-адрес.
+     */
+    const inet_address& get_address() const;
+
+    /**
+     * Вычисляет хеш-код.
+     */
+    int64_t hashcode() const;
+
+    /**
+     * Проверяет равенство двух адресов сокета.
+     */
+    bool equals(const socket_address& sock_addr) const;
+
+    static const int32_t TO_STRING_MIN_BUFFER_SIZE = 64;
+    /**
+     * Преобразует адрес сокета в строку.
+     *
+     * @param buf 
+     *      Буфер для строки
+     * 
+     * @param bufsize 
+     *      Размер буфера
+     * 
+     * @return 
+     *      Количество записанных символов (не считая '\0').
+     */
+    int to_string(char buf[], int bufsize);
 };
 
 
