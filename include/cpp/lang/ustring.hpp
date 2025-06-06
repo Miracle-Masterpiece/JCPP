@@ -53,7 +53,7 @@ std::ostream& operator<<(std::ostream& out, const utf32_t* str);
 
 typedef tustring<char>      u8string;
 typedef tustring<uint16_t>  u16string;
-typedef tustring<utf32_t>  u32string;
+typedef tustring<utf32_t>   u32string;
 typedef u8string string;
 
 namespace utf {

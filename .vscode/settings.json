@@ -139,7 +139,8 @@
     "__hash_table": "cpp",
     "__tree": "cpp",
     "forward_list": "cpp",
-    "cfloat": "cpp"
+    "cfloat": "cpp",
+    "locale": "cpp"
   },
   "markdown.validate.enabled": true
 }

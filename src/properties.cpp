@@ -41,8 +41,8 @@ namespace jstd {
         const char new_line = '\n';
         const char assign   = '=';
 
-        char date_strbuf[64]{'#'};
         {
+            char date_strbuf[64]{'#'};
             date now = date::now();
             int len = now.to_string(date_strbuf + 1, sizeof(date_strbuf) - 1);
             out.write(date_strbuf, len + 1);
