@@ -1,14 +1,14 @@
 #include <cpp/lang/net/inetaddr.hpp>
 #define __PUSH_STACK__
 
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(JSTD_OS_LINUX) || defined(JSTD_OS_MAC)
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-#elif _WIN32
+#elif defined(JSTD_OS_WINDOWS)
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
@@ -23,10 +23,10 @@
 #include <allocators/ArrayList.h>
 #include <cpp/lang/array.hpp>
 
-#if defined(_linux_) || defined(__APPLE__)
+#if defined(JSTD_OS_LINUX) || defined(JSTD_OS_MAC)
 #define UNIX_CODE(code) code
 #define WIN_CODE(code)
-#elif defined(_WIN32)
+#elif defined(JSTD_OS_WINDOWS)
 #define UNIX_CODE(code)
 #define WIN_CODE(code) code
 #endif
@@ -60,7 +60,7 @@ public:
     char next();
     bool eof() const;
     const tca::array_list<ip_token_storage>& ip_token_list() const;
-    void tokineze(inet_family family);
+    void tokinize(inet_family family);
     inet_address make_v4() const;
     inet_address make_v6() const;
 };
@@ -88,7 +88,7 @@ public:
         return _ip_tokens;
     }
 
-    void ip_parser::tokineze(inet_family family) {
+    void ip_parser::tokinize(inet_family family) {
         char c = next();
         tca::inline_linear_allocator<64> allocator;
         jstd::array<char> numbers(64, &allocator);
@@ -131,8 +131,8 @@ public:
     }
     
     inet_address ip_parser::make_v4() const {
-        tca::inline_linear_allocator<4> allocator;
-        jstd::array<uint8_t> ip(4, &allocator);
+        uint8_t buf[4];
+        jstd::array<uint8_t> ip(buf, sizeof(buf) / sizeof(uint8_t));
         int offset = 0;
         for (int i = 0, len = _ip_tokens.size(); i < len; ++i) {
             if (_ip_tokens.at(i).m_ip_token == ip_token::L_NUMBER)
@@ -152,10 +152,9 @@ public:
         int begin_sections  = 0;
         int end_sections    = 0;
 
-        tca::inline_linear_allocator<16> allocator;
-        array<uint16_t> ip(8, &allocator);
-        ip.set(0);
-
+        uint16_t buf[8] = {0};
+        array<uint16_t> ip(buf, sizeof(buf) / sizeof(uint16_t));
+        
         for (int i = 0, len = _ip_tokens.size(); i < len; ++i) {
             ____EXPR_LEAVE____(begin_sections);
             if (i + 1 >= len)
@@ -206,7 +205,7 @@ public:
 
   /*static */ const char* getStringError() {
     __PUSH_STACK__
-    #ifdef __linux__
+    #if defined(JSTD_OS_LINUX) || defined(JSTD_OS_MAC) || defined(JSTD_OS_UNIX)
             return strerror(errno);
     #elif _WIN32
             int error = WSAGetLastError();
@@ -225,9 +224,9 @@ public:
     //У меня нет ни малейшего понятия, что значит Gai в названии функции.
     //Two tausen years later: Gai = это GetAddrInfo
     /*static*/ const char* getGaiStringError(int errorCode) {
-#if defined(__linux__)
+#if defined(JSTD_OS_LINUX) || defined(JSTD_OS_MAC) || defined(JSTD_OS_UNIX)
         return gai_strerror(errorCode);
-#elif _WIN32
+#elif defined(JSTD_OS_WINDOWS)
         switch (errorCode) {
             case 0: 
                 return "No error!";
@@ -368,7 +367,7 @@ public:
         );
         tca::inline_linear_allocator<512> allocator;
         ip_parser parser(&allocator, ip_string);
-        parser.tokineze(inet_family::IPV4);
+        parser.tokinize(inet_family::IPV4);
         allocator.print();
         return parser.make_v4();
     }
@@ -381,7 +380,7 @@ public:
         );
         tca::inline_linear_allocator<1024> allocator;
         ip_parser parser(&allocator, ip_string);
-        parser.tokineze(inet_family::IPV6);
+        parser.tokinize(inet_family::IPV6);
         allocator.print();
         return parser.make_v6();
     }
@@ -497,7 +496,7 @@ public:
         inet_address addr;
         addr.family = inet_family::IPV6;
         for (int i = 0; i < 16; ++i)
-            addr.IPv4.m_byte_view[i] = addr_in->s6_addr[i];
+            addr.IPv6.m_byte_view[i] = addr_in->s6_addr[i];
         return addr;
     }
 

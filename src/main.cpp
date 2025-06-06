@@ -25,6 +25,7 @@
 #include <cpp/lang/utils/smooth_noise.hpp>
 #include <cpp/lang/math/math.hpp>
 #include <cpp/lang/utils/linked_list.hpp>
+#include <allocators/arena_free_list_allocator.hpp>
 
 namespace cstd = jstd;
 
@@ -35,75 +36,6 @@ using namespace jstd;
 
 tca::os_allocator os_alloc;
 //tca::shared_allocator m_alloc(&os_alloc, 1 << 18, tca::shared_allocator::BEST_FIT);
-
-namespace tca 
-{
-    
-class arena_free_list_allocator : public tca::base_allocator {
-    arena_free_list_allocator(const arena_free_list_allocator&) = delete;
-    arena_free_list_allocator& operator= (const arena_free_list_allocator&) = delete;
-    internal::chunk m_arena;
-public:
-    arena_free_list_allocator(std::size_t arena_size, base_allocator* allocator = get_scoped_or_default());
-    arena_free_list_allocator(arena_free_list_allocator&&);
-    arena_free_list_allocator& operator= (arena_free_list_allocator&&);
-    ~arena_free_list_allocator();
-    void* allocate(std::size_t sz) override;
-    void* allocate_align(std::size_t sz, std::size_t align) override;
-    void deallocate(void* p, std::size_t sz) override;
-    void reset();
-    void print() const;
-    void compact();
-};
-
-    arena_free_list_allocator::arena_free_list_allocator(std::size_t arena_size, base_allocator* allocator) :
-    base_allocator(), 
-    m_arena(internal::chunk::make(allocator, arena_size)) {
-        
-    }
-
-    arena_free_list_allocator::~arena_free_list_allocator() {
-
-    }
-
-    void* arena_free_list_allocator::allocate(std::size_t sz) {
-        return allocate_align(sz, alignof(std::max_align_t));
-    }
-    
-    void* arena_free_list_allocator::allocate_align(std::size_t sz, std::size_t align) {
-        return m_arena.allocate_best_fit(sz);
-    }
-    
-    void arena_free_list_allocator::deallocate(void* p, std::size_t sz) {
-        m_arena.free(p);
-    }
-    
-    arena_free_list_allocator::arena_free_list_allocator(arena_free_list_allocator&& alloc) :
-    base_allocator(std::move(alloc)), m_arena(std::move(alloc.m_arena)) {
-
-    }
-
-    arena_free_list_allocator& arena_free_list_allocator::operator= (arena_free_list_allocator&& alloc) {
-        if (&alloc != this) {
-            base_allocator::operator=(std::move(alloc));
-            m_arena = std::move(alloc.m_arena);
-        }
-        return *this;
-    }
-
-    void arena_free_list_allocator::reset() {
-        assert(m_arena.is_empty());
-        m_arena.reset();
-    }
-
-    void arena_free_list_allocator::print() const {
-        m_arena.print_log();
-    }
-
-    void arena_free_list_allocator::compact() {
-        m_arena.compact();
-    }
-}
 
 cstd::array<cstd::image> load_all_image(const char* path, tca::base_allocator* allocator = tca::get_scoped_or_default()) {
     using namespace jstd;
@@ -201,24 +133,30 @@ int main() {
         };
 
         tca::scope_allocator malloc_scope = tca::get_default_allocator();
-        tca::arena_free_list_allocator allocator(1024);
+        tca::arena_free_list_allocator allocator(1024); 
         tca::scope_allocator scoped = &allocator;
 
+        string s = "hello";
+        std::cout << "capacity: " << s.capacity() << std::endl;
+        std::cout << "length: " << s.length() << std::endl;
+        s.clear();
+        s.trim_to_size();
+        std::cout << "capacity: " << s.capacity() << std::endl;
+        std::cout << "length: " << s.length() << std::endl;
+        
+        // shared_ptr<_int> ptr = make_shared<_int>(546);
+        // weak_ptr<_int> wptr = ptr;
+        // shared_ptr<_int> _ptr = wptr.lock();        
 
-        shared_ptr<_int> ptr = make_shared<_int>(546);
-        weak_ptr<_int> wptr = ptr;
-        shared_ptr<_int> _ptr = wptr.lock();        
+        // std::cout << *_ptr << std::endl;
+        // std::cout << obj_to_cstr_buf(_ptr) << std::endl;
 
+        // // linked_list<_int> list = {1, 2, 3, 4, 5};
+        // // list.remove_at(0);
 
-        std::cout << *_ptr << std::endl;
-        std::cout << obj_to_cstr_buf(_ptr) << std::endl;
-
-        // linked_list<_int> list = {1, 2, 3, 4, 5};
-        // list.remove_at(0);
-
-        // for (_int& entry : list) {
-        //     std::cout << entry << "\n";    
-        // }
+        // // for (_int& entry : list) {
+        // //     std::cout << entry << "\n";    
+        // // }
 
         allocator.print();
 

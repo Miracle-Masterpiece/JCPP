@@ -5,8 +5,6 @@
 
 namespace tca {
 
-
-    
 class base_allocator;
 namespace internal 
 {

@@ -535,6 +535,9 @@ public:
     void tstring<CHAR_TYPE>::dispose() {
         if (_allocator != nullptr && _data != nullptr) {
             _allocator->deallocate(_data, sizeof(CHAR_TYPE) * _capacity);
+            _data       = nullptr;
+            _capacity   = 0;
+            _size       = 0;
         }
     }
 
@@ -755,6 +758,9 @@ public:
         if (_size != 0) {
             resize(_size + 1);
             _data[_size] = 0;
+        }
+        else {
+            dispose();
         }
         return *this;
     }

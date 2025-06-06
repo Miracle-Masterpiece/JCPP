@@ -44,10 +44,11 @@ namespace jstd {
     std::size_t deflater::deflate(void* out_buffer, std::size_t out_buffer_size, int flush_type) {
         if (m_finished) 
             return 0;
-#ifndef NDEBUG
-        if (flush_type != NO_FLUSH && flush_type != FULL_FLUSH && flush_type != SYNC_FLUSH)
-            throw_except<illegal_argument_exception>("invalid flush type %i", flush_type);
-#endif//NDEBUG
+
+        JSTD_DEBUG_CODE(
+            if (flush_type != NO_FLUSH && flush_type != FULL_FLUSH && flush_type != SYNC_FLUSH)
+                throw_except<illegal_argument_exception>("invalid flush type %i", flush_type);
+        );
 
         m_strm.next_out     = reinterpret_cast<Bytef*>(out_buffer);
         m_strm.avail_out    = static_cast<uInt>(out_buffer_size);
