@@ -2,6 +2,7 @@
 #define JSTD_CPP_LANG_MATH_MATH_H
 
 #include <cmath>
+#include <cstdint>
 
 #ifndef M_PI
     #define M_PI 3.141592653589793
@@ -158,15 +159,15 @@ namespace math {
         return x * x * x * (x * (x * 6 - 15) + 10);
     }
 
-    constexpr double cosine(double x) {
+    inline double cosine(double x) {
         return (1 - cos(M_PI * x)) / 2;
     }
 
-    constexpr float cosine(float x) {
+    inline float cosine(float x) {
         return (1 - cos((float) M_PI * x)) / 2;
     }
 
-    constexpr long double cosine(long double x) {
+    inline long double cosine(long double x) {
         return (1 - cos(M_PI * x)) / 2;
     }
 
