@@ -8,6 +8,7 @@
 #include <sys/fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <cerrno>
 #elif defined(JSTD_OS_WINDOWS)
 #include <winsock2.h>
 #include <ws2tcpip.h>

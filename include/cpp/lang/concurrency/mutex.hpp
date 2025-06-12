@@ -1,5 +1,5 @@
-#ifndef JSTD_CPP_LANG_CONCURRENCY_H
-#define JSTD_CPP_LANG_CONCURRENCY_H
+#ifndef JSTD_CPP_LANG_CONCURRENCY_MUTEX_H
+#define JSTD_CPP_LANG_CONCURRENCY_MUTEX_H
 
 #include <mutex>
 
@@ -7,6 +7,8 @@ namespace jstd
 {
 
 class mutex {
+    friend class cond_var;
+    friend class unique_lock;
     mutex(const mutex&)             = delete;
     mutex& operator= (const mutex&) = delete;
     mutex(mutex&&)                  = delete;
@@ -21,20 +23,21 @@ public:
 };
 
 class unique_lock {
-    mutex* m_mutex;
+    friend class cond_var;
+    std::unique_lock<std::mutex> m_mutex;
     unique_lock(const unique_lock&)             = delete;
     unique_lock& operator= (const unique_lock&) = delete;
     unique_lock(unique_lock&&)                  = delete;
     unique_lock& operator= (unique_lock&&)      = delete;
 public:
-    unique_lock(mutex& mutex)  : m_mutex(&mutex) {
-        m_mutex->lock();
+    unique_lock(mutex& mutex)  : m_mutex(mutex.m_mutex_impl) {
+        
     }
     ~unique_lock() {
-        m_mutex->unlock();
+        
     }
 };
 
 }// namespace jstd
 
-#endif//JSTD_CPP_LANG_CONCURRENCY_H
+#endif//JSTD_CPP_LANG_CONCURRENCY_MUTEX_H

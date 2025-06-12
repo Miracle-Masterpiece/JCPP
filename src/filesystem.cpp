@@ -14,6 +14,7 @@
     #include <fcntl.h> 
     #include <unistd.h>
     #include <utime.h>
+    #include <cerrno>
     #define READ_OWNER 		        S_IRUSR 	//Чтение для владельца
 	#define WRITE_OWNER 		    S_IWUSR 	//Запись для владельца
 	#define EXECUTABLE_OWNER 	    S_IXUSR	    //Выполнение для владельца
@@ -805,10 +806,6 @@ namespace jstd {
         int i = 0;
         while(true) {
             const char* file_name = files[i++];
-            if ((void*) file_name == (void*) files) {
-                std::cout << "assert" << std::endl;
-                abort();
-            }
             if (file_name == nullptr)
                 break;
             int len = std::strlen(file_name);

@@ -2,6 +2,7 @@
 #define _JSTD_LANG_USTRING_H_H
 #include <cpp/lang/string.hpp>
 #include <cpp/lang/types.hpp>
+#include <iostream>
 
 namespace jstd {
 
@@ -9,7 +10,6 @@ namespace jstd {
 template<typename CHAR_TYPE>
 class tustring;
 
-    
 typedef uint32_t codepoint_t;
 
 /**

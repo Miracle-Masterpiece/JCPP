@@ -6,6 +6,7 @@
 #include <cpp/lang/utils/hash.hpp>
 #include <utility>
 #include <cstdint>
+#include <cassert>
 
 namespace jstd {
 

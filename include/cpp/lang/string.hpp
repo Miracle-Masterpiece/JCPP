@@ -12,7 +12,6 @@
 #include <utility>
 #include <exception>
 #include <algorithm>
-#include <iostream>
 
 namespace jstd {
 
