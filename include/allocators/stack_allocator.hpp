@@ -34,8 +34,8 @@ class stack_allocator : public base_allocator {
     std::size_t     m_stack_size;
     std::size_t     m_total_allocated;
 public:
-    stack_allocator(base_allocator* allocator, std::size_t size);
-
+    
+    stack_allocator(std::size_t size, base_allocator* allocator = get_default_allocator());
     ~stack_allocator();
 
     inline std::size_t calcAlign(void* ptr, std::size_t align){

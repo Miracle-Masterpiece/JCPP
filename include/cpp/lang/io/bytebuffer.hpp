@@ -4,25 +4,48 @@
 #include <allocators/base_allocator.hpp>
 #include <cpp/lang/system.hpp>
 #include <cpp/lang/utils/utils.hpp>
+#include <cpp/lang/utils/cond_compile.hpp>
 #include <cstdint>
 #include <cstring>
 #include <climits>
 
 namespace jstd {
 
+JSTD_DEBUG_CODE(
+    class index_out_of_bound_exception;
+    class readonly_exception;
+);
+
 class byte_buffer {
+protected:
     tca::base_allocator*    _allocator;
     char*                   _data;
-    int64_t             _cap;
-    int64_t             _pos;
-    int64_t             _limit;
-    int64_t             _mark;
+    int64_t                 _cap;
+    int64_t                 _pos;
+    int64_t                 _limit;
+    int64_t                 _mark;
     byte_order              _order;
+    bool                    m_readonly;
     void dispose();
-    void checkIndex(int64_t idx, int64_t sz) const;
+    void checkIndex(int64_t idx, int64_t sz) const {
+        JSTD_DEBUG_CODE(
+            if (idx > _limit) {
+                throw_except<index_out_of_bound_exception>("Index %zu > _limit %zu", idx, _limit);
+            }
+            else if (_limit - idx < sz) {
+                throw_except<index_out_of_bound_exception>("Remaining %zu < tsize %zu", _limit - idx, sz);
+            }
+        );
+    }
+    void check_write_or_except() const {
+        JSTD_DEBUG_CODE(
+            if (m_readonly)
+                throw_except<readonly_exception>("Buffer is read only");
+        );
+    }
 public:
     byte_buffer();
-    byte_buffer(char* buf, int64_t bufsize);
+    byte_buffer(char* buf, int64_t bufsize, bool readonly = false);
     explicit byte_buffer(int64_t capacity, tca::base_allocator* allocator = tca::get_scoped_or_default());
     byte_buffer(const byte_buffer&);
     byte_buffer(byte_buffer&&);
@@ -83,6 +106,7 @@ public:
 
     template<typename T>
     byte_buffer& byte_buffer::put(T v) {
+        check_write_or_except();                                                                                                                            \
         put<T>(_pos, v);
         _pos += sizeof(v);
         return *this;
@@ -90,17 +114,15 @@ public:
     
     template<typename T>
     byte_buffer& byte_buffer::put(int64_t idx, T v) {
+        check_write_or_except();                                                                                                                            \
         checkIndex(idx, sizeof(v));
-        if (_order != system::native_byte_order()) {
-            utils::copy_swap_memory(_data + idx, reinterpret_cast<const char*>(&v), sizeof(v), 1);
-        } else {
-            std::memcpy(_data + idx, reinterpret_cast<const char*>(&v), sizeof(v));
-        }
+        utils::write_with_order<T>(_data + idx, v, _order);
         return *this;
     }
 
     template<typename T>
     byte_buffer& byte_buffer::puts(const T* arr, int64_t sz) {
+        check_write_or_except();                                                                                                                            \
         puts<T>(_pos, arr, sz);
         _pos += sizeof(T) * sz;
         return *this;
@@ -108,10 +130,12 @@ public:
 
     template<typename T>
     byte_buffer& byte_buffer::puts(int64_t idx, const T* arr, int64_t sz) {
+        check_write_or_except();                                                                                                                            \
         checkIndex(idx, sizeof(T) * sz);
         if (_order != system::native_byte_order()) {
-            utils::copy_swap_memory(_data + idx, reinterpret_cast<const char*>(arr), sizeof(T), sz);
-        } else {
+            utils::copy_swap_memory<T>(_data + idx, reinterpret_cast<const char*>(arr), sz);
+        } 
+        else {
             std::memcpy(_data + idx, reinterpret_cast<const char*>(arr), sizeof(T) * sz);
         }
         return *this;
@@ -127,13 +151,7 @@ public:
     template<typename T>
     T byte_buffer::get(int64_t idx) const {
         checkIndex(idx, sizeof(T));
-        T ret;
-        if (_order != system::native_byte_order()) {
-            utils::copy_swap_memory(reinterpret_cast<char*>(&ret), _data + idx, sizeof(ret), 1);
-        } else {
-            std::memcpy(reinterpret_cast<char*>(&ret), _data + idx, sizeof(ret));
-        }
-        return ret;
+        return utils::read_with_order<T>(_data + idx, _order);
     }
 
     template<typename T>
@@ -147,8 +165,9 @@ public:
     byte_buffer& byte_buffer::gets(int64_t idx, T* arr, int64_t sz) {
         checkIndex(idx, sizeof(T) * sz);
         if (_order != system::native_byte_order()) {
-            utils::copy_swap_memory(reinterpret_cast<char*>(arr), _data + idx, sizeof(T), sz);
-        } else {
+            utils::copy_swap_memory<T>(reinterpret_cast<char*>(arr), _data + idx, sz);
+        } 
+        else {
             std::memcpy(reinterpret_cast<char*>(arr), _data + idx, sizeof(T) * sz);
         }
         return *this;

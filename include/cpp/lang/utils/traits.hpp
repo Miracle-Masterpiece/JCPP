@@ -246,6 +246,24 @@ struct base_pure_type {
 };
 
 /**
+ * Структура, проверяющая, относится ли тип DERIVED_T к типу BASE_T.
+ * 
+ * @tparam DERIVED_T
+ *      Тип, который проверяется, принажлежит ли он к типу BASE_T.
+ * 
+ * @tparam BASE_T
+ *      Базовый тип.
+ */
+template<typename DERIVED_T, typename BASE_T>
+struct is_base_of {
+private:
+    static char test(const BASE_T* v);
+    static long test(const void* v);
+public:
+    static const bool value = sizeof(test((const DERIVED_T*) 1)) == sizeof(char) ? true : false;
+};
+
+/**
  * Структура, очищающая тип от const, указателей, ссылок и rvalue-ссылок.
  *
  * Рекурсивно удаляет верхнеуровневые модификаторы:

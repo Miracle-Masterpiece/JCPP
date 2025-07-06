@@ -118,7 +118,7 @@ public:
             throw_except<eof_exception>("Cannot read type");   
         if (system::native_byte_order() != byte_order::LE) {
             for (int64_t i = 0; i < sz; ++i)
-                utils::swap(reinterpret_cast<void*>(buf + i), sizeof(T));
+                buf[i] = utils::bswap<T>(buf[i]);
         }
         return sz;
     }

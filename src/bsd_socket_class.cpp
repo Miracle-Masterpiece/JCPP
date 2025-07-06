@@ -4,8 +4,10 @@
 
 #define NULL_SOCK -1
 
-namespace jstd {
-namespace bsd_socket {
+namespace jstd 
+{
+namespace bsd_socket 
+{
 
 
     sock_id::sock_id() : ID(NULL_SOCK) {
@@ -160,4 +162,5 @@ namespace bsd_socket {
     }
 
 }
+
 }

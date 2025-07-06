@@ -40,11 +40,10 @@ namespace jstd {
      */
     template<typename T>
     void placement_new(T* array, std::size_t length) {
-#ifndef NDEBUG
+        JSTD_DEBUG_CODE(
         if (array == nullptr)
             throw_except<null_pointer_exception>("array is null");
-#endif//NDEBUG
-
+        );
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_copyable<T>::value)
             return;
@@ -83,11 +82,10 @@ namespace jstd {
      */
     template<typename T>
     void placement_destroy(const T* array, std::size_t length) {
-#ifndef NDEBUG
-        if (array == nullptr)
-            throw_except<null_pointer_exception>("array is null");
-#endif//NDEBUG
-
+        JSTD_DEBUG_CODE(
+            if (array == nullptr)
+                throw_except<null_pointer_exception>("array is null");
+        );
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_destructible<T>::value)
             return;
@@ -127,13 +125,12 @@ namespace jstd {
      */
     template<typename T>
     void placement_copy(T* dst, const T* src, std::size_t length) {
-#ifndef NDEBUG
-        if (dst == nullptr)
-            throw_except<null_pointer_exception>("dst is null");
-        if (src == nullptr)
-            throw_except<null_pointer_exception>("src is null");
-#endif//NDEBUG
-
+        JSTD_DEBUG_CODE(
+            if (dst == nullptr)
+                throw_except<null_pointer_exception>("dst is null");
+            if (src == nullptr)
+                throw_except<null_pointer_exception>("src is null");
+        );
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_copyable<T>::value) {
             std::memcpy((void*) dst, (void*) src, sizeof(T) * length);
@@ -154,10 +151,10 @@ namespace jstd {
 
     template<typename T, typename E>
     void placement_copy(T* array, const std::initializer_list<E>& init_list) {
-#ifndef NDEBUG
-        if (array == nullptr)
-            throw_except<null_pointer_exception>("array must be != null");
-#endif//NDEBUG
+        JSTD_DEBUG_CODE(
+            if (array == nullptr)
+                throw_except<null_pointer_exception>("array is null");
+        );
         std::size_t copied = 0;
         try {
             for (const E& e : init_list) {
@@ -199,13 +196,12 @@ namespace jstd {
      */
     template<typename T>
     void copy(T* dst, const T* src, std::size_t length) {
-#ifndef NDEBUG
-        if (dst == nullptr)
-            throw_except<null_pointer_exception>("dst is null");
-        if (src == nullptr)
-            throw_except<null_pointer_exception>("src is null");
-#endif//NDEBUG
-
+        JSTD_DEBUG_CODE(
+            if (dst == nullptr)
+                throw_except<null_pointer_exception>("dst is null");
+            if (src == nullptr)
+                throw_except<null_pointer_exception>("src is null");
+        );
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_copyable<T>::value) {
             std::memcpy(dst, src, sizeof(T) * length);

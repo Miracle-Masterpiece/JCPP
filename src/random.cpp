@@ -7,15 +7,17 @@ namespace jstd
 {
 
     uint64_t random::next0() {
-        const uint64_t a = 25214903917L;                            // Multiplier constant.
-        const uint64_t c = abs(next1() + next1()) & 0xfff;          // Increment constant.
-        m_seed = (m_seed * a + c);
+        // const uint64_t a = 25214903917L;                            // Multiplier constant.
+        // const uint64_t c = abs(next1() + next1()) & 0xfff;          // Increment constant.
+        // m_seed = (m_seed * a + c);
+        // return m_seed;
+        m_seed = next1();
         return m_seed;
     }
     
     uint64_t random::next1() {
-        const uint64_t a = 25214903917L;    // Multiplier constant.
-        const uint64_t c = 17;              // Increment constant.
+        const uint64_t a = 25214903917L;
+        const uint64_t c = 17;
         return (m_seed * a + c);
     }
     

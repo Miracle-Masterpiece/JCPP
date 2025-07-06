@@ -22,8 +22,8 @@ namespace sptr
 
         }
 
-        shared_control_block::shared_control_block(tca::base_allocator* allocator, void* object) :
-        m_allocator(allocator), m_object(object), m_strong_refs(0), m_weak_refs(0) {
+        shared_control_block::shared_control_block(tca::base_allocator* allocator, void* object, uint32_t blocksize) :
+        m_allocator(allocator), m_object(object), m_blocksize(blocksize),  m_strong_refs(0), m_weak_refs(0) {
 
         }
 

@@ -311,7 +311,7 @@ struct base_vec3 {
      * @return 
      *      Единичный вектор с тем же направлением.
      */
-    base_vec3<T> normalize() const;
+    base_vec3<T> normalized() const;
 
     /**
      * Длина (модуль) вектора.
@@ -678,7 +678,7 @@ struct base_vec3 {
     }
     
     template<typename T>
-    base_vec3<T> base_vec3<T>::normalize() const {
+    base_vec3<T> base_vec3<T>::normalized() const {
         const T len = length();
         return base_vec3<T>(x / len, y / len, z / len);
     }

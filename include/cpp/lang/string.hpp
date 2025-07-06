@@ -38,6 +38,9 @@ protected:
     char _order;                     // Порядок байтов строки (младший порядок или старший порядок).
     //TODO: даже не спрашивай какого чёрта функция просто не перенесена в секцию public
 public:
+
+    using CHAR_T = CHAR_TYPE;
+
      /**
      * Вспомогательная функция для вычисления длины строки.
      * @param str Строка, длину которой нужно вычислить.
@@ -115,7 +118,7 @@ protected:
         if (sizeof(CHAR_TYPE) == sizeof(char) || in == out) {
             std::memcpy(_data, str, sizeof(CHAR_TYPE) * len);
         } else {
-            utils::copy_swap_memory(_data, str, sizeof(CHAR_TYPE), len);
+            utils::copy_swap_memory<CHAR_TYPE>(_data, str, len);
         }
         _data[_size] = 0;
     }
@@ -131,7 +134,7 @@ protected:
         if (sizeof(CHAR_TYPE) == sizeof(char) || ch_order == _order) {
             _data[idx] = ch;
         } else {
-            _data[idx] = utils::swap_bytes<CHAR_TYPE>(ch);
+            _data[idx] = utils::bswap<CHAR_TYPE>(ch);
         }
     }
 
@@ -146,7 +149,7 @@ protected:
         if (sizeof(CHAR_TYPE) == sizeof(char) || ret_order == _order) {
             return _data[idx];
         } else {
-            return utils::swap_bytes<CHAR_TYPE>(_data[idx]);
+            return utils::bswap<CHAR_TYPE>(_data[idx]);
         }
     }
 

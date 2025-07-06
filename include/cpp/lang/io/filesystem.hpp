@@ -1,3 +1,8 @@
+/**
+ * Этот файл исключительно для внутренней работы... 
+ * Не пользуйтесь этим дерьмом. API может измениться!
+ * (Не спрашивайте, почему он не в папке internal. Никто не знал, что это будет ужасом :D)
+ */
 #ifndef _JSTD_CPP_LANG_IO_FILESYSTEM_H_
 #define _JSTD_CPP_LANG_IO_FILESYSTEM_H_
 
@@ -111,8 +116,8 @@ class directory_iterator {
     void close();
 
     // Копировать нельзя.
-    directory_iterator(const directory_iterator&) = delete;
-    directory_iterator& operator=(const directory_iterator&) = delete;
+    directory_iterator(const directory_iterator&)               = delete;
+    directory_iterator& operator=(const directory_iterator&)    = delete;
 
 public:
     // Открывает папку и начинает её перебирать.

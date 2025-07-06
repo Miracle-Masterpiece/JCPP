@@ -179,28 +179,29 @@ namespace jstd {
         return is_high_surrogate(ch) ? 2 : 1;
     }
 
-    uint16_t read_with_ordering(const uint16_t* str, byte_order order) {
-        uint16_t ch;
-        if (order != system::native_byte_order()) {
-            utils::copy_swap_memory(&ch, str, sizeof(utf16_t));
-        } else {
-            ch = str[0];
-        }
-        return ch;
-    }
+    // uint16_t read_with_ordering(const uint16_t* str, byte_order order) {
+    //     uint16_t ch;
+    //     if (order != system::native_byte_order()) {
+    //         ch = utils::bswap<uint16_t>(*str);
+    //     } 
+    //     else {
+    //         ch = str[0];
+    //     }
+    //     return ch;
+    // }
 
-    void write_with_ordering(uint16_t* str, uint16_t ch, byte_order order) {
-        if (order != system::native_byte_order()) {
-            utils::copy_swap_memory(str, &ch, sizeof(utf16_t));
-        } else {
-            str[0] = ch;
-        }
-    }
+    // void write_with_ordering(uint16_t* str, uint16_t ch, byte_order order) {
+    //     if (order != system::native_byte_order()) {
+    //         utils::copy_swap_memory(str, &ch, sizeof(utf16_t));
+    //     } else {
+    //         str[0] = ch;
+    //     }
+    // }
 
     /*static*/ codepoint_t utf16_t::chars_to_codepoint(const uint16_t* str, byte_order in) {
-        uint16_t ch1 = read_with_ordering(str, in);
+        uint16_t ch1 = utils::read_with_order<uint16_t>(str, in);
         if (is_high_surrogate(ch1)) {
-            uint16_t ch2 = read_with_ordering(str + 1, in);
+            uint16_t ch2 = utils::read_with_order<uint16_t>(str + 1, in);
             if (is_low_surrogate(ch2)) {
                 uint32_t c1 = ch1 - 0xD800;
                 uint32_t c2 = ch2 - 0xDC00;
@@ -212,14 +213,14 @@ namespace jstd {
 
     /*static*/ int utf16_t::codepoint_to_chars(uint16_t buf[], codepoint_t cp, byte_order out) {
         if (cp < 0x10000) {
-            write_with_ordering(buf, (uint16_t) cp, out);
+            utils::write_with_order<uint16_t>(buf, cp, out);
             return 1;
         } else {
             cp -= 0x10000;
             uint16_t c1 = (uint16_t) (((cp >> 10) & 0x3ff) + 0xD800);
             uint16_t c2 = (uint16_t) (((cp >>  0) & 0x3ff) + 0xDC00);
-            write_with_ordering(buf + 0, c1, out);
-            write_with_ordering(buf + 1, c2, out);
+            utils::write_with_order<uint16_t>(buf + 0, c1, out);
+            utils::write_with_order<uint16_t>(buf + 1, c2, out);
             return 2;
         }
     }
@@ -267,7 +268,7 @@ namespace jstd {
 
         char buf[4];
         for (int i = 0; i < _size; ) {
-            int char_size   = utf16_t::symbol_size(read_with_ordering(_data + i, (byte_order) _order));
+            int char_size   = utf16_t::symbol_size(utils::read_with_order<uint16_t>(_data + i, (byte_order) _order));
             int codepoint   = utf16_t::chars_to_codepoint(_data + i, (byte_order) _order);
             int sz          = utf8_t::codepoint_to_chars(buf, codepoint);
             result.append(buf, sz);
@@ -433,11 +434,11 @@ namespace jstd {
         int utf8_length = 0;
         {
             for (int i = 0; i < len ; ) {
-                uint16_t ch = read_with_ordering(utf16_str + i, in_order);
+                uint16_t ch = utils::read_with_order<uint16_t>(utf16_str + i, in_order);
                 ++i;
                 codepoint_t cp;
                 if (utf16_t::is_high_surrogate(ch)) {
-                    uint16_t ch2 = read_with_ordering(utf16_str + i, in_order);
+                    uint16_t ch2 = utils::read_with_order<uint16_t>(utf16_str + i, in_order);
                     ++i;
                     uint16_t buf[2] {ch, ch2};
                     cp = utf16_t::chars_to_codepoint(buf, system::native_byte_order());
@@ -453,11 +454,11 @@ namespace jstd {
         u8string result(allocator);
         result.reserve(utf8_length);
         for (int i = 0; i < len ; ) {
-            uint16_t ch = read_with_ordering(utf16_str + i, in_order);
+            uint16_t ch = utils::read_with_order<uint16_t>(utf16_str + i, in_order);
             ++i;
             codepoint_t cp;
             if (utf16_t::is_high_surrogate(ch)) {
-                uint16_t ch2 = read_with_ordering(utf16_str + i, in_order);
+                uint16_t ch2 = utils::read_with_order<uint16_t>(utf16_str + i, in_order);
                 ++i;
                 uint16_t buf[2] {ch, ch2};
                 cp = utf16_t::chars_to_codepoint(buf, system::native_byte_order());

@@ -5,7 +5,10 @@
 
 namespace tca {
     
-    
+    malloc_free_allocator::malloc_free_allocator() : base_allocator(nullptr) {
+
+    }
+
     void* malloc_free_allocator::allocate(std::size_t sz) {
         return malloc(sz);
     }

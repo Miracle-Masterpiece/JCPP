@@ -105,16 +105,15 @@ public:
 
     template<typename T>
     void odstream::write(const T* v, int64_t sz) {
-        if (byte_order::LE != system::native_byte_order()) {
+        if (system::native_byte_order() != byte_order::LE) {
             T tmp;
             for (int64_t i = 0; i < sz; ++i) {
-                //Этот чёртов алгоритм довольно медленный, но мне всё-равно
-                utils::copy_swap_memory(&tmp, v + i, sizeof(T));
+                tmp = utils::bswap<T>(v[i]);
                 write(reinterpret_cast<const char*>(&tmp), sizeof(T));
             }
-        } else {
-            for (int64_t i = 0; i < sz; ++i)
-                write(reinterpret_cast<const char*>(v + i), sizeof(T));
+        } 
+        else {
+            write(reinterpret_cast<const char*>(v), sizeof(T) * sz);
         }
     }
 }

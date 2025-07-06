@@ -195,21 +195,42 @@ namespace internal {
 
 
 
-
-    pool_allocator::pool_allocator() : m_allocator(nullptr), m_pool(), m_pool_size(0) {
-
-    }
-
-    pool_allocator::pool_allocator(base_allocator* allocator, std::size_t size) : 
+    pool_allocator::pool_allocator(std::size_t size, base_allocator* allocator) : 
     m_allocator(allocator), m_pool(allocator), m_pool_size(size) {
 
     }
     
-    // pool_allocator(pool_allocator&&);
-    // pool_allocator& operator= (pool_allocator&&);
+    pool_allocator::pool_allocator(pool_allocator&& pa) : 
+    base_allocator(std::move(pa)),
+    m_allocator(pa.m_allocator),
+    m_pool(std::move(pa.m_pool)),
+    m_pool_size(pa.m_pool_size) {
+        pa.m_allocator = nullptr;
+        pa.m_pool_size = 0;
+    }
+
+    pool_allocator& pool_allocator::operator= (pool_allocator&& pa) {
+        if (&pa != this) {
+            base_allocator::operator=(std::move(pa));
+            m_allocator = pa.m_allocator;
+            m_pool      = std::move(pa.m_pool);
+            m_pool_size = pa.m_pool_size;
+            pa.m_allocator = nullptr;
+            pa.m_pool_size = 0;
+        }
+        return *this;
+    }
     
     pool_allocator::~pool_allocator() {
 
+    }
+
+    void* pool_allocator::allocate() {
+        return allocate(1);
+    }
+    
+    void pool_allocator::deallocate(void* p) {
+        deallocate(p, 0);
     }
 
     void* pool_allocator::allocate(std::size_t sz) {

@@ -357,7 +357,7 @@ struct base_vec4 {
      * @return 
      *      Новый нормализованный вектор.
      */
-    base_vec4<T> normalize() const;
+    base_vec4<T> normalized() const;
 
     /**
      * Длина вектора.
@@ -711,7 +711,7 @@ struct base_vec4 {
     }
     
     template<typename T>
-    base_vec4<T> base_vec4<T>::normalize() const {
+    base_vec4<T> base_vec4<T>::normalized() const {
         const T len = length();
         return base_vec4<T>(x / len, y / len, z / len, w / len);
     }

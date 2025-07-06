@@ -85,6 +85,7 @@ ___MAKE_EXCEPT_CLASS__(io_exception,                        exception)
 ___MAKE_EXCEPT_CLASS__(file_not_found_exception,            io_exception)
 ___MAKE_EXCEPT_CLASS__(eof_exception,                       io_exception)
 ___MAKE_EXCEPT_CLASS__(closed_exception,                    io_exception)
+___MAKE_EXCEPT_CLASS__(readonly_exception,                  io_exception)
 
 //socket exceptions
 ___MAKE_EXCEPT_CLASS__(socket_exception,                    io_exception)
@@ -135,13 +136,15 @@ ___MAKE_EXCEPT_CLASS__(socket_timeout_exception,            socket_exception)
 
     template<typename T>
     void check_index(T idx, T len) {
-        if (is_unsigned<T>::value) {
-            if (idx >= len)
-                throw_except<index_out_of_bound_exception>("Index %llu out of bound for length %llu!", (unsigned long long) idx, (unsigned long long) len);
-        } else {
-            if (idx < 0 || idx >= len)
-                throw_except<index_out_of_bound_exception>("Index %d out of bound for length %d!", (signed long long) idx, (signed long long) len);
-        }
+        JSTD_DEBUG_CODE(
+            if (is_unsigned<T>::value) {
+                if (idx >= len)
+                    throw_except<index_out_of_bound_exception>("Index %llu out of bound for length %llu!", (unsigned long long) idx, (unsigned long long) len);
+            } else {
+                if (idx < 0 || idx >= len)
+                    throw_except<index_out_of_bound_exception>("Index %d out of bound for length %d!", (signed long long) idx, (signed long long) len);
+            }
+        );
     }
 
 }

@@ -15,18 +15,20 @@ namespace jstd {
     _pos(0), 
     _limit(0), 
     _mark(-1),
-    _order(system::native_byte_order()) {
+    _order(system::native_byte_order()),
+    m_readonly(false) {
 
     }
 
-    byte_buffer::byte_buffer(char* buf, int64_t bufsize) : 
+    byte_buffer::byte_buffer(char* buf, int64_t bufsize, bool readonly) : 
     _allocator(nullptr), 
     _data(buf), 
     _cap(bufsize), 
     _pos(0), 
     _limit(bufsize), 
     _mark(-1),
-    _order(system::native_byte_order()) {
+    _order(system::native_byte_order()),
+    m_readonly(readonly) {
 
     }
     
@@ -41,7 +43,7 @@ namespace jstd {
         if (capacity > 0) {
             char* data = (char*) allocator->allocate_align(capacity, alignof(char));
             if (data == nullptr)
-                throw std::bad_alloc();
+                throw_except<out_of_memory_error>("Out of memory");
             _allocator  = allocator;
             _data       = data;
             _cap        = capacity;
@@ -61,13 +63,15 @@ namespace jstd {
     _pos(buf._pos),
     _limit(buf._limit), 
     _mark(buf._mark),
-    _order(buf._order) {
+    _order(buf._order),
+    m_readonly(buf.m_readonly) {
         buf._allocator  = nullptr;
         buf._data       = nullptr;
         buf._cap        = 0;
         buf._pos        = 0;
         buf._limit      = 0;
         buf._mark       =-1;
+        buf.m_readonly  = false;
     }
     
     byte_buffer& byte_buffer::operator= (const byte_buffer& buf) {
@@ -85,21 +89,22 @@ namespace jstd {
             _limit      = buf._limit;
             _mark       = buf._mark;
             _order      = buf._order;
+            m_readonly  = buf.m_readonly;
             buf._allocator  = nullptr;
             buf._data       = nullptr;
             buf._cap        = 0;
             buf._pos        = 0;
             buf._limit      = 0;
             buf._mark       =-1;
+            buf.m_readonly  = false;
         }
         return *this;
     }
     
     void byte_buffer::dispose() {
         if (_allocator != nullptr) {
-            if (_data != nullptr) {
+            if (_data != nullptr)
                 _allocator->deallocate(_data, _cap);
-            }
         }
     }
 
@@ -175,14 +180,6 @@ namespace jstd {
         return *this;
     }
 
-    void byte_buffer::checkIndex(int64_t idx, int64_t sz) const {
-        if (idx > _limit) {
-            throw_except<index_out_of_bound_exception>("Index %zu > _limit %zu", idx, _limit);
-        }else if (_limit - idx < sz) {
-            throw_except<index_out_of_bound_exception>("Remaining %zu < tsize %zu", _limit - idx, sz);
-        }
-    }
-
     byte_order byte_buffer::order() const {
         return _order;
     }
@@ -204,27 +201,31 @@ namespace jstd {
                                                                                                                                                             \
     template<>                                                                                                                                              \
     byte_buffer& byte_buffer::put<type_name__jstd_io_bytebuffer>(type_name__jstd_io_bytebuffer v) {                                                         \
+        check_write_or_except();                                                                                                                            \
         put<type_name__jstd_io_bytebuffer>(_pos, v);                                                                                                        \
         _pos += sizeof(v);                                                                                                                                  \
         return *this;                                                                                                                                       \
     }                                                                                                                                                       \
                                                                                                                                                             \
     template<>                                                                                                                                              \
-    byte_buffer& byte_buffer::put<type_name__jstd_io_bytebuffer>(int64_t idx, type_name__jstd_io_bytebuffer v) {                                        \
+    byte_buffer& byte_buffer::put<type_name__jstd_io_bytebuffer>(int64_t idx, type_name__jstd_io_bytebuffer v) {                                            \
         checkIndex(idx, sizeof(v));                                                                                                                         \
+        check_write_or_except();                                                                                                                            \
         _data[idx] = static_cast<type_name__jstd_io_bytebuffer>(v);                                                                                         \
         return *this;                                                                                                                                       \
     }                                                                                                                                                       \
                                                                                                                                                             \
     template<>                                                                                                                                              \
-    byte_buffer& byte_buffer::puts<type_name__jstd_io_bytebuffer>(const type_name__jstd_io_bytebuffer* arr, int64_t sz) {                               \
+    byte_buffer& byte_buffer::puts<type_name__jstd_io_bytebuffer>(const type_name__jstd_io_bytebuffer* arr, int64_t sz) {                                   \
+        check_write_or_except();                                                                                                                            \
         puts<type_name__jstd_io_bytebuffer>(_pos, arr, sz);                                                                                                 \
         _pos += sizeof(type_name__jstd_io_bytebuffer) * sz;                                                                                                 \
         return *this;                                                                                                                                       \
     }                                                                                                                                                       \
                                                                                                                                                             \
     template<>                                                                                                                                              \
-    byte_buffer& byte_buffer::puts<type_name__jstd_io_bytebuffer>(int64_t idx, const type_name__jstd_io_bytebuffer* arr, int64_t sz) {              \
+    byte_buffer& byte_buffer::puts<type_name__jstd_io_bytebuffer>(int64_t idx, const type_name__jstd_io_bytebuffer* arr, int64_t sz) {                      \
+        check_write_or_except();                                                                                                                            \
         checkIndex(idx, sizeof(type_name__jstd_io_bytebuffer) * sz);                                                                                        \
         std::memcpy(_data + idx, reinterpret_cast<const char*>(arr), sizeof(type_name__jstd_io_bytebuffer) * sz);                                           \
         return *this;                                                                                                                                       \

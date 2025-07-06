@@ -11,19 +11,22 @@
 	#include<time.h>
 #endif
 
-namespace jstd::system {   
+namespace jstd
+{   
+namespace system
+{
 
+namespace internal
+{
     byte_order init_native_byte_order() {
         const unsigned long c   = 1;
         const unsigned char* ip = reinterpret_cast<const unsigned char*>(&c);
         return *ip != 0 ? byte_order::LE : byte_order::BE;
     }
-    
     const byte_order system_order = init_native_byte_order();
-    byte_order native_byte_order() {
-        return system_order;
-    }
+}
 
+    
     int64_t current_time_millis() {
 #if defined(__linux__) || defined(__APPLE__)
         timeval time;
@@ -61,6 +64,7 @@ namespace jstd::system {
 
 #if defined(_WIN32)
     const char* error_string(int err) {
+        thread_local char no_specified_error_buffer[48];
         switch(err){
 			case ERROR_SUCCESS              : return "No error";
 			case ERROR_INSUFFICIENT_BUFFER  : return "The buffer size is insufficient to store the full path to the file";
@@ -75,7 +79,11 @@ namespace jstd::system {
 			case ERROR_INVALID_NAME         : return "Invalid name";
 			case ERROR_BAD_FORMAT           : return "Bad format";
             case ERROR_NOACCESS             : return "Invalid access to memory location";
-			default:                          return "No specified error";
+            case ERROR_MAPPED_ALIGNMENT     : return "The base address or the file offset specified does not have the proper alignment";
+            case ERROR_USER_MAPPED_FILE     : return  "The requested operation cannot be performed on a file with a user-mapped section open";
+			default:
+                    std::snprintf(no_specified_error_buffer, sizeof(no_specified_error_buffer), "Windows error: %i", err);
+                    return no_specified_error_buffer;
 		}
     }
 #elif defined(__linux__)
@@ -94,4 +102,7 @@ namespace jstd::system {
         ls_mutex.unlock();
         return result;
     }
-}
+
+}//namespace system
+
+}//namespace jstd

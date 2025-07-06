@@ -65,28 +65,27 @@ public:
 }
 
 class pool_allocator : public base_allocator {
-    static const std::size_t    COUNT_POOL_BUCKETS = 1024;
+    pool_allocator(const pool_allocator&)               = delete;
+    pool_allocator& operator= (const pool_allocator&)   = delete;
     
+    static const std::size_t    COUNT_POOL_BUCKETS = 1024;
     tca::base_allocator*        m_allocator;
     array_list<internal::pool>  m_pool;
     std::size_t                 m_pool_size;
 
-    pool_allocator(const pool_allocator&) = delete;
-    pool_allocator& operator= (const pool_allocator&) = delete;
-
 public:
-    
-    pool_allocator();
-    pool_allocator(base_allocator* allocator, std::size_t size);
+    using base_allocator::allocate;
+    using base_allocator::deallocate;
+    explicit pool_allocator(std::size_t size, base_allocator* allocator = get_scoped_or_default());
     pool_allocator(pool_allocator&&);
     pool_allocator& operator= (pool_allocator&&);
     ~pool_allocator();
-
+    void* allocate();
+    void deallocate(void* p);
     void* allocate(std::size_t) override;
     void* allocate_align(std::size_t, std::size_t) override;
     void deallocate(void*, std::size_t) override;
 };
-
 
 }
 

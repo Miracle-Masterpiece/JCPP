@@ -143,6 +143,7 @@ __TEMPLATE__EXCEPT_CLASS_IMPL(io_exception,                        exception)
 __TEMPLATE__EXCEPT_CLASS_IMPL(file_not_found_exception,            io_exception)
 __TEMPLATE__EXCEPT_CLASS_IMPL(eof_exception,                       io_exception)
 __TEMPLATE__EXCEPT_CLASS_IMPL(closed_exception,                    io_exception)
+__TEMPLATE__EXCEPT_CLASS_IMPL(readonly_exception,                  io_exception)
 
 //socket exceptions
 __TEMPLATE__EXCEPT_CLASS_IMPL(socket_exception,                    io_exception)

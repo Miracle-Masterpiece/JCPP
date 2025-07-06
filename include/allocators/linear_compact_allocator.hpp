@@ -3,6 +3,8 @@
 
 #include <allocators/base_allocator.hpp>
 #include <allocators/Helpers.hpp>
+#include <allocators/pool_allocator.hpp>
+#include <cpp/lang/utils/shared_ptr.hpp>
 
 #include <cstring>
 #include <cstddef>
@@ -27,12 +29,9 @@
 
 namespace tca {
 
-    struct Ref;
     struct Header {
         
-        //указатель на владеющий объект tca::Ref
-        //Если этот указатель равен nullptr - значит что блок свободный.
-        Ref* _reference;
+        jstd::internal::sptr::shared_control_block * _reference;
         
         /**
          * Указатель на функцию, которая занимается перемещением данных из src в dst
@@ -48,10 +47,7 @@ namespace tca {
          *          Используется, если блок памяти аллоцировался, как массив.
          */
         void (*_movfunc) (void* dst, void* src, std::size_t count);
-        
-        //Общий размер выделенного блока, включая заголовок(Этот объект).
-        std::size_t _size;  //size_with_header
-        
+    
         //Количество непрерывно выделенных объектов.
         std::size_t _count;
     
@@ -109,284 +105,6 @@ namespace tca {
     };
     
     /**
-     * Стуктура для хранения указателя на владеющий блок памяти.
-     */
-    struct Ref {
-        
-        //указатель на начало выделенного блока.
-        void* _data;
-       
-        /**
-         * Создаёт объект, представляющий null-pointer
-         */
-        Ref();
-    
-        /**
-         * Создаёт объект принимая указатель на начало блока, 
-         * которым будет владеть этот объект.
-         * 
-         * @param data
-         *          Указатель на блок памяти, которым будет владеть этот объект.
-         * 
-         * @remark
-         *          Перед блоком памяти обязан располагаться объект tca:Header,
-         *          для правильной работы tca::Ref::getHeader()
-         */
-        Ref(void* data);
-        
-        /**
-         * Конструктор перемещения.
-         * Перемещает ссылку из одного объекта в другой.
-         * И, если новый указатель _data != nullptr, 
-         * переходит в заголовок и меняет tca::Header::_ref на указатель текущего объекта.
-         */
-        Ref(Ref&&);
-        
-        /**
-         * Оператор перемещения.
-         * 
-         * 
-         * Перемещает ссылку из одного объекта в другой.
-         * И, если новый указатель _data != nullptr, 
-         * переходит в заголовок и меняет tca::Header::_ref на указатель текущего объекта.
-         */
-        Ref& operator= (Ref&&);
-        
-        /**
-         * Помечает блок памяти, как свободный.
-         * 
-         * @see tca::Ref::free()
-         */
-        ~Ref();
-        
-        /**
-         * Возвращает указатель на заголовок выделенного блока.
-         * 
-         * @return 
-         *     Указатель на заголовок выделенного блока.
-         * 
-         * @see tca::Header
-         */
-        Header* getHeader();
-        
-        /**
-         * Возвращает константный указатель на заголовок выделенного блока.
-         * 
-         * @return 
-         *     Константный указатель на заголовок выделенного блока.
-         * 
-         * @see tca::Header
-         */
-        const Header* getHeader() const;
-    
-    private:
-        //обновляет ссылки при перемещении
-        void updateRef();
-        
-        /**
-         * Помечает блок памяти, как свободный.
-         */
-        void dispose();
-        
-        //Удалённые конструктор копирования и оператор копирования.
-        Ref(const Ref&);
-        Ref& operator= (const Ref&);
-    };
-    
-    /**
-     * Структура для хранения внутренней безтиповой ссылки для интерпретирования её, как типовой.
-     * Структура использует принципы std::unique_ptr<T>
-     * То есть, её нельзя копировать, только перемещать и владеет блоком памяти только один объект структуры.
-     * 
-     * Структура имеет перегруженные операторы для работы с блоком памяти, как с прямым указателем.
-     * При этом её можно привести к сырому указателю, чтобы, например, передать в функции, которые ожидают сырой указатель.
-     * 
-     */
-    template<typename T>    
-    struct reference {
-    private:
-        //удалённые конструкторы копирования и оператор присваивания с копированием.
-        reference(const reference&);
-        reference& operator= (const reference&);
-    
-        //Безтиповая внутренняя ссылка
-        Ref _ref;
-    
-    public:
-        /**
-         * Создаёт объект nullreference
-         */
-        reference() : _ref() {
-    
-        }
-    
-        /**
-         * Создаёт объект на основе безтиповой ссылки и
-         * просто вызывает конструтор перемещения tca::Ref
-         * 
-         * @param ref
-         *      R-value cсылка на объект 
-         *      хранящий безтиповой указатель на блок памяти.      
-         *      
-         * 
-         * 
-         * @see tca::Ref
-         */
-        reference(Ref&& ref) : _ref(std::move(ref)) {
-    
-        }
-    
-        /**
-         * Просто вызывает конструтор перемещения tca::Ref
-         * 
-         * @param ref
-         *      R-value ссылка на tca::reference<T> 
-         * 
-         * @see tca::Ref
-         */
-        reference(reference&& ref) : _ref(std::move(ref._ref)) {
-    
-        }
-    
-        /**
-         * Оператор перемещения.
-         * Просто вызывает оператор перемещения у tca::Ref
-         * 
-         * @see tca::Ref
-         */
-        reference& operator= (reference&& ref) {
-            if (&ref != this)
-                _ref = std::move(ref._ref);
-            return *this;
-        }
-    
-        /**
-         * Оператор приведения типа.
-         * 
-         * @remark
-         *      Указатель, который возвращается, необходимо проверять на nullptr
-         *      поскольку функция не бросает исключения, или std::abort(), если внутренний указатель nullptr
-         * 
-         * @return 
-         *      Сырой указатель на T         
-         */
-        operator T*() {
-            return reinterpret_cast<T*>(_ref._data);    
-        } 
-    
-        /**
-         * Оператор приведения типа.
-         * 
-         * @remark
-         *      Указатель, который возвращается, необходимо проверять на nullptr
-         *      поскольку функция не бросает исключения, или std::abort(), если внутренний указатель nullptr
-         * 
-         * @return 
-         *      Сырой указатель на const T         
-         */
-        operator const T*() const {
-            return reinterpret_cast<const T*>(_ref._data);    
-        } 
-    
-        /**
-         * Оператор доступа к членам.
-         * 
-         * @remark
-         *      Если не объявлен макрос NDEBUG, 
-         *      то функция сначала проверит внутренний указатель на nullptr.
-         *      И если указатель равен nullptr, 
-         *      то аварийно завершит программу с информацией об ошибке.
-         */
-        T* operator-> () {
-            ALLOC_LIB_CHECK_NULL_POINTER(_ref._data);
-            return reinterpret_cast<T*>(_ref._data);
-        }
-    
-        /**
-         * Константный оператор доступа к членам.
-         * 
-         * @remark
-         *      Если не объявлен макрос NDEBUG, 
-         *      то функция сначала проверит внутренний указатель на nullptr.
-         *      И если указатель равен nullptr, 
-         *      то аварийно завершит программу с информацией об ошибке.
-         */
-        const T* operator-> () const {
-            ALLOC_LIB_CHECK_NULL_POINTER(_ref._data);
-            return reinterpret_cast<const T*>(_ref._data);
-        }
-    
-        /**
-         * Оператор индексации.
-         * 
-         * @remark
-         *      Если не объявлен макрос NDEBUG:
-         *      
-         *      Функция сначала проверит внутренний указатель на nullptr.
-         *      И если указатель равен nullptr, 
-         *      то аварийно завершит программу с информацией об ошибке.
-         * 
-         *      Функция проверит диапазон индекса.
-         *      И если индекс больше или равна длине аллоцированного блока
-         *      то аварийно завершит программу с информацией об ошибке.
-         * 
-         * @return 
-         *     Ссылку на объект по-указанному индексу.
-         */
-        T& operator[] (std::size_t idx) {
-            ALLOC_LIB_CHECK_NULL_POINTER(_ref._data);
-            ALLOC_LIB_CHECK_INDEX(idx, _ref.getHeader()->_count);
-            return reinterpret_cast<T*>(_ref._data)[idx];
-        }
-    
-        /**
-         * Константный оператор индексации.
-         * 
-         * @remark
-         *      Если не объявлен макрос NDEBUG:
-         *      
-         *      Функция сначала проверит внутренний указатель на nullptr.
-         *      И если указатель равен nullptr, 
-         *      то аварийно завершит программу с информацией об ошибке.
-         * 
-         *      Функция проверит диапазон индекса.
-         *      И если индекс больше или равна длине аллоцированного блока
-         *      то аварийно завершит программу с информацией об ошибке.
-         * 
-         * @return 
-         *     Константную ссылку на объект по-указанному индексу.
-         */
-        const T& operator[] (std::size_t idx) const {
-            ALLOC_LIB_CHECK_NULL_POINTER(_ref._data);
-            ALLOC_LIB_CHECK_INDEX(idx, _ref.getHeader()->_count);
-            return reinterpret_cast<T*>(_ref._data)[idx];
-        }
-
-        T& operator* () {
-            ALLOC_LIB_CHECK_NULL_POINTER(_ref._data);
-            ALLOC_LIB_CHECK_INDEX(0, _ref.getHeader()->_count);
-            return *reinterpret_cast<T*>(_ref._data);
-        }
-
-        const T& operator* () const {
-            ALLOC_LIB_CHECK_NULL_POINTER(_ref._data);
-            ALLOC_LIB_CHECK_INDEX(0, _ref.getHeader()->_count);
-            return *reinterpret_cast<const T*>(_ref._data);
-        }
-
-        /**
-         * @deprecated
-         */
-        bool isNull() const {
-            return _ref._data == nullptr;
-        }
-
-        bool is_null() const {
-            return isNull();
-        }
-    };
-    
-    /**
      * Класс линейного рапределителя, который дефрагментирует кучу.
      * При этом класс является динамически-расширяемым, то есть, куча умеет увеличиваться.
      * 
@@ -416,7 +134,10 @@ namespace tca {
         
         //Указатель на базовый аллокатор.
         base_allocator*  _allocator;
-        
+       
+        //Аллокатор для выделения памяти под jstd::internal::sptr::shared_control_block.
+        pool_allocator m_ctrl_block_allocator;
+
         //Указатель на блок памяти
         void*           _data;
         
@@ -437,10 +158,10 @@ namespace tca {
         
         //Расширение буфера в два раза.
         void grow();
-        
+
         //Функция для выделения сырых байтов под данные, а так же установки фукнции для перемещения.
-        Ref allocate(std::size_t sz, std::size_t count, void (*move_func)(void*, void*, std::size_t));
-    
+        jstd::internal::sptr::shared_control_block* allocate(std::size_t sz, std::size_t count, void (*move_func)(void*, void*, std::size_t));
+
         /**
          * Функция перемещения по-умолчанию.
          * 
@@ -477,7 +198,7 @@ namespace tca {
          * @param capacity
          *          Начальная емкость аллокатора.
          */
-        compact_linear_allocator(base_allocator* allocator, std::size_t capacity);
+        compact_linear_allocator(std::size_t capacity, base_allocator* allocator = get_scoped_or_default());
         
         /**
          * Перемещает данные из ранее выделенного аллокатора в этот аллокатор.
@@ -501,27 +222,23 @@ namespace tca {
         ~compact_linear_allocator();
     
         /**
-         * Аллоцирует выровненный блок сырой* памяти для объекта T количеством n
-         * Сырой* - значит, что у памяти не вызывается конструктор типа.
+         * Выделяет память под объект типа T
          * 
-         * @param n - количество объектов типа T
-         * 
-         * @return ссылка на блок памяти.
+         * @return 
+         *      shared_ptr на объект.
          */
-        template<typename T>
-        reference<T> allocate(std::size_t n);
+        template<typename T, typename... ARGS>
+        jstd::shared_ptr<T> allocate(ARGS&&... args);
         
         /**
-         * Аллоцирует выровненный блок памяти для объекта T количеством n
-         * И вызывает конструктор по-умолчанию.
+         * Выделяет память под массив объект типа T
          * 
-         * @param n - количество объектов типа T
-         * 
-         * @return ссылка на блок памяти.
+         * @return 
+         *      shared_ptr на массив объектов.
          */
         template<typename T>
-        reference<T> allocate_constructed(std::size_t count);
-    
+        jstd::shared_ptr<T[]> allocate_array(uint32_t length);
+
         /**
          * Устанавливает новую ёмкость для внутреннего буфера аллокатора. (В байтах)
          * Новый размер обязан быть больше, чем текущая ёмкость.
@@ -556,48 +273,33 @@ namespace tca {
         if (std::is_trivially_copyable<T>::value) {
             memcpy(dst, src, sizeof(T) * count);
         } else {
-            T* d = reinterpret_cast<T*>(dst);
-            T* s = reinterpret_cast<T*>(src);
+            using non_const_type = jstd::remove_const<T>::type;
+            non_const_type* d = const_cast<non_const_type*>(reinterpret_cast<T*>(dst));
+            non_const_type* s = const_cast<non_const_type*>(reinterpret_cast<T*>(src));
             for (std::size_t i = 0; i < count; ++i) {
-                new(d + i) T(std::move(*(s + i)));
+                new(&d[i]) T(std::move(s[i]));
                 s[i].~T();
             }
         }
     }
 
-    template<typename T>
-    reference<T> compact_linear_allocator::allocate(std::size_t count) {
-        if (count == 0)
-            return reference<T>();
-
-        Ref ref = allocate(count * sizeof(T), count, mov<T>);
-        
-        //Проверка указателя на выравнивание.
-        ALLOC_LIB_CHECK_ALIGN(ref._data, T);
-   
-        return reference<T>(std::move(ref));
+    template<typename T, typename... ARGS>
+    jstd::shared_ptr<T> compact_linear_allocator::allocate(ARGS&&... args) {
+        jstd::internal::sptr::shared_control_block* block = allocate(sizeof(T), 1, mov<T>);
+        if (!block) return jstd::shared_ptr<T>();
+        new (block->m_object) T(args...);
+        return jstd::shared_ptr<T>(block);
     }
 
     template<typename T>
-    reference<T> compact_linear_allocator::allocate_constructed(std::size_t count) {
-        if (count == 0)
-            return reference<T>();
-        
-        Ref rawRef = allocate(count * sizeof(T), count, mov<T>);
-        
-        //Проверка указателя на выравнивание.
-        ALLOC_LIB_CHECK_ALIGN(rawRef._data, T);
-        
-        reference<T> ref(std::move(rawRef));
-        
-        T* data = (T*) ref;
-        for (std::size_t i = 0; i < count; ++i)
-            new (data + i) T();
-        
-        return reference<T>(std::move(ref));
+    jstd::shared_ptr<T[]> compact_linear_allocator::allocate_array(uint32_t length) {
+        jstd::internal::sptr::shared_control_block* block = allocate(sizeof(T), length, mov<T>);
+        if (!block) 
+            return jstd::shared_ptr<T[]>();
+        using non_const_T = jstd::remove_const<T>::type;
+        jstd::placement_new(reinterpret_cast<non_const_T*>(block->m_object), length);
+        return jstd::shared_ptr<T[]>(block, length);
     }
-
 }
-
 
 #endif//_ALLOCATORS_LINEAR_COMPACT_ALLOCATOR_ALLOCATOR_H

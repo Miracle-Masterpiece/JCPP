@@ -1,3 +1,5 @@
+//Вероятно, это самый худший файл во всём проекте. Fucking shit...
+
 #include <cpp/lang/io/filesystem.hpp>
 #include <cpp/lang/ustring.hpp>
 #include <cpp/lang/array.hpp>
@@ -48,9 +50,9 @@
 #include <cstring>
 #include <cstdio>
 
+namespace jstd 
+{
 
-
-namespace jstd {
 #if defined(_WIN32)
    
     void check_errors() {
@@ -761,7 +763,7 @@ namespace jstd {
             const char* name    = entry.get_name();
             int len             = std::strlen(name);    
             if (!filter->apply(name, len))
-                goto NEXT;
+                goto NEXT;          // Чёрт возьми, чей этот дерьмовый код?
             ++count_files;
             NEXT:
             ++begin;
@@ -898,24 +900,6 @@ namespace jstd {
         out_path[min_size] = '\0';
         path_length = filesystem::normalize_path(out_path, path_length);
         return get_parent_from_absolute(out_path, path_length);
-        // if (is_absolute(path, path_length)) {
-        //     int min_size = std::min(buf_size - 1, path_length);
-        //     std::memcpy(out_path, path, min_size);
-        //     out_path[min_size] = '\0';
-        //     path_length = filesystem::normalize_path(out_path, path_length);
-        //     return get_parent_from_absolute(out_path, path_length);
-        // } else {
-        //     int len = filesystem::runtime_path(out_path, buf_size);
-        //     int off = len;
-        //     for (int i = 0; i < path_length; ++i) {
-        //         if (off + 1 >= buf_size)
-        //             break;
-        //         out_path[off++] = path[i];
-        //     }
-        //     len = filesystem::normalize_path(out_path, off);
-        //     len = get_parent_from_absolute(out_path, len);
-        //     return len;
-        // }
     }
 
 
@@ -969,8 +953,8 @@ namespace jstd {
 
 
     directory_entry::directory_entry(const char* path, int path_length) {
-        path_length = normalize_length(path, path_length);
-        int size     = std::min<int>(sizeof(_name) - 1, path_length);
+        path_length     = normalize_length(path, path_length);
+        int size        = std::min<int>(sizeof(_name) - 1, path_length);
         std::memcpy(_name, path, size);
         _name[size] = 0;
     }
@@ -1000,22 +984,4 @@ namespace jstd {
     directory_entry::~directory_entry() {
 
     }
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
 }

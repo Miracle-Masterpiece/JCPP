@@ -11,7 +11,6 @@ namespace internal
     thread_local base_allocator* scoped_allocator = nullptr;
 }
 
-    
     base_allocator* get_default_allocator() {
         static malloc_free_allocator s_malloc_allocator;
         return &s_malloc_allocator;
@@ -21,28 +20,39 @@ namespace internal
         return internal::scoped_allocator != nullptr ? internal::scoped_allocator : get_default_allocator();
     }
 
-    base_allocator::base_allocator() : parent(nullptr) {
-
-    }
-
-    base_allocator::base_allocator(base_allocator* parent) : parent(parent) {
+    base_allocator::base_allocator(base_allocator* parent) : m_parent(parent) {
         
     }
 
-    base_allocator::base_allocator(base_allocator&& base) : parent(base.parent) {
-        base.parent = nullptr;
+    base_allocator::base_allocator(base_allocator&& base) : m_parent(base.m_parent) {
+        base.m_parent = nullptr;
     }
 
     base_allocator& base_allocator::operator= (base_allocator&& base) {
         if (&base != this) {
-            parent      = base.parent;
-            base.parent = nullptr;
+            m_parent      = base.m_parent;
+            base.m_parent = nullptr;
         }
         return *this;
     }
 
     base_allocator::~base_allocator() {
 
+    }
+
+    void* base_allocator::allocate(std::size_t sz) {
+        assert(m_parent != nullptr);
+        return m_parent->allocate(sz);
+    }
+
+    void* base_allocator::allocate_align(std::size_t sz, std::size_t align) {
+        assert(m_parent != nullptr);
+        return m_parent->allocate_align(sz, align);
+    }
+
+    void base_allocator::deallocate(void* p, std::size_t sz) {
+        assert(m_parent != nullptr);
+        m_parent->deallocate(p, sz);
     }
 
     scope_allocator::scope_allocator(base_allocator* allocator) : m_prev(internal::scoped_allocator) {

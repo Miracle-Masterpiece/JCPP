@@ -140,7 +140,11 @@
     "__tree": "cpp",
     "forward_list": "cpp",
     "cfloat": "cpp",
-    "locale": "cpp"
+    "locale": "cpp",
+    "__bit_reference": "cpp",
+    "__node_handle": "cpp",
+    "stack": "cpp",
+    "__verbose_abort": "cpp"
   },
   "markdown.validate.enabled": true
 }

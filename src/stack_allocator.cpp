@@ -21,7 +21,7 @@ namespace tca {
         stack->pop_frame();
     }
 
-    stack_allocator::stack_allocator(base_allocator* allocator, std::size_t size) : 
+    stack_allocator::stack_allocator(std::size_t size, base_allocator* allocator) : 
     base_allocator(allocator), 
     m_data(nullptr), 
     m_data_length(0), 
@@ -40,8 +40,8 @@ namespace tca {
     }
 
     stack_allocator::~stack_allocator(){
-        if (parent != nullptr)
-            parent->deallocate(m_data, m_data_length);
+        if (m_parent != nullptr)
+            m_parent->deallocate(m_data, m_data_length);
     }
 
     stack_frame stack_allocator::push_frame() {

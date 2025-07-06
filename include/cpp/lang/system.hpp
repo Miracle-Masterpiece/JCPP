@@ -3,16 +3,25 @@
 
 #include <cstdint>
 
-namespace jstd {
+namespace jstd 
+{
 
 enum byte_order {
     LE, //little-endian
     BE, //big-endian
 };
 
-namespace system {
+namespace system 
+{
 
-    
+namespace internal
+{
+    /**
+     * Системный порядок байт.
+     * */    
+    extern const byte_order system_order;
+}
+
 
     /**
      * Возвращает константу порядка байтов на выполняемой системе.
@@ -21,7 +30,9 @@ namespace system {
      *      byte_order::LE - если программа выполняется на процессоре с порядом байтов Little-Endian
      *      byte_order::BE - если программа выполняется на процессоре с порядом байтов Big-Endian
      */
-    byte_order native_byte_order();
+    inline byte_order native_byte_order() {
+        return internal::system_order;
+    }
 
     inline bool native_is_little_endian() {
         return native_byte_order() == byte_order::LE;
@@ -91,7 +102,9 @@ namespace system {
      * Thread-Safe printf
      */
     int tsprintf(const char* format, ...);
-}
 
-}
+}//namespace system
+
+}//namespace jstd
+
 #endif//_ALLOCATORS_SYSTEM_H

@@ -917,7 +917,7 @@ public:
 
     template<typename T>
     template<typename NODE_TYPE, typename VALUE_TYPE>
-    typename linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>& linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator= (const iterator<NODE_TYPE, VALUE_TYPE>& it) {
+    typename linked_list<T>:: template iterator<NODE_TYPE, VALUE_TYPE>& linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator= (const iterator<NODE_TYPE, VALUE_TYPE>& it) {
         if (&it != this) {
             _n = it._n;
         }
@@ -926,7 +926,7 @@ public:
 
     template<typename T>
     template<typename NODE_TYPE, typename VALUE_TYPE>
-    typename linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>& linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator= (iterator<NODE_TYPE, VALUE_TYPE>&& it) {
+    typename linked_list<T>:: template iterator<NODE_TYPE, VALUE_TYPE>& linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator= (iterator<NODE_TYPE, VALUE_TYPE>&& it) {
         if (&it != this) {
             _n = it._n;
             it._n = nullptr;
@@ -942,7 +942,7 @@ public:
 
     template<typename T>
     template<typename NODE_TYPE, typename VALUE_TYPE>
-    typename linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>& linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator++() {
+    typename linked_list<T>:: template iterator<NODE_TYPE, VALUE_TYPE>& linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator++() {
 #ifndef NDEBUG
         if (_n == nullptr) 
             throw_except<null_pointer_exception>("_n must be != null");
@@ -953,7 +953,7 @@ public:
     
     template<typename T>
     template<typename NODE_TYPE, typename VALUE_TYPE>
-    typename linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE> linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator++(int) {
+    typename linked_list<T>:: template iterator<NODE_TYPE, VALUE_TYPE> linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator++(int) {
 #ifndef NDEBUG
         if (_n == nullptr) 
             throw_except<null_pointer_exception>("_n must be != null");

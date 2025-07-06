@@ -27,7 +27,7 @@ namespace tca {
     _buffer(nullptr), 
     _capacity(capacity),
     _offset(0) {
-        _buffer = parent->allocate_align(capacity, alignof(std::max_align_t));
+        _buffer = m_parent->allocate_align(capacity, alignof(std::max_align_t));
     }
 
     linear_allocator::linear_allocator(linear_allocator&& alloc) : 
@@ -42,8 +42,8 @@ namespace tca {
     
     linear_allocator& linear_allocator::operator= (linear_allocator&& alloc) {
         if (&alloc != this) {
-            if (parent != nullptr)
-                parent->deallocate(_buffer, _capacity);
+            if (m_parent != nullptr)
+                m_parent->deallocate(_buffer, _capacity);
     
             base_allocator::operator=(std::move(alloc));
 
@@ -59,8 +59,8 @@ namespace tca {
     }
 
     linear_allocator::~linear_allocator() {
-        if (parent != nullptr)
-            parent->deallocate(_buffer, _capacity);
+        if (m_parent != nullptr)
+            m_parent->deallocate(_buffer, _capacity);
     }
     
     void* linear_allocator::allocate(std::size_t sz) {

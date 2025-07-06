@@ -17,4 +17,32 @@
 #   define JSTD_OS_MAC
 #endif
 
+#if defined(JSTD_OS_LINUX)
+#   define JSTD_LINUX_CODE(code) code
+#   define JSTD_UNIX_CODE(code)  code
+#   define JSTD_MAC_CODE(code)
+#   define JSTD_WIN_CODE(code)
+#endif
+
+#if defined(JSTD_OS_MAC)
+#   define JSTD_MAC_CODE(code)  code
+#   define JSTD_UNIX_CODE(code) code
+#   define JSTD_LINUX_CODE(code)
+#   define JSTD_WIN_CODE(code)
+#endif
+
+#if defined(JSTD_OS_WINDOWS)
+#   define JSTD_WIN_CODE(code) code
+#   define JSTD_MAC_CODE(code)
+#   define JSTD_UNIX_CODE(code)
+#   define JSTD_LINUX_CODE(code)
+#endif
+
+#if defined(JSTD_OS_UNIX) && !defined(JSTD_OS_LINUX)
+#   define JSTD_WIN_CODE(code) 
+#   define JSTD_MAC_CODE(code)   code
+#   define JSTD_UNIX_CODE(code)  code
+#   define JSTD_LINUX_CODE(code) code
+#endif
+
 #endif//JSTD_CPP_LANG_UTILS_COND_COMPILATION_H
