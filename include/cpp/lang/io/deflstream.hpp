@@ -7,6 +7,13 @@
 
 namespace jstd {
 
+/**
+ * Выходной поток для сжатых данных.
+ * 
+ * @note
+ *      Для закрытия ресурсов необходимо вызывать функцию deflstream::close().
+ *      Деструктор не освобождает данные! В силу требований об явной обработке ошибок.
+ */
 class deflstream : public ostream {
     static const int32_t DEFAULT_BUFFER_SIZE = 1024;
 
@@ -27,7 +34,7 @@ class deflstream : public ostream {
 
 public:
     /**
-     * @brief Конструктор по умолчанию.
+     * Конструктор по умолчанию.
      */
     deflstream();
 
@@ -70,25 +77,29 @@ public:
     deflstream& operator= (deflstream&&);
 
     /**
-     * @brief Записывает массив байтов в поток.
+     * Записывает массив байтов в поток.
      * 
-     * @param data Указатель на массив байтов.
+     * @param data 
+     *      Указатель на массив байтов.
      * 
-     * @throws io_exception Если произошла ошибка ввода/вывода
+     * @throws io_exception 
+     *      Если произошла ошибка ввода/вывода
      */
     void write(const char* data, int64_t sz);
 
     /**
-     * @brief Сбрасывает буферизированные данные.
+     * Сбрасывает буферизированные данные.
      * 
-     * @throws io_exception Если произошла ошибка ввода/вывода
+     * @throws io_exception 
+     *      Если произошла ошибка ввода/вывода
      */
     void flush();
 
     /**
-     * @brief Закрывает поток.
+     * Закрывает поток.
      * 
-     * @throws io_exception Если произошла ошибка ввода/вывода
+     * @throws io_exception 
+     *      Если произошла ошибка ввода/вывода
      */
     void close();
 
@@ -98,7 +109,8 @@ public:
     void finish();
 
     /**
-     * @brief Деструктор.
+     * @note
+     *      Для освобождения ресурсов должен явно вызываться this::close()
      */
     ~deflstream();  
 };

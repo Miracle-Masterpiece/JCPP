@@ -15,7 +15,7 @@ namespace jstd {
          *      Входящий поток ввода.
          * 
          * @param allocator
-         *      Распределитель памяти для выделения памяти под временный буфер и конечного изображения.
+         *      Распределитель памяти для выделения памяти под изображения и его загрузку.
          * 
          * @throws out_of_memory_error
          *      Если памяти для временного буфера не хватило.
@@ -30,16 +30,18 @@ namespace jstd {
         image load_image(istream* in, tca::base_allocator* allocator);
 
         /**
-         * Тот же самый, метод, что и {
-         * @code image load_image(istream*, tca::base_allocator*)
-         * }
+         * Читает изображение из переданного файла.
          * 
-         * Только вместо потока, файл из которого считать изображение.
+         * @param file
+         *      Файл, являющийся изображением.
+         * 
+         * @param allocator
+         *      Распределитель памяти для выделения памяти под изображения и его загрузку.
          * 
          * @throws file_not_found_exception
          *      Если файла не существует.
          * 
-         * Выбрасываемые исключения, такие-же, как и у функции {@code load_image(istream*, tca::base_allocator*)}.
+         * Остальные выбрасываемые исключения, такие-же, как и у функции {@code load_image(istream*, tca::base_allocator*)}.
          */
         image load_image(const file& file , tca::base_allocator* allocator = tca::get_scoped_or_default());
 

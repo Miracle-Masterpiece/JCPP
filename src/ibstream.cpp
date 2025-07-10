@@ -114,28 +114,20 @@ namespace jstd {
     }
 
     ibstream::~ibstream() {
-        if (_in != nullptr) {
-            try {
-                close();
-            } catch (const io_exception& e) {
-                std::cout << e.cause() << std::endl;
-            }    
-        }
+
     }
 
     void ibstream::close() {
-        if (_in != nullptr) {
-            try {
-                _in->close();
-            } catch (const io_exception& e) {
-                _in = nullptr;
-                free();
-                throw e;    
-            }
+        if (_in == nullptr)
+            return;
+        try {
+            _in->close();
+        } catch (const io_exception& e) {
             _in = nullptr;
             free();
-        } else {
-            throw_except<io_exception>("Stream already closed!");
-        }   
+            throw e;    
+        }
+        _in = nullptr;
+        free();
     }    
 }

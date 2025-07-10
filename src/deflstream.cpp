@@ -88,10 +88,8 @@ namespace jstd {
     }
 
     void deflstream::close() {
-#ifndef NDEBUG
         if (m_out == nullptr)
-            throw_except<io_exception>("Stream already closed!");
-#endif//NDEBUG
+            return;
         try {
             try {
                 finish();
@@ -107,12 +105,7 @@ namespace jstd {
     }
 
     deflstream::~deflstream() {
-        try {
-            if (m_out != nullptr)
-                close();
-        } catch (const throwable& ignore) {
-            std::cout << ignore.cause() << '\n';
-        }
+ 
     }
 
 }

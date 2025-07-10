@@ -1,7 +1,8 @@
 #include <cpp/lang/exceptions.hpp>
 #include <utility>
 
-namespace jstd {
+namespace jstd 
+{
 
 
     throwable::throwable() : m_calltrace() {
@@ -9,9 +10,9 @@ namespace jstd {
     }
 
     throwable::throwable(const char* cause) : m_calltrace() {
-        int len      = std::strlen(cause);
-        int max_size = sizeof(_cause);
-        int max = len >= max_size ? max_size - 1 : len;
+        int len         = std::strlen(cause);
+        int max_size    = sizeof(_cause);
+        int max         = len >= max_size ? max_size - 1 : len;
         std::memcpy(_cause, cause, max);
         _cause[max] = 0; 
     }

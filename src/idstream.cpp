@@ -27,13 +27,7 @@ namespace jstd {
     }
 
     idstream::~idstream() {
-        if (_in != nullptr) {
-            try {
-                _in->close();
-            } catch (const io_exception& e) {
-                std::cout << e.cause() << '\n';
-            }
-        }
+        
     }
     
     int64_t idstream::read(char buf[], int64_t sz) {
@@ -53,10 +47,8 @@ namespace jstd {
     }
 
     void idstream::close() {
-#ifndef NDEBUG
         if (_in == nullptr)
-            throw_except<io_exception>("Stream is null!");
-#endif
+            return;
         try {
             _in->close();
             _in = nullptr;

@@ -3,6 +3,7 @@
 #include <cpp/lang/io/bytebuffer.hpp>
 #include <cpp/lang/utils/unique_ptr.hpp>
 #include <cpp/lang/io/ifstream.hpp>
+#include <cpp/lang/io/iostream.hpp>
 #include <iostream>
 
 namespace jstd 
@@ -12,26 +13,35 @@ namespace jstd
 
     }
 
-    wav_data::wav_data(const char* path, tca::base_allocator* allocator) {
-#ifndef NDEBUG
-        if (path == nullptr)
-            throw_except<illegal_argument_exception>("in must be != null");
-        if (allocator == nullptr)
-            throw_except<illegal_argument_exception>("allocator must be != null");
-#endif
+    wav_data::wav_data(const file& path, tca::base_allocator* allocator) {
+        JSTD_DEBUG_CODE(
+            if (allocator == nullptr)
+                throw_except<illegal_argument_exception>("allocator must be != null");
+        );
+        
+        if (!path.exists())
+            throw_except<file_not_found_exception>("File not found!");
+
         m_allocator = allocator;
+        
         ifstream in(path);
-        load_from(&in);
-        in.close();        
+        try {
+            load_from(&in);
+        } catch(...) {
+            close_stream_and_suppress_except(&in);
+            throw;
+        }
+        in.close();
+
     }
 
     wav_data::wav_data(istream* in, tca::base_allocator* allocator) : wav_data() {
-#ifndef NDEBUG
-        if (in == nullptr)
-            throw_except<illegal_argument_exception>("in must be != null");
-        if (allocator == nullptr)
-            throw_except<illegal_argument_exception>("allocator must be != null");
-#endif
+        JSTD_DEBUG_CODE(
+            if (in == nullptr)
+                throw_except<illegal_argument_exception>("in must be != null");
+            if (allocator == nullptr)
+                throw_except<illegal_argument_exception>("allocator must be != null");
+        );
         m_allocator = allocator;
         load_from(in);
     }

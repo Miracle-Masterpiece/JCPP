@@ -20,6 +20,10 @@ namespace internal
         return internal::scoped_allocator != nullptr ? internal::scoped_allocator : get_default_allocator();
     }
 
+    base_allocator* get_exception_allocator() {
+        return get_default_allocator();
+    }
+
     base_allocator::base_allocator(base_allocator* parent) : m_parent(parent) {
         
     }

@@ -25,7 +25,7 @@ namespace jstd {
             try {
                 filesystem::close(_handle);
             } catch (const throwable& dontCare) {
-                std::cout << dontCare.cause() << "\n";
+
             }
             throw except;
         }
@@ -50,27 +50,20 @@ namespace jstd {
     
     void ifstream::close() {
         if (_handle == nullptr)
-            throw_except<io_exception>("Stream already closed!");
-        if (_handle != nullptr) {
-            try {
-                filesystem::close(_handle);
-            } catch (const io_exception& e) {
-                _handle     = nullptr;
-                _available  = 0;
-                throw e;
-            }
+            return;
+        try {
+            filesystem::close(_handle);
+        } catch (const io_exception& e) {
             _handle     = nullptr;
             _available  = 0;
+            throw e;
         }
+        _handle     = nullptr;
+        _available  = 0;
     }
     
     ifstream::~ifstream() {
-        try {
-            if (_handle != nullptr)
-                close();
-        } catch (const io_exception& dont_care) {
-            std::cout << dont_care.cause() << "\n";
-        }
+        
     }
     
     int ifstream::read() {

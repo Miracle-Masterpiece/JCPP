@@ -34,7 +34,7 @@ namespace utils {
      *      //x == 0x44332211
      * }
      * 
-     * @version 1.1
+     * @since 1.1
      * 
      * @IntrinsicCandidate
      */
@@ -55,7 +55,7 @@ namespace utils {
     /**
      * Оптимизированная версия функции для изменения порядка байт в 16 битной переменной.
      * @see template<typename T> bswap(T x);
-     * @version 1.1
+     * @since 1.1
      */
     template<>
     inline uint16_t bswap<uint16_t>(uint16_t x) {
@@ -67,7 +67,7 @@ namespace utils {
     /**
      * Оптимизированная версия функции для изменения порядка байт в 32 битной переменной.
      * @see template<typename T> bswap(T x);
-     * @version 1.1
+     * @since 1.1
      */
     template<>
     inline uint32_t bswap<uint32_t>(uint32_t x) {
@@ -79,7 +79,7 @@ namespace utils {
     /**
      * Оптимизированная версия функции для изменения порядка байт в 64 битной переменной.
      * @see template<typename T> bswap(T x);
-     * @version 1.1
+     * @since 1.1
      */
     template<>
     inline uint64_t bswap<uint64_t>(uint64_t x) {
@@ -91,7 +91,7 @@ namespace utils {
     /**
      * Оптимизированная версия функции для изменения порядка байт в 16 битной знаковой переменной.
      * @see template<typename T> bswap(T x);
-     * @version 1.1
+     * @since 1.1
      */
     template<>
     inline int16_t bswap<int16_t>(int16_t x) {
@@ -103,7 +103,7 @@ namespace utils {
     /**
      * Оптимизированная версия функции для изменения порядка байт в 32 битной знаковой переменной.
      * @see template<typename T> bswap(T x);
-     * @version 1.1
+     * @since 1.1
      */
     template<>
     inline int32_t bswap<int32_t>(int32_t x) {
@@ -115,7 +115,7 @@ namespace utils {
     /**
      * Оптимизированная версия функции для изменения порядка байт в 64 битной знаковой переменной.
      * @see template<typename T> bswap(T x);
-     * @version 1.1
+     * @since 1.1
      */
     template<>
     inline int64_t bswap<int64_t>(int64_t x) {
@@ -127,7 +127,7 @@ namespace utils {
     /**
      * Оптимизированная версия функции для изменения порядка байт float переменной.
      * @see template<typename T> bswap(T x);
-     * @version 1.1
+     * @since 1.1
      */
     template<>
     inline float bswap(float x) {
@@ -143,7 +143,7 @@ namespace utils {
     /**
      * Оптимизированная версия функции для изменения порядка байт double переменной.
      * @see template<typename T> bswap(T x);
-     * @version 1.1
+     * @since 1.1
      */
     template<>
     inline double bswap(double x) {
@@ -174,14 +174,22 @@ namespace utils {
      * @param n 
      *      Количество элементов типа T.
      * 
-     * @version 1.1
+     * @since 1.1
      * 
      * @IntrinsicCandidate
      */
     template<typename T>
     void copy_swap_memory(void* dst, const void* src, std::size_t n) {
-        for (std::size_t i = 0; i < n; ++i)
-            reinterpret_cast<T*>(dst)[i] = bswap<T>(reinterpret_cast<const T*>(src)[i]);
+        T tmp;
+        unsigned char* dest         = reinterpret_cast<unsigned char*>(dst);
+        const unsigned char* source = reinterpret_cast<const unsigned char*>(src);
+        for (std::size_t i = 0; i < n; ++i) {
+            std::memcpy(&tmp, source, sizeof(T));
+            tmp = bswap<T>(tmp);
+            std::memcpy(dest, &tmp, sizeof(T));
+            dest    += sizeof(T);
+            source  += sizeof(T);
+        }
     }
 
     /**
@@ -205,7 +213,7 @@ namespace utils {
      * @return 
      *      Прочитанное значение, преобразованное в передаваемый порядок байт.
      * 
-     * @version 1.0
+     * @since 1.0
      * 
      * @IntrinsicCandidate
      */
@@ -240,7 +248,7 @@ namespace utils {
      * @param out_order 
      *      Порядок байт для записи.
      * 
-     * @version 1.0
+     * @since 1.0
      * 
      * @IntrinsicCandidate
      */
@@ -274,6 +282,8 @@ namespace utils {
      *      Eсли len < 0.
      *
      * Сортирует массив вставками, используя заданный компаратор.
+     * 
+     * @since 1.0
      */
     template<typename T, typename T_COMPARATOR = compare_to<T>>
     void intersect_sort(T* array, int64_t len) {
@@ -349,6 +359,8 @@ namespace internal {
      * 
      * @throws illegal_argument_exception 
      *      Eсли len < 0
+     * 
+     * @since 1.0
      */
     template<typename T, typename T_COMPARATOR = compare_to<T>>
     void quick_sort(T* array, int64_t len) {

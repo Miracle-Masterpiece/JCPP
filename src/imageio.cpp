@@ -4,6 +4,7 @@
 #include <allocators/malloc_free_allocator.hpp>
 #include <cpp/lang/io/ifstream.hpp>
 #include <cpp/lang/io/ofstream.hpp>
+#include <cpp/lang/io/iostream.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
@@ -44,23 +45,12 @@ static void jstd_free(void* ptr) {
     return jstd_malloc_allocator.deallocate(ptr, -1);
 }
 
-namespace jstd {
+namespace jstd 
+{
 
-namespace imageio {
+namespace imageio 
+{
 
-    /**
-     * Загружает изображение из потока ввода.
-     * 
-     * @throws out_of_memory_error
-     *      Если памяти для временного буфера не хватило.
-     *      Если прямяти для конечного изображения не хватило.
-     * 
-     * @throws io_exception
-     *      Если произошла ошибка ввода/вывода
-     * 
-     * @throws illegal_state_exception
-     *      Если произошла ошибка во внутренней библитеки.
-     */
     image load_image(istream* in, tca::base_allocator* allocator) {
         
         int64_t size = in->available();
@@ -98,7 +88,15 @@ namespace imageio {
 
     image load_image(const file& file, tca::base_allocator* allocator) {
         ifstream in(file);
-        return load_image(&in, allocator);
+        image img;
+        try {
+            img = std::move(load_image(&in, allocator));
+        } catch (...) {
+            close_stream_and_suppress_except(&in);    
+            throw;
+        }
+        in.close();
+        return image(std::move(img));
     }
     
     static void save_contex(void* context, void* data, int size){
@@ -108,7 +106,13 @@ namespace imageio {
 
     void write_image(const file& file, const image* img, const char* ext) {
         ofstream out(file);
-        write_image(&out, img, ext);
+        try {
+            write_image(&out, img, ext);
+        } catch (...) {
+            close_stream_and_suppress_except(&out);
+            throw;
+        }
+        out.close();
     }
 
     void write_image(ostream* out, const image* img, const char* ext) {
@@ -138,8 +142,6 @@ namespace imageio {
             throw_except<illegal_state_exception>("stbi_write error: %i", error);
 
     }
-
-
 
 }
 

@@ -8,6 +8,8 @@
 namespace jstd
 {
 
+class file;
+
 /**
  * Представляет декодированные заголовки и данные WAV-файла.
  * 
@@ -65,10 +67,16 @@ public:
      * Загружает WAV-данные из файла.
      *
      * @param path
-     *      Путь к .wav-файлу. Должен быть строкой в формате UTF-8.
+     *      Путь к .wav-файлу.
      * 
      * @param allocator
      *      Пользовательский аллокатор памяти, который будет использоваться для хранения аудиоданных.
+     *
+     * @warning
+     *      Если при загрузки аудио возникло исключение, а после при закрытии потока, то исключение закрытия потока будет проигнорировано!
+     * 
+     * @throws file_not_found_exception
+     *      Если файла не существует.
      * 
      * @throws io_exception
      *      Если произошла ошибка ввода/вывода.
@@ -78,8 +86,11 @@ public:
      * 
      * @throws invalid_data_format_exception
      *      Если формат WAV недопустим
+     * 
+     * @throws out_of_memory_error
+     *      Если памяти не хватило
      */
-    explicit wav_data(const char* path, tca::base_allocator* allocator = tca::get_scoped_or_default());
+    explicit wav_data(const file& file, tca::base_allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Загружает WAV-данные из указанного входного потока.
@@ -99,6 +110,9 @@ public:
      * 
      * @throws invalid_data_format_exception
      *      Если формат WAV недопустим
+     * 
+     * @throws out_of_memory_error
+     *      Если памяти не хватило
      */
     wav_data(istream* in, tca::base_allocator* allocator = tca::get_scoped_or_default());
 

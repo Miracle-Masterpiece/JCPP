@@ -83,18 +83,15 @@ namespace jstd {
     }
 
     void oastream::flush() {
-        //Это чёртово дерьмо тут только потому-что, попытка сбрасывание нулевого ресурса - логическая ошибка программиста!
-#ifndef NDEBUG
-        if (_allocator == nullptr && _buffer == nullptr)
-            throw_except<io_exception>("Stream is null");
-#endif//NDEBUG
+        JSTD_DEBUG_CODE(
+            if (_allocator == nullptr && _buffer == nullptr)
+                throw_except<io_exception>("Stream is null");
+        );
     }
 
     void oastream::close() {
-#ifndef NDEBUG
-    if (_buffer == nullptr && _allocator == nullptr)
-        throw_except<io_exception>("Stream already closed!");
-#endif//NDEBUG
+        if (_buffer == nullptr)
+            return;
         if (_allocator != nullptr) {
             _allocator->deallocate(_buffer, _capacity);
             _allocator = nullptr;
@@ -103,8 +100,7 @@ namespace jstd {
     }
 
     oastream::~oastream() {
-        if (_buffer != nullptr || _allocator != nullptr)
-            close();
+        
     }
 
     const char* oastream::data() const {

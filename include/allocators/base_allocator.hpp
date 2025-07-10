@@ -21,6 +21,11 @@ namespace internal
      */
     base_allocator* get_scoped_or_default();
 
+    /**
+     * Возвращает аллокатор для выделения памяти под исключений.
+     */
+    base_allocator* get_exception_allocator();
+
 /**
  * Базовый тип полиморфного распределителя.
  */

@@ -42,9 +42,13 @@ namespace internal
         fdesc.fd = NULL_FD.fd;
     }
     
+    file_descriptor::operator bool() const {
+        return *this != NULL_FD;
+    }
+
     file_descriptor& file_descriptor::operator=(file_descriptor&& fdesc) {
         if (&fdesc != this) {
-            cleanup();
+            close();
             fd          = fdesc.fd;
             fdesc.fd    = NULL_FD.fd;
         }
@@ -67,19 +71,22 @@ namespace internal
         }
     }
     
-    void file_descriptor::cleanup() {
+    void file_descriptor::close() {
         if (*this != NULL_FD) {
             JSTD_WIN_CODE(
-                _close(fd);
+                if (_close(fd) != 0)
+                    throw_except<io_exception>(std::strerror(errno));
             );
             JSTD_POSIX_CODE(
-                close(fd);
+                if (::close(fd) != 0)
+                    throw_except<io_exception>(std::strerror(errno));
             );
+            fd = NULL_FD.fd;
         }
     }
 
     file_descriptor::~file_descriptor() {
-        cleanup();
+        
     }
     
     int file_descriptor::get_fd() const {

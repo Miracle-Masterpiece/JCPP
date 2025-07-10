@@ -36,14 +36,7 @@ namespace jstd {
     }
     
     iastream::~iastream() {
-        if (_buffer != nullptr) {
-            try  {
-                close();
-            } catch (const io_exception& e) {
-                std::cout << e.cause() << "\n";
-            }
-            _buffer = nullptr;
-        }
+
     }
     
     int iastream::read() {
@@ -74,11 +67,7 @@ namespace jstd {
     }
     
     void iastream::close() {
-        if (_buffer != nullptr) {
-            _buffer = nullptr;
-        } else {
-            throw_except<io_exception>("Stream already closed");
-        }
+        _buffer = nullptr;
     }
     
     void iastream::reset() {

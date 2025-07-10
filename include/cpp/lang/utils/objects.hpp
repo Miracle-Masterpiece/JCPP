@@ -35,6 +35,32 @@ public:
     operator const char*() {
         return m_strbuf;
     }
+
+    /**
+     * Возвращает константную си-строку.
+     * 
+     * @return
+     *      Строка в стиле Си.
+     */
+    const char* cstr() const {
+        return m_strbuf;
+    }
+
+    /**
+     * Возвращает длину строки. (Не включая нуль-терминатор)
+     * 
+     * @return
+     *      Длина строки.
+     */
+    std::size_t length() const {
+        std::size_t len = 0;
+        const char* c = m_strbuf;
+        while (*c) {
+            ++c;
+            ++len;
+        }
+        return len;
+    }
 };
     
     /**

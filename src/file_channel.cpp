@@ -68,7 +68,8 @@ namespace jstd
     }
 
     void file_channel::close() {
-        
+        if (m_fd)
+            m_fd.close();
     }
 
     void file_channel::require_fd() const {

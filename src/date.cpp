@@ -55,7 +55,7 @@ namespace jstd {
     }
 
     int date::to_string(char* buf, int bufsize) const {
-        return strftime(buf, bufsize, "%d/%m/%Y %H:%M:%S", &_localTime);
+        return strftime(buf, bufsize, "%d.%m.%Y %H:%M:%S", &_localTime);
     }
 
     /*static*/ date date::now() {

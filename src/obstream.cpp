@@ -68,17 +68,7 @@ namespace jstd {
     }
 
     obstream::~obstream() {
-        if (_out != nullptr) {
-            try {
-                close();
-            } catch (const io_exception& e) {
-                std::cout << e.cause() << "\n";
-            }
-        }
-        if (_allocator != nullptr) {
-            _allocator->deallocate(_buffer, _capacity);
-            _allocator = nullptr;
-        }
+
     }
 
     void obstream::write(char c) {
@@ -117,19 +107,28 @@ namespace jstd {
     }
     
     void obstream::close() {
-        if (_out != nullptr) {
+        if (_out == nullptr) 
+            return;
+        
+        try {
+            flush();
+        } catch (const io_exception& flush_except) {
             try {
-                flush();
                 _out->close();
-            } catch (io_exception& e) {
-                _out = nullptr;
-                free();
-                throw e;
-            }
+            } catch (const io_exception& close_except) {}
             _out = nullptr;
             free();
-        } else {
-            throw_except<io_exception>("Stream already closed!");
+            throw flush_except;    
+        }
+        
+        free();
+
+        try {
+            _out->close();
+            _out = nullptr;
+        } catch (const io_exception& e) {
+            _out = nullptr;
+            throw e;
         }
     }
     
