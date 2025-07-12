@@ -37,8 +37,11 @@
 
 #define __sock_error_str__ socket_error_string()
 
-namespace jstd {
-namespace bsd_socket {
+namespace jstd 
+{
+
+namespace bsd_socket 
+{
 
     void ms_to_timeval(struct timeval* tv, int64_t millisec) {
         std::cout << "in ms: " << millisec << std::endl;
@@ -727,5 +730,7 @@ ___make_get_socket_func_timeval__(get_receive_timeout, SOL_SOCKET, SO_RCVTIMEO)
                 throw_except<illegal_argument_exception>("Option %i is invalid!", (int) opt);
         }
     }
+
 }//bsd_socket
+
 }//jstd

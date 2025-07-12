@@ -68,7 +68,7 @@ namespace jstd {
         m_runnable  = task;    
         m_state     = thread::state::NEW;
 
-        //stack_size в std-c++ нельзя указать... ахуеть!
+        //stack_size в std-c++ нельзя указать... збц!
         
         if (thread_name != nullptr) {
             set_name(thread_name);

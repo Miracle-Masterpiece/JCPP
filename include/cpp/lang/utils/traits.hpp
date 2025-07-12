@@ -260,7 +260,7 @@ private:
     static char test(const BASE_T* v);
     static long test(const void* v);
 public:
-    static const bool value = sizeof(test((const DERIVED_T*) 1)) == sizeof(char) ? true : false;
+    static const bool value = sizeof(test((const DERIVED_T*) 1)) == sizeof(char);
 };
 
 /**
