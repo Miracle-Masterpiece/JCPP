@@ -8,6 +8,15 @@
 
 namespace jstd {
 
+/**
+ * Класс, реализующий сокетное соединение.
+ * 
+ * @note
+ *      Для закрытия сокета, необходимо вызвать функция {@code tsocket<T>::close()}
+ *      Деструктор не закрывает соединение!
+ * 
+ * @since 1.0
+ */
 template<typename SOCK_T>
 class tsocket {
     static const int32_t DEFAULT_BACKLOG = 16;

@@ -21,6 +21,13 @@ private:
     sock_id& operator= (const sock_id&) = delete;
 };
 
+/**
+ * @note
+ *      Деструктор не закрывает сокет.
+ *      Для закрытия сокета, необходимо вызвать {@code socket_impl::close()}
+ * 
+ * @since 1.0
+ */
 class socket_impl : public base_socket<sock_id> {
     /**
      * Является ли сокет неблокирующим.
@@ -187,8 +194,9 @@ public:
     int64_t write(const char* data, int64_t len);
 
     /**
-     * Закрывает сокет и подавляет любые исключения.
-     * Чтобы обработать исключения, вызывайте close() явно.
+     * @note
+     *      Деструктор не закрывает сокет.
+     *      Для закрытия сокета, необходимо вызвать {@code socket_impl::close()}
      */
     ~socket_impl();
 

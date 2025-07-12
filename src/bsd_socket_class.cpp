@@ -33,24 +33,18 @@ namespace bsd_socket
     }
 
     sock_id::~sock_id() {
-        if (ID != NULL_SOCK) {
-            try {
-                close();
-            } catch (const socket_exception& ignore) {
-                std::cout << ignore.cause() << "\n";
-            }
-        }
+
     }
 
     void sock_id::close() {
         if (ID == NULL_SOCK)
-            throw_except<illegal_state_exception>("Socket already closed or not opened!");
+            return;
         try {
             bsd_socket::close(ID);
             ID = NULL_SOCK;
-        } catch (const socket_exception& se) {
+        } catch (...) {
             ID = NULL_SOCK;
-            throw se;
+            throw;
         }
     }
 
@@ -157,8 +151,7 @@ namespace bsd_socket
     }
 
     socket_impl::~socket_impl() {
-        //действия не требуются, поскольку сокет в любом случае будет закрыт через объект this->_ID
-        //Важно уточнить. Деструктор полностью игнорирует исключения.
+        
     }
 
 }
