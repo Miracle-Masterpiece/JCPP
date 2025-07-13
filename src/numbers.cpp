@@ -42,12 +42,12 @@ namespace internal
                 --str_len;
                 if (value[str_len] == '-') {
                     if (is_negative)
-                        throw_except<numper_format_exception>("%s illegal number", value);
+                        throw_except<number_format_exception>("%s illegal number", value);
                     is_negative = true;
                     continue;
                 }    
                 if (!is_hex_digit(value[str_len]))
-                    throw_except<numper_format_exception>("%s illegal number", value);
+                    throw_except<number_format_exception>("%s illegal number", value);
                 result += hex_to_dec(value[str_len]) * digit;
                 digit *= 16;
             }
@@ -83,12 +83,12 @@ namespace internal
             --str_len;
             if (value[str_len] == '-') {
                 if (is_negative)
-                    throw_except<numper_format_exception>("%s illegal number", value);
+                    throw_except<number_format_exception>("%s illegal number", value);
                 is_negative = true;
                 continue;
             }
             if (value[str_len] < '0' || value[str_len] > '0' + (radix - 1))
-                throw_except<numper_format_exception>("%s illegal number", value);
+                throw_except<number_format_exception>("%s illegal number", value);
             result += (value[str_len] - '0') * digit;
             digit *= radix;
         }
@@ -118,12 +118,12 @@ namespace internal
                 --i;
                 if (value[i] == '-') {
                     if (is_negative)
-                        throw_except<numper_format_exception>("%s illegal number", value);
+                        throw_except<number_format_exception>("%s illegal number", value);
                     is_negative = true;
                     continue;
                 } 
                 if (value[i] == '.')
-                    throw_except<numper_format_exception>("%s illegal number", value);
+                    throw_except<number_format_exception>("%s illegal number", value);
                 result += char_to_digit(value[i]) * digit;
                 digit *= 10;
             }
@@ -142,7 +142,7 @@ namespace internal
             std::size_t i = dot_index + 1;
             while (i < str_len) {
                 if (value[i] == '.' || !is_digit(value[i]))
-                    throw_except<numper_format_exception>("%s illegal number", value);
+                    throw_except<number_format_exception>("%s illegal number", value);
                 result += char_to_digit(value[i]) * digit;
                 digit *= multiplier;
                 i++;
