@@ -137,7 +137,7 @@ namespace math {
         return ::atan2f(y, x);
     }
 
-    constexpr uint64_t hash2d(int64_t x, int64_t y) {
+    inline uint64_t hash2d(int64_t x, int64_t y) {
         const uint64_t ux = (uint64_t) x;
         const uint64_t uy = (uint64_t) y;
         uint64_t hash = (ux * 0x0B00B135U) + (uy * 0x50FFC001U);

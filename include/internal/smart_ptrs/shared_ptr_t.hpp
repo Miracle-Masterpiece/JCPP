@@ -104,7 +104,7 @@ namespace sptr
             return nullptr;
         try {
             assert((std::intptr_t) ctrl_block->m_object % alignof(T) == 0);
-            using non_const_T = remove_const<T>::type;
+            using non_const_T = typename remove_const<T>::type;
             placement_new<non_const_T>(reinterpret_cast<non_const_T*>(ctrl_block->m_object), length);
         } catch (...) {
             using u32 = uint32_t;

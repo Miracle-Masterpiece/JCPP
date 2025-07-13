@@ -19,7 +19,7 @@ namespace jstd
         );
         shared_ptr<const string>* in_map = m_map.get(cstr(str));
         if (in_map == nullptr) {
-            tca::scope_allocator scope = m_allocator;
+            tca::scope_allocator scope( m_allocator );
             shared_ptr<const string> shared = 
                                                 make_shared<const string>(string(str));
             m_map.put(str, shared);
@@ -53,7 +53,7 @@ namespace jstd
             if (m_allocator == nullptr)
                 throw_except<illegal_state_exception>("allocator is null");
         );
-        tca::scope_allocator scope = m_allocator;
+        tca::scope_allocator scope( m_allocator );
         return m_map.put(str, make_shared<const string>(str));
     }
 

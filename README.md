@@ -117,10 +117,10 @@ _Yes, compiling this library manually is a dark ritual. Good luck._ :D
 <summary> Windows </summary>
 
 ##### C++11
-`g++ -g -std=c++11 -O2 -shared -L. -o libjcpp.dll -I"include" ./src/*.cpp -lws2_32 -lzlib`
+`g++ -g -std=c++11 -O2 -shared -o libjcpp.dll -I"include" ./src/*.cpp -L./depended/zlib/bin/win/ -lws2_32 -lzlib`
 
 ##### C++23
-`g++ -g -std=c++23 -O2 -shared -L. -o libjcpp.dll -I"include" ./src/*.cpp -lws2_32 -lzlib -lstdc++exp`
+`g++ -g -std=c++23 -O2 -shared -o libjcpp.dll -I"include" ./src/*.cpp -L./depended/zlib/bin/win/ -lws2_32 -lzlib -lstdc++exp`
 
 </details>
 

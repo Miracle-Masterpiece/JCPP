@@ -273,7 +273,7 @@ namespace tca {
         if (std::is_trivially_copyable<T>::value) {
             memcpy(dst, src, sizeof(T) * count);
         } else {
-            using non_const_type = jstd::remove_const<T>::type;
+            using non_const_type = typename jstd::remove_const<T>::type;
             non_const_type* d = const_cast<non_const_type*>(reinterpret_cast<T*>(dst));
             non_const_type* s = const_cast<non_const_type*>(reinterpret_cast<T*>(src));
             for (std::size_t i = 0; i < count; ++i) {
@@ -296,7 +296,7 @@ namespace tca {
         jstd::internal::sptr::shared_control_block* block = allocate(sizeof(T), length, mov<T>);
         if (!block) 
             return jstd::shared_ptr<T[]>();
-        using non_const_T = jstd::remove_const<T>::type;
+        using non_const_T = typename jstd::remove_const<T>::type;
         jstd::placement_new(reinterpret_cast<non_const_T*>(block->m_object), length);
         return jstd::shared_ptr<T[]>(block, length);
     }

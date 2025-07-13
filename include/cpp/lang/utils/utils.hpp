@@ -120,8 +120,8 @@ namespace utils {
     template<>
     inline int64_t bswap<int64_t>(int64_t x) {
         return 
-        (int64_t) bswap<uint32_t>((int32_t) ((x >> 32) & 0xff'ff'ff'ff)) | 
-        (int64_t) bswap<uint32_t>((int32_t) (x & 0xff'ff'ff'ff)) << 32;
+        (int64_t) bswap<uint32_t>((int32_t) ((x >> 32) & 0xffffffff)) | 
+        (int64_t) bswap<uint32_t>((int32_t) (x & 0xffffffff)) << 32;
     }
 
     /**
