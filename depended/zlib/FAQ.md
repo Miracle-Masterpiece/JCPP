@@ -5,11 +5,11 @@
 
 ### Windows
 
-`gcc -O2 -o libzlib.dll -shared zlib/*.c`
+`gcc -O2 -o libzlib.dll -fPIC -shared src/*.c`
 
 ### Linux
 
-`gcc -O2 -o libzlib.so -shared -fPIC zlib/*.c`
+`gcc -O2 -o libzlib.so -shared -fPIC src/*.c`
 
 The compilation was also tested on clang.
 
