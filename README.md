@@ -130,10 +130,10 @@ _Yes, compiling this library manually is a dark ritual. Good luck._ :D
 <summary> Linux </summary>
 
 ##### C++11
-`g++ -g -std=c++11 -O2 -shared -fPIC -L. -o libjcpp.so -Wl,-rpath='$ORIGIN' -I"include" ./src/*.cpp -lzlib`
+`g++ -g -std=c++11 -O2 -shared -fPIC -o libjcpp.so -Wl,-rpath='$ORIGIN' -I"include" ./src/*.cpp -L./depended/zlib/bin/linux/ -lzlib`
 
 ##### C++23
-`g++ -g -std=c++23 -O2 -shared -fPIC -L. -o libjcpp.so -Wl,-rpath='$ORIGIN' -I"include" ./src/*.cpp -lzlib -lstdc++exp`
+`g++ -g -std=c++23 -O2 -shared -fPIC -o libjcpp.so -Wl,-rpath='$ORIGIN' -I"include" ./src/*.cpp -L./depended/zlib/bin/linux/ -lzlib -lstdc++exp`
 
 </details>
 
