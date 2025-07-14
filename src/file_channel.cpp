@@ -190,7 +190,7 @@ namespace jstd
         void* file_view = nullptr;
 
         //WINDOWS
-        //{JSTD_WIN_CODE(
+        {JSTD_WIN_CODE(
             DWORD page_prot = PAGE_NOACCESS;
             if (mode == fmap_mode::READ_ONLY) {
                 if (m_oflags & open_option::WRITE) {
@@ -250,7 +250,7 @@ namespace jstd
 
                 return mapped_byte_buffer(std::move(buf));
             }
-        //);}
+        );}
 
         //POSIX
         {JSTD_POSIX_CODE(
