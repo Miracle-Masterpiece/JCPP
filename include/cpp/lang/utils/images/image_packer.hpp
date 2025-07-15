@@ -78,7 +78,7 @@ public:
      *      Лучше использовать какой-то пул аллокатор на размер sizeof(texturing::node), поскольку этот аллокатор выделяет только этот размер!
      */
     image_packer(const image* img_array, int32_t count_images, int32_t w, int32_t h,
-                 tca::base_allocator* allocator, tca::base_allocator* node_allocator = nullptr);
+                 tca::base_allocator* allocator = tca::get_scoped_or_default(), tca::base_allocator* node_allocator = tca::get_scoped_or_default());
 
     /**
      * Конструктор перемещения.

@@ -19,7 +19,7 @@ namespace jstd {
 
     image_packer::image_packer(const image* img_array, int32_t count_images, int32_t w, int32_t h, tca::base_allocator* allocator, tca::base_allocator* node_allocator) :
     m_allocator(allocator), 
-    m_node_allocator(node_allocator != nullptr ? node_allocator : allocator), 
+    m_node_allocator(node_allocator), 
     m_root(), 
     m_images(img_array, count_images),
     m_width(w),
