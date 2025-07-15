@@ -218,6 +218,12 @@ namespace jstd {
         return objects::hashcode(_path);
     }
 
+    file file::plus(const file& f) const {
+        char buf[io::constants::MAX_LENGTH_PATH];
+        std::snprintf(buf, sizeof(buf), "%s/%s", _path, f._path);
+        return file(buf);
+    }
+
     bool file::equals(const file& f) const {
         const char* p1 = _path;
         const char* p2 = f._path;

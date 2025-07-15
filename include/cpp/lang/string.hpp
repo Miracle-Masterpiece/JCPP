@@ -32,7 +32,10 @@ class tstring {
 protected:
     
     tca::base_allocator* _allocator; // Аллокатор памяти для хранения строки.
-    CHAR_TYPE* _data;                // Указатель на данные строки.
+    union {
+        CHAR_TYPE* _data;                // Указатель на данные строки.
+        const CHAR_TYPE* _const_data;    // Указатель на константные данные строки.
+    };
     int _capacity;                   // Вместимость выделенной памяти.
     int _size;                       // Текущий размер (длина) строки.
     char _order;                     // Порядок байтов строки (младший порядок или старший порядок).
@@ -51,6 +54,22 @@ public:
         while (*(str + len)) 
             ++len;
         return len;
+    }
+
+    /**
+     * Проверяет, является ли это строка обёрткой над константной си-строкой.
+     * И, если тот объект - обёртка, кидает исключение.
+     * 
+     * @throws unsupported_operation_exception
+     *      Если этот объект неизменяемый.
+     * 
+     * @since 1.1
+     */
+    void check_const_or_except() {
+        JSTD_DEBUG_CODE(
+            if (is_constant_string())
+                throw_except<unsupported_operation_exception>("String is constant!");
+        );
     }
 
 protected:
@@ -147,9 +166,9 @@ protected:
     CHAR_TYPE get_char(int idx, byte_order ret_order) const {
         check_index(idx, _capacity);
         if (sizeof(CHAR_TYPE) == sizeof(char) || ret_order == _order) {
-            return _data[idx];
+            return _const_data[idx];
         } else {
-            return utils::bswap<CHAR_TYPE>(_data[idx]);
+            return utils::bswap<CHAR_TYPE>(_const_data[idx]);
         }
     }
 
@@ -463,6 +482,17 @@ public:
     bool equals(const CHAR_TYPE* str, int slen = -1, byte_order str_order = system::native_byte_order()) const;
 
     /**
+     * Является ли строка константной.
+     * Константная строка - это строка, которая является обёрткой вокруг константной Си-строки.
+     * 
+     * @return
+     *      true - если строка является константной; иначе - false.
+     */
+    bool is_constant_string() const {
+        return _allocator == nullptr && _data != nullptr;
+    }
+
+    /**
      * ==============================================================
      *                  D E B U G  F U N CS
      * ==============================================================
@@ -490,8 +520,14 @@ public:
 
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE>::tstring(const tstring<CHAR_TYPE>& str) : tstring() {
-        if (str._allocator != nullptr)
+        if (str.is_constant_string()) {
+            _data       = str._data;
+            _capacity   = _size = str._size;
+            _order      = str._order;
+            _allocator  = nullptr;
+        } else if (str._allocator != nullptr) {
             construct_string(str._data, str._allocator, (byte_order) str._order, (byte_order) str._order);
+        }
     }
     
     template<typename CHAR_TYPE>
@@ -510,8 +546,16 @@ public:
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::operator= (const tstring<CHAR_TYPE>& str) {
         if (&str != this) {
-            tstring<CHAR_TYPE> tmp(str);
-            this->operator=(std::move(tmp));
+            if (str.is_constant_string()) {
+                _data       = str._data;
+                _capacity   = _size = str._size;
+                _order      = str._order;
+                _allocator  = nullptr;
+            } 
+            else {
+                tstring<CHAR_TYPE> tmp(str);
+                this->operator=(std::move(tmp));
+            }
         }
         return *this;
     }
@@ -550,6 +594,7 @@ public:
 
     template<typename CHAR_TYPE>
     void tstring<CHAR_TYPE>::resize(int sz) {
+        check_const_or_except();
         check_allocator();
         CHAR_TYPE* data = (CHAR_TYPE*) _allocator->allocate_align(sizeof(CHAR_TYPE) * sz, alignof(CHAR_TYPE));
         if (data == nullptr)
@@ -563,6 +608,7 @@ public:
 
     template<typename CHAR_TYPE>
     void tstring<CHAR_TYPE>::resize_for(int new_size) {
+        check_const_or_except();
         if (new_size == 1) {
             if (_capacity < new_size) 
                 resize(new_size);
@@ -577,6 +623,7 @@ public:
 
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::reserve(int size) {
+        check_const_or_except();
         resize(size + 1);
         return *this;
     }
@@ -588,6 +635,7 @@ public:
     
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::append(int idx, const CHAR_TYPE* str, int slen, byte_order str_order) {
+        check_const_or_except();
         check_index(idx, _size + 1);
         int len = normalize_length(str, slen);
         if (_size + len + 1 > _capacity)
@@ -624,6 +672,7 @@ public:
         byte_order regex_order, 
         byte_order replacement_order) 
     {
+        check_const_or_except();
         regex_length        = normalize_length(regex, regex_length);
         replacement_length  = normalize_length(replacement, replacement_length);    
         int count_equal     = count_contains(regex, regex_length, regex_order);
@@ -671,6 +720,7 @@ public:
         byte_order regex_order, 
         byte_order replacement_order) 
     {
+        check_const_or_except();
         check_index(idx, _size);
         regex_length        = normalize_length(regex, regex_length);
         replacement_length  = normalize_length(replacement, replacement_length);
@@ -723,6 +773,8 @@ public:
 
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::trim() {
+        check_const_or_except();
+        
         if (_size == 0)
             return *this;
         
@@ -757,6 +809,7 @@ public:
     
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::trim_to_size() {
+        check_const_or_except();
         if (_size != 0) {
             resize(_size + 1);
             _data[_size] = 0;
@@ -769,6 +822,7 @@ public:
     
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::wipe_extra() {
+        check_const_or_except();
         if (_size != 0)
             std::memset(_data + _size, 0, sizeof(CHAR_TYPE) * (_capacity - _size));
         return *this;
@@ -776,6 +830,7 @@ public:
     
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::clear() {
+        check_const_or_except();
         _size = 0;
         if (_data != nullptr && _capacity > 0)
             _data[0] = 0;
@@ -784,6 +839,7 @@ public:
     
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::secure_clear() {
+        check_const_or_except();
         if (_size != 0) {
             clear();
             std::memset(_data, 0, sizeof(CHAR_TYPE) * _capacity);
@@ -793,6 +849,7 @@ public:
 
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::remove(int start, int end) {
+        check_const_or_except();
         check_index(start,  _size + 1);
         check_index(end,    _size + 1);
         if (start > end)
@@ -806,11 +863,16 @@ public:
 
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE> tstring<CHAR_TYPE>::clone(tca::base_allocator* allocator) const {
-        if (_allocator == nullptr && allocator == nullptr) 
-            return tstring<CHAR_TYPE>();
-        else if (allocator != nullptr) 
-            return tstring<CHAR_TYPE>(allocator, _data);
-        return tstring<CHAR_TYPE>(_allocator, _data);
+        if (is_constant_string()) {
+            return tstring<CHAR_TYPE>(*this);
+        } 
+        else {
+            if (_allocator == nullptr && allocator == nullptr) 
+                return tstring<CHAR_TYPE>();
+            else if (allocator != nullptr) 
+                return tstring<CHAR_TYPE>(allocator, _data);
+            return tstring<CHAR_TYPE>(_allocator, _data);
+        }
     }
 
     template<typename CHAR_TYPE>
@@ -886,6 +948,7 @@ public:
 
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE> tstring<CHAR_TYPE>::substr(int start, int end, tca::base_allocator* allocator) {
+        check_const_or_except();
         check_index(start,  _size + 1);
         check_index(end,    _size + 1);
         if (start > end)

@@ -14,7 +14,7 @@ typedef uint32_t codepoint_t;
 
 /**
  * ################################################################
- *                      U T F - 8
+ *                        U T F - 8
  * ################################################################
  */
 struct utf8_t {
@@ -26,7 +26,7 @@ struct utf8_t {
 
 /**
  * ################################################################
- *                      U T F - 16
+ *                       U T F - 16
  * ################################################################
  */
 struct utf16_t {
@@ -71,10 +71,10 @@ public:
     tustring(tca::base_allocator* allocator = tca::get_scoped_or_default());
  
     /**
-     * @deprecated
+     * @deprecated in @since 1.1
      */
     tustring(tca::base_allocator* allocator, const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order());
-    tustring(const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order(), tca::base_allocator* allocator = nullptr);
+    tustring(const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order(), tca::base_allocator* allocator = tca::get_scoped_or_default());
  
     tustring(const tustring<CHAR_TYPE>& str);
     tustring(tstring<CHAR_TYPE>&& str);
@@ -85,21 +85,43 @@ public:
     ~tustring();
     
     /**
+     * Создаёт view с-строки.
+     * Строка, созданная этой функцией, не может быть изменена.
+     * Любая попытка изменить будет бросать исключение.
+     * 
+     * @param str
+     *      С-Строка, которая будет обёрнута в объект.
+     * 
+     * @param length (Опционально)
+     *      Длина С-строки не включая нулевой символ. 
+     *      Если указано отрицательное значение, длина строки будет вычислена автоматически, но она должна оканчиваться нуль-терминатором.
+     * 
+     * @param order
+     *      Порядок байт входящей строки.
+     * 
+     * @return
+     *      Неизменяемая строка.
+     * 
+     * @since 1.1
+     */
+    static tustring<CHAR_TYPE> make_view(const CHAR_TYPE* str, int32_t length = -1, byte_order order = system::native_byte_order());
+
+    /**
      * ==============================================================
      *              S Y M B O L  F U N CS
      * ==============================================================
      */
     
-    int                     index_at(int idx) const;
-    int                     length_chars() const;
-    int                     codepoint_at(int idx) const;
+    int index_at(int idx) const;
+    int length_chars() const;
+    int codepoint_at(int idx) const;
 
     template<typename OUT_CHAR_TYPE>
     tustring<OUT_CHAR_TYPE> recode(tca::base_allocator* allocator = nullptr, byte_order out = system::native_byte_order()) const;
 };
     
     template<typename CHAR_TYPE>
-    tustring<CHAR_TYPE>::tustring(tca::base_allocator* allocator) : tstring<CHAR_TYPE>(allocator != nullptr ? allocator : tca::get_scoped_or_default()) {
+    tustring<CHAR_TYPE>::tustring(tca::base_allocator* allocator) : tstring<CHAR_TYPE>(allocator) {
     }
     
     template<typename CHAR_TYPE>
@@ -109,7 +131,7 @@ public:
 
     template<typename CHAR_TYPE>
     tustring<CHAR_TYPE>::tustring(const CHAR_TYPE* str, byte_order in, byte_order out, tca::base_allocator* allocator) :
-    tustring<CHAR_TYPE>(allocator != nullptr ? allocator : tca::get_scoped_or_default(), str, in, out) {
+    tustring<CHAR_TYPE>(allocator, str, in, out) {
 
     }
     
@@ -142,6 +164,16 @@ public:
     tustring<CHAR_TYPE>& tustring<CHAR_TYPE>::operator= (tstring<CHAR_TYPE>&& str) {
         tstring<CHAR_TYPE>::operator=(std::move(str));
         return *this;
+    }
+
+    template<typename CHAR_TYPE>
+    /*static*/ tustring<CHAR_TYPE> tustring<CHAR_TYPE>::make_view(const CHAR_TYPE* str, int32_t length, byte_order order) {
+        tustring<CHAR_TYPE> view;
+        view._capacity          = view._size = length >= 0 ? length : tstring<CHAR_TYPE>::strlen(str);
+        view._const_data        = str;
+        view._order             = order;
+        view._allocator         = nullptr;
+        return view;
     }
 
     template<typename CHAR_TYPE>

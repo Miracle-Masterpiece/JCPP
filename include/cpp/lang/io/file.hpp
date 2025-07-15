@@ -307,6 +307,27 @@ public:
      *      true - если передаваемый файл равен этому файлу, иначе false.
      */
     bool equals(const file& f) const;
+
+    /**
+     * Добавляет путь входящего файла к этому файлу и возвращает новый файл.
+     * 
+     * @param f
+     *      Абстрактный файл, который будет добавлен к этому абстрактному файлу.
+     * 
+     * @return
+     *     Абстрактный файл, путь которого состоит из этого файла плюс входящего файла.
+     * 
+     * @since 1.1
+     */
+    file plus(const file& f) const;
+
+    /**
+     * @see {@ file::plus(const file&)}
+     * @since 1.1
+     */
+    file operator+ (const file& f) const {
+        return this->plus(f);
+    }
 };
 
 
