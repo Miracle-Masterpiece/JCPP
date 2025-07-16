@@ -154,7 +154,7 @@ namespace jstd {
     }
 
     template<>
-    int tustring<char>::length_chars() const {
+    int tustring<char>::codepoints_count() const {
         int len = 0;
         for (int i = 0; i < _size; ++len)
             i += utf8_t::symbol_size(_data[i]);
@@ -227,7 +227,7 @@ namespace jstd {
 
     template<>
     template<>
-    tustring<uint16_t> tustring<char>::recode(tca::base_allocator* allocator, byte_order out_order) const {
+    tustring<uint16_t> tustring<char>::recode(byte_order out_order, tca::base_allocator* allocator) const {
         if (allocator == nullptr)
             allocator = _allocator;
 
@@ -249,8 +249,8 @@ namespace jstd {
     }
 
     template<>
-    int tustring<char>::codepoint_at(int idx) const {
-        check_index(idx, length_chars());
+    codepoint_t tustring<char>::codepoint_at(int idx) const {
+        check_index(idx, codepoints_count());
         if (_size == 0)
             return 0;
         return utf8_t::chars_to_codepoint(index_at(idx) + _data);
@@ -258,7 +258,7 @@ namespace jstd {
 
     template<>
     template<>
-    tustring<char> tustring<uint16_t>::recode(tca::base_allocator* allocator, byte_order out) const {
+    tustring<char> tustring<uint16_t>::recode(byte_order out, tca::base_allocator* allocator) const {
         if (allocator == nullptr)
             allocator = _allocator;
         if (_size == 0 || allocator == nullptr)
@@ -304,7 +304,7 @@ namespace jstd {
 
     template<>
     template<>
-    tustring<utf32_t> tustring<char>::recode(tca::base_allocator* allocator, byte_order out) const {
+    tustring<utf32_t> tustring<char>::recode(byte_order out, tca::base_allocator* allocator) const {
         tca::base_allocator* alloc = allocator;
         if (alloc == nullptr)
             alloc = _allocator;
@@ -321,11 +321,9 @@ namespace jstd {
         return tustring<utf32_t>(std::move(result));
     }
 
-    //TODO: этот код был написан на похуях, тк уже поздно и я заебался. Кому нужен UTF32?
-    //TODO2: не совсем на похуях
     template<>
     template<>
-    tustring<utf32_t> tustring<uint16_t>::recode(tca::base_allocator* allocator, byte_order out) const {
+    tustring<utf32_t> tustring<uint16_t>::recode(byte_order out, tca::base_allocator* allocator) const {
         tca::base_allocator* alloc = allocator;
         if (alloc == nullptr)
             alloc = _allocator;
@@ -358,7 +356,7 @@ namespace jstd {
     }
 
     template<>
-    int tustring<uint16_t>::length_chars() const {
+    int tustring<uint16_t>::codepoints_count() const {
         if (_size == 0)
             return 0;
         int len = 0;
@@ -377,8 +375,8 @@ namespace jstd {
     }
 
     template<>
-    int tustring<uint16_t>::codepoint_at(int idx) const {
-        check_index(idx, length_chars());
+    codepoint_t tustring<uint16_t>::codepoint_at(int idx) const {
+        check_index(idx, codepoints_count());
         return utf16_t::chars_to_codepoint(_data + index_at(idx), system::native_byte_order());
     }
 
@@ -388,12 +386,12 @@ namespace jstd {
     }
 
     template<>
-    int tustring<utf32_t>::length_chars() const {
+    int tustring<utf32_t>::codepoints_count() const {
         return _size;
     }
 
     template<>
-    int tustring<utf32_t>::codepoint_at(int idx) const {
+    codepoint_t tustring<utf32_t>::codepoint_at(int idx) const {
         return get_char(idx, system::native_byte_order());
     }
 
@@ -472,4 +470,43 @@ namespace jstd {
 
         return u8string( std::move(result) );
     }
+
+    //UTF8 CHAR_SEQUENCE
+    template<>
+    tustring<char>::codepoint_sequence::codepoint_sequence(const char* chars, int32_t length, int32_t offset, byte_order str_order) : 
+    m_chars(chars), m_length(length), m_offset(offset), m_cp(0), m_str_order(str_order) {
+        if (length > 0 && offset == 0)
+            m_cp = utf8_t::chars_to_codepoint(chars);
+    }
+
+    template<>
+    typename tustring<char>::codepoint_sequence& tustring<char>::codepoint_sequence::operator++() {
+        check_index(m_offset, m_length);
+        int32_t char_size = utf8_t::symbol_size(m_chars[m_offset]);
+        if (m_offset + char_size > m_length)
+            throw_except<utf_format_exception>("Invalid UTF-8 string!");
+        m_offset += char_size;
+        m_cp     = utf8_t::chars_to_codepoint(m_chars + m_offset);
+        return *this;
+    }
+
+    //UTF16 CHAR_SEQUENCE
+    template<>
+    tustring<uint16_t>::codepoint_sequence::codepoint_sequence(const uint16_t* chars, int32_t length, int32_t offset, byte_order str_order) : 
+    m_chars(chars), m_length(length), m_offset(offset), m_cp(0), m_str_order(str_order) {
+        if (length > 0 && offset == 0)
+            m_cp = utf16_t::chars_to_codepoint(chars, str_order);
+    }
+
+    template<>
+    typename tustring<uint16_t>::codepoint_sequence& tustring<uint16_t>::codepoint_sequence::operator++() {
+        check_index(m_offset, m_length);
+        int32_t char_size = utf8_t::symbol_size(m_chars[m_offset]);
+        if (m_offset + char_size > m_length)
+            throw_except<utf_format_exception>("Invalid UTF-16 string!");
+        m_offset += char_size;
+        m_cp     = utf16_t::chars_to_codepoint(m_chars + m_offset, m_str_order);
+        return *this;
+    }
+    
 }

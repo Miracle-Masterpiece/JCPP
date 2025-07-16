@@ -53,7 +53,7 @@ std::ostream& operator<<(std::ostream& out, const utf32_t* str);
 
 typedef tustring<char>      u8string;
 typedef tustring<uint16_t>  u16string;
-typedef tustring<utf32_t>   u32string;
+typedef tustring<uint32_t>  u32string;
 typedef u8string string;
 
 namespace utf {
@@ -67,7 +67,6 @@ namespace utf {
 template<typename CHAR_TYPE> 
 class tustring : public tstring<CHAR_TYPE> {
 public:
-
     tustring(tca::base_allocator* allocator = tca::get_scoped_or_default());
  
     /**
@@ -112,12 +111,98 @@ public:
      * ==============================================================
      */
     
-    int index_at(int idx) const;
-    int length_chars() const;
-    int codepoint_at(int idx) const;
+    /**
+     * Возвращает реальный индекс из позиции кодовой точки или печатного символа.
+     * 
+     * @param codepoint_pos
+     *      Индекс кодовой точки или печатного символа.
+     * 
+     * @note
+     *      Такие кодировки, как UTF-8 или UTF-16 могут хранить свои символы в нескольких байтах или суррогатных пар.
+     *      Где один байт или представление символа может не соответсвовать реальному положению.
+     *      Так, например, в UTF-8 буква "р" в слове "Привет", имеет индекс 1, 
+     *      но реальный индекс будет 2 из-за того, что для буквы "П" необходимо 2 байта.
+     * 
+     * @return
+     *      Реальный индекс в многобайтовой последовательности.
+     */
+    int index_at(int codepoint_pos) const;
+    
+    /**
+     * Возвращает длину в количестве печатных символов.
+     * 
+     * @note
+     *      Данная функция отличается от функции tstring<CHAR_TYPE>::size() тем,
+     *      что она возвращает кол-во именно печатных символов. 
+     *      Так, например, если строка UTF-8 хранит 1 печатный символ из 4 байт, то данная функция вернёт 1.
+     * 
+     * @return
+     *      Количество печатных символов.
+     * 
+     * @since 1.0
+     */
+    int codepoints_count() const;
+    
+    /**
+     * 
+     */
+    codepoint_t codepoint_at(int idx) const;
 
+    /**
+     * Конвертирует строку из одной кодировки в другую.
+     * 
+     * @tparam OUT_CHAR_TYPE
+     *      Тип символа, который указывает на кодировку. 
+     *      char        -   UTF-8
+     *      uint16_t    -   UTF-16
+     *      uint32_t    -   UTF-32
+     * 
+     * @param out_order
+     *      Порядок байт конвертированной строки.
+     * 
+     * @param allocator
+     *      Аллокатор для выделения памяти под выходную строку.
+     *
+     * @since 1.0
+     */
     template<typename OUT_CHAR_TYPE>
-    tustring<OUT_CHAR_TYPE> recode(tca::base_allocator* allocator = nullptr, byte_order out = system::native_byte_order()) const;
+    tustring<OUT_CHAR_TYPE> recode(byte_order out_order = system::native_byte_order(), tca::base_allocator* allocator = tca::get_scoped_or_default()) const;
+
+    /**
+     * Позволяет итерироваться по кодовым точкам юникода в строке.
+     * Поддерживает кодировки UTF-8, UTF-16(LE/BE), UTF-32(LE/BE)
+     * 
+     * @since 1.2
+     */
+    class codepoint_sequence {
+        const CHAR_TYPE*    m_chars;
+        int32_t             m_length;
+        int32_t             m_offset;
+        codepoint_t         m_cp;
+        byte_order          m_str_order;
+    public:
+        codepoint_sequence();
+        codepoint_sequence(const CHAR_TYPE* chars, int32_t length, int32_t offset, byte_order str_order);
+        codepoint_sequence(const codepoint_sequence&);
+        codepoint_sequence(codepoint_sequence&&);
+        codepoint_sequence& operator= (const codepoint_sequence&);
+        codepoint_sequence& operator= (codepoint_sequence&&);
+        ~codepoint_sequence();
+        const codepoint_t& operator* () const;
+        codepoint_sequence& operator++();
+        codepoint_sequence  operator++(int);
+        bool operator!=(const codepoint_sequence&) const;
+    };
+
+    /**
+     * @since 1.2
+     */
+    codepoint_sequence begin() const;
+    
+    /**
+     * @since 1.2
+     */
+    codepoint_sequence end() const;
 };
     
     template<typename CHAR_TYPE>
@@ -188,10 +273,10 @@ public:
     int tustring<char>::index_at(int idx) const;
 
     template<>
-    int tustring<char>::length_chars() const;
+    int tustring<char>::codepoints_count() const;
 
     template<>
-    int tustring<char>::codepoint_at(int idx) const;
+    codepoint_t tustring<char>::codepoint_at(int idx) const;
 
     inline u8string make_utf8(const char* str, tca::base_allocator* allocator) {
         return u8string(allocator, str);
@@ -206,14 +291,15 @@ public:
      *                      U T F - 16
      * #########################################################
      */
+    
     template<>
     int tustring<uint16_t>::index_at(int idx) const;
 
     template<>
-    int tustring<uint16_t>::length_chars() const;
+    int tustring<uint16_t>::codepoints_count() const;
 
     template<>
-    int tustring<uint16_t>::codepoint_at(int idx) const;
+    codepoint_t tustring<uint16_t>::codepoint_at(int idx) const;
 
     /**
      * #########################################################
@@ -224,10 +310,10 @@ public:
     int tustring<utf32_t>::index_at(int idx) const;
 
     template<>
-    int tustring<utf32_t>::length_chars() const;
+    int tustring<utf32_t>::codepoints_count() const;
 
     template<>
-    int tustring<utf32_t>::codepoint_at(int idx) const;
+    codepoint_t tustring<utf32_t>::codepoint_at(int idx) const;
 
     /**
      * #########################################################
@@ -237,20 +323,139 @@ public:
 
     template<>
     template<>
-    tustring<uint16_t> tustring<char>::recode(tca::base_allocator* allocator, byte_order out) const;
+    tustring<uint16_t> tustring<char>::recode(byte_order out, tca::base_allocator* allocator) const;
 
     template<>
     template<>
-    tustring<utf32_t> tustring<char>::recode(tca::base_allocator* allocator, byte_order out) const;
+    tustring<utf32_t> tustring<char>::recode(byte_order out, tca::base_allocator* allocator) const;
 
     template<>
     template<>
-    tustring<char> tustring<uint16_t>::recode(tca::base_allocator* allocator, byte_order out) const;
+    tustring<char> tustring<uint16_t>::recode(byte_order out, tca::base_allocator* allocator) const;
 
     template<>
     template<>
-    tustring<utf32_t> tustring<uint16_t>::recode(tca::base_allocator* allocator, byte_order out) const;
+    tustring<utf32_t> tustring<uint16_t>::recode(byte_order out, tca::base_allocator* allocator) const;
 
+
+/**
+ * ===================================================================================================================
+ *                                          CODEPOINT_SEQUENCE
+ * ===================================================================================================================
+ */
+        template<typename CHAR_TYPE>
+        tustring<CHAR_TYPE>::codepoint_sequence::codepoint_sequence() :
+        m_chars(nullptr), m_length(0), m_offset(0), m_cp(0), m_str_order(system::native_byte_order())  {
+
+        }
+
+        template<typename CHAR_TYPE>
+        tustring<CHAR_TYPE>::codepoint_sequence::codepoint_sequence(const CHAR_TYPE* chars, int32_t length, int32_t offset, byte_order str_order) : 
+        m_chars(chars), m_length(length), m_offset(offset), m_cp(0), m_str_order(str_order) {
+            if (length > 0 && offset == 0) {
+                (*this)++;
+                m_offset = 0;
+            }
+        }
+        
+        template<typename CHAR_TYPE>
+        tustring<CHAR_TYPE>::codepoint_sequence::codepoint_sequence(const codepoint_sequence& cs) : 
+        m_chars(cs.m_chars), m_length(cs.m_length), m_offset(cs.m_offset), m_cp(cs.m_cp), m_str_order(cs.m_str_order) {
+
+        }
+        
+        template<typename CHAR_TYPE>
+        tustring<CHAR_TYPE>::codepoint_sequence::codepoint_sequence(codepoint_sequence&& cs) :
+        m_chars(cs.m_chars), m_length(cs.m_length), m_offset(cs.m_offset), m_cp(cs.m_cp), m_str_order(cs.m_str_order) {
+            cs.m_chars  = nullptr;
+            cs.m_length = 0;
+            cs.m_offset = 0;
+            cs.m_cp     = 0;
+        }
+        
+        template<typename CHAR_TYPE>
+        typename tustring<CHAR_TYPE>::codepoint_sequence& tustring<CHAR_TYPE>::codepoint_sequence::operator= (const codepoint_sequence& cs) {
+            if (&cs != this) {
+                m_chars     = cs.m_chars;
+                m_length    = cs.m_length;
+                m_offset    = cs.m_offset;
+                m_cp        = cs.m_cp;
+                m_str_order = cs.m_str_order;
+            }
+            return *this;
+        }
+        
+        template<typename CHAR_TYPE>
+        typename tustring<CHAR_TYPE>::codepoint_sequence& tustring<CHAR_TYPE>::codepoint_sequence::operator= (codepoint_sequence&& cs) {
+            if (&cs != this) {
+                m_chars     = cs.m_chars;
+                m_length    = cs.m_length;
+                m_offset    = cs.m_offset;
+                m_cp        = cs.m_cp;
+                m_str_order = cs.m_str_order;
+
+                cs.m_chars  = nullptr;
+                cs.m_length = 0;
+                cs.m_offset = 0;
+                cs.m_cp     = 0;
+            }
+            return *this;
+        }
+        
+        template<typename CHAR_TYPE>
+        tustring<CHAR_TYPE>::codepoint_sequence::~codepoint_sequence() {
+
+        }
+        
+        template<typename CHAR_TYPE>
+        const codepoint_t& tustring<CHAR_TYPE>::codepoint_sequence::operator* () const {
+            check_index(m_offset, m_length);
+            return m_cp;
+        }
+        
+        template<typename CHAR_TYPE>
+        typename tustring<CHAR_TYPE>::codepoint_sequence& tustring<CHAR_TYPE>::codepoint_sequence::operator++() {
+            check_index(m_offset, m_length);
+            m_cp = m_chars[++m_offset];
+            return *this;
+        }
+        
+        template<typename CHAR_TYPE>
+        typename tustring<CHAR_TYPE>::codepoint_sequence tustring<CHAR_TYPE>::codepoint_sequence::operator++(int) {
+            check_index(m_offset, m_length);
+            codepoint_sequence sq = *this;
+            ++(*this);
+            return sq;
+        }
+
+        template<typename CHAR_TYPE>
+        bool tustring<CHAR_TYPE>::codepoint_sequence::operator!=(const codepoint_sequence& sq) const {
+            return m_offset != sq.m_offset;
+        }
+
+        //UTF8 CHAR_SEQUENCE
+        template<>
+        tustring<char>::codepoint_sequence::codepoint_sequence(const char* chars, int32_t length, int32_t offset, byte_order str_order);
+
+        template<>
+        typename tustring<char>::codepoint_sequence& tustring<char>::codepoint_sequence::operator++();
+
+        //UTF16 CHAR_SEQUENCE
+        template<>
+        tustring<uint16_t>::codepoint_sequence::codepoint_sequence(const uint16_t* chars, int32_t length, int32_t offset, byte_order str_order);
+
+        template<>
+        typename tustring<uint16_t>::codepoint_sequence& tustring<uint16_t>::codepoint_sequence::operator++();
+
+        template<typename CHAR_TYPE>
+        typename tustring<CHAR_TYPE>::codepoint_sequence tustring<CHAR_TYPE>::begin() const {
+            return tustring<CHAR_TYPE>::codepoint_sequence(this->_data, this->_size, 0, (byte_order) this->_order);
+        }
+    
+        template<typename CHAR_TYPE>
+        typename tustring<CHAR_TYPE>::codepoint_sequence tustring<CHAR_TYPE>::end() const {
+            return tustring<CHAR_TYPE>::codepoint_sequence(this->_data, this->_size, this->_size, (byte_order) this->_order);
+        }
 
 /**
  * ===================================================================================================================
