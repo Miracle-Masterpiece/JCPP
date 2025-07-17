@@ -18,11 +18,8 @@ namespace jstd {
     }
 
     void properties::set(const char* key, const char* value) {
-#ifndef NDEBUG
-        if (_allocator == nullptr)
-            throw_except<illegal_state_exception>("allocator must be != null");
-#endif
-        _props.put(make_utf8(key, _allocator), make_utf8(value, _allocator));
+        tca::scope_allocator scope(_allocator);        
+        _props.put(string(_allocator, key), string(_allocator, value));
     }
 
     const string* properties::get(const string& key) const {

@@ -144,10 +144,20 @@ public:
     int codepoints_count() const;
     
     /**
+     * Возвращает кодовую точку, находящуюся по байтовому индексу.
      * 
+     * @param idx
+     *      Индекс в последовательности символов. 
+     *      Этот индекс является индексом внутри строки, а не индексом печатного символа.
+     * 
+     * @return
+     *      Кодовая точка юникода.
+     * 
+     * @throws utf_format_exception
+     *      Если последовательность символов не смога быть преобразована в кодовую точку.
      */
     codepoint_t codepoint_at(int idx) const;
-
+    
     /**
      * Конвертирует строку из одной кодировки в другую.
      * 
@@ -278,12 +288,46 @@ public:
     template<>
     codepoint_t tustring<char>::codepoint_at(int idx) const;
 
-    inline u8string make_utf8(const char* str, tca::base_allocator* allocator) {
-        return u8string(allocator, str);
-    }
-
+    /**
+     * Создаёт строку UTF-16 из последовательности символов UTF-8.
+     * 
+     * @param utf8_str
+     *      Строка в кодировке UTF-8 или ASKII
+     * 
+     * @param allocator
+     *      Аллокатор для выделения памяти под возвращаемую строку.
+     * 
+     * @param out_order
+     *      Порядок байт возвращаемой строки.
+     * 
+     * @param len
+     *      Длина utf8_str (Опционально!)
+     *      Если указано -1, длина вычисляется автоматически.
+     * 
+     * @return 
+     *      Строка в кодировке UTF-16
+     */
     u16string make_utf16(const char* utf8_str, tca::base_allocator* allocator, byte_order out_order = system::native_byte_order() , int len = -1);
 
+    /**
+     * Создаёт строку UTF-8 из последовательности символов UTF-16.
+     * 
+     * @param utf16_str
+     *      Строка в кодировке UTF-16.
+     * 
+     * @param allocator
+     *      Аллокатор для выделения памяти под возвращаемую строку.
+     * 
+     * @param in_order
+     *      Порядок байт utf16_str.
+     * 
+     * @param len
+     *      Длина строки utf16_str (Опционально!)
+     *      Если указано -1, длина вычисляется автоматически.
+     * 
+     * @return
+     *      Строка в кодировке UTF-&
+     */
     u8string make_utf8(const uint16_t* utf16_str, tca::base_allocator* allocator, byte_order in_order = system::native_byte_order() , int len = -1);
 
     /**

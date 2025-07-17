@@ -145,7 +145,8 @@
     "__node_handle": "cpp",
     "stack": "cpp",
     "__verbose_abort": "cpp",
-    "__locale": "cpp"
+    "__locale": "cpp",
+    "__split_buffer": "cpp"
   },
   "markdown.validate.enabled": true
 }
