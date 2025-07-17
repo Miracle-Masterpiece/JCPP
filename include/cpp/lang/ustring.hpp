@@ -157,7 +157,16 @@ public:
      *      Если последовательность символов не смога быть преобразована в кодовую точку.
      */
     codepoint_t codepoint_at(int idx) const;
-    
+
+    /**
+     * Возвращает первую позицию кодовой точки.
+     * 
+     * @return
+     *      позиция кодовой точки или -1 если кодовая точка не содержится в строке.
+     *      
+     */
+    int32_t codepoint_index_of(codepoint_t cp);
+
     /**
      * Конвертирует строку из одной кодировки в другую.
      * 
@@ -274,6 +283,17 @@ public:
     template<typename CHAR_TYPE>
     tustring<CHAR_TYPE>::~tustring() {}
 
+    template<typename CHAR_TYPE>
+    int32_t tustring<CHAR_TYPE>::codepoint_index_of(codepoint_t cp) {
+        int32_t pos = 0;
+        for (const codepoint_t& entry : *this) {
+            if (entry == cp)
+                return pos;
+            ++pos;
+        }
+        return -1;
+    }
+    
     /**
      * #########################################################
      *                      U T F - 8
