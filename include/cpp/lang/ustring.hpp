@@ -165,7 +165,7 @@ public:
      *      позиция кодовой точки или -1 если кодовая точка не содержится в строке.
      *      
      */
-    int32_t codepoint_index_of(codepoint_t cp);
+    int32_t codepoint_index_of(codepoint_t cp) const;
 
     /**
      * Конвертирует строку из одной кодировки в другую.
@@ -284,7 +284,7 @@ public:
     tustring<CHAR_TYPE>::~tustring() {}
 
     template<typename CHAR_TYPE>
-    int32_t tustring<CHAR_TYPE>::codepoint_index_of(codepoint_t cp) {
+    int32_t tustring<CHAR_TYPE>::codepoint_index_of(codepoint_t cp) const {
         int32_t pos = 0;
         for (const codepoint_t& entry : *this) {
             if (entry == cp)
