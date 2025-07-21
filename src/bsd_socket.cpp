@@ -615,11 +615,14 @@ ___make_get_socket_func_timeval__(get_receive_timeout, SOL_SOCKET, SO_RCVTIMEO)
 
     void set_keep_alive_ex(int32_t sock, const socket_option& value) {
         
+        socket_option opt;
         if (!value.keepalive.on_off) {
-            set_keep_alive(sock, {.int_value = false});
+            opt.int_value = false;
+            set_keep_alive(sock, opt);
             return;
         } else {
-            set_keep_alive(sock, {.int_value = true});
+            opt.int_value = true;
+            set_keep_alive(sock, opt);
         }
 
         _____UNIX_CODE____(

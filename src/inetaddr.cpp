@@ -156,7 +156,7 @@ public:
         uint16_t buf[8] = {0};
         array<uint16_t> ip(buf, sizeof(buf) / sizeof(uint16_t));
         
-        for (int i = 0, len = _ip_tokens.size(); i < len; ++i) {
+        for (std::size_t i = 0, len = _ip_tokens.size(); i < len; ++i) {
             ____EXPR_LEAVE____(begin_sections);
             if (i + 1 >= len)
                 if (begin_sections < 8)
@@ -164,13 +164,15 @@ public:
         }
 
         if (begin_sections < 8) {
-            for (int i = _ip_tokens.size() - 1; i >= 0; --i) {
+            std::size_t i = _ip_tokens.size(); 
+            while (i > 0) {
+                --i;
                 ____EXPR_LEAVE____(end_sections);
             }
         }
 
         int offset = 0;
-        for (int i = 0, len = _ip_tokens.size(); i < len; ++i) {
+        for (std::size_t i = 0, len = _ip_tokens.size(); i < len; ++i) {
             if (_ip_tokens.at(i).m_ip_token == ip_token::COLON) { 
                 continue;
             } 
@@ -444,10 +446,10 @@ public:
         const int BUF_SIZE = 16;
         char tmpBuf[BUF_SIZE];
         const uint32_t addr = address.IPv4.m_int_view;
-        const uint8_t b1 =  addr          & 0xff;
-        const uint8_t b2 = (addr >> 8)    & 0xff;
-        const uint8_t b3 = (addr >> 16)   & 0xff;
-        const uint8_t b4 = (addr >> 24)   & 0xff;
+        const uint8_t b1 =  (uint8_t) (addr           & 0xff);
+        const uint8_t b2 =  (uint8_t) ((addr >> 8)    & 0xff);
+        const uint8_t b3 =  (uint8_t) ((addr >> 16)   & 0xff);
+        const uint8_t b4 =  (uint8_t) ((addr >> 24)   & 0xff);
         const int32_t length = snprintf(tmpBuf, sizeof(tmpBuf), "%d.%d.%d.%d", b1, b2, b3, b4);
         if (bufsize < (length + 1))
             throw_except<overflow_exception>("bufsize < result length");

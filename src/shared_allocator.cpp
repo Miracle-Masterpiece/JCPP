@@ -288,9 +288,9 @@ using namespace internal;
         std::printf("=================== F R E E  L I S T ===================\n=================== allocs: %lli ===================\n", (long long int) allocs_);
         for (memblock* block = freelist_; block != nullptr; block = block->next_) {
             #ifndef NDEBUG
-                std::printf("[p:%p, sz:%zu, magic: %llX]\n", block, block->len_, block->magic_);
+                std::printf("[p:%p, sz:%zu, magic: %llX]\n", (void*) block, block->len_, block->magic_);
             #else
-                std::printf("[p:%p, sz:%zu]\n", block, block->len_);
+                std::printf("[p:%p, sz:%zu]\n", (void*) block, block->len_);
             #endif
         }
 
@@ -299,9 +299,9 @@ using namespace internal;
         memblock* end   = reinterpret_cast<memblock*>(reinterpret_cast<byte_t*>(data_) + chunk_size_);
         for (memblock* block = start; block < end; ) {
             #ifndef NDEBUG
-                std::printf("[p:%p, sz:%zu, f:%s, magic: %llX]\n", block, block->len_, block->owner_ != this ? "true" : "false", block->magic_);
+                std::printf("[p:%p, sz:%zu, f:%s, magic: %llX]\n", (void*) block, block->len_, block->owner_ != this ? "true" : "false", block->magic_);
             #else
-                std::printf("[p:%p, f:%s, sz:%zu]\n", block, block->owner_ != this ? "true" : "false", block->len_);
+                std::printf("[p:%p, f:%s, sz:%zu]\n", (void*) block, block->owner_ != this ? "true" : "false", block->len_);
             #endif
             block = reinterpret_cast<memblock*>(reinterpret_cast<byte_t*>(block) + HEADER_SIZE + block->len_);
         }
@@ -367,7 +367,7 @@ using namespace internal;
     void* shared_allocator::allocate(std::size_t sz) {
         jstd::unique_lock lock(m_global_lock);
         void* p = nullptr;
-        for (int32_t i = 0, size = chunk_list_.size(); i < size; ++i) {
+        for (std::size_t i = 0, size = chunk_list_.size(); i < size; ++i) {
             chunk& ch =  chunk_list_.at(i);
             if (strategy_ == alloc_strategy::BEST_FIT) {
                 p = ch.allocate_best_fit(sz);

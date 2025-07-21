@@ -34,11 +34,11 @@ namespace math {
     }
 
     constexpr float to_radians(float angle) {
-        return angle * (M_PI / 180.0);
+        return angle * (float) (M_PI / 180.0);
     }
 
     constexpr float to_degrees(float rad) {
-        return rad * (180.0 / M_PI);
+        return rad * (float) (180.0 / M_PI);
     }
 
     constexpr long double to_radians(long double angle) {
@@ -95,6 +95,30 @@ namespace math {
 
     inline float ctg(float x) {
         return cos(x) / sin(x);
+    }
+
+    inline float asin(float x) {
+        return ::asinf(x);
+    }
+
+    inline double asin(double x) {
+        return ::asin(x);
+    }
+
+    inline long double asin(long double x) {
+        return ::asinl(x);
+    }
+
+    inline float acos(float x) {
+        return ::acosf(x);
+    }
+
+    inline double acos(double x) {
+        return ::acos(x);
+    }
+
+    inline long double acos(long double x) {
+        return ::acosl(x);
     }
 
     template<typename T>
@@ -170,6 +194,44 @@ namespace math {
     inline long double cosine(long double x) {
         return (1 - cos(M_PI * x)) / 2;
     }
+
+    template<typename T>
+    T min(const T& a, const T& b) {
+        return a < b ? a : b;
+    }
+
+    template<typename T>
+    T max(const T& a, const T& b) {
+        return a > b ? a : b;
+    }
+
+    template<typename T>
+    T abs(const T& x) {
+        return x < 0 ? -x : x;
+    }
+
+    inline float floor(float x) {
+        return ::floorf(x);
+    }
+
+    inline double floor(double x) {
+        return ::floor(x);
+    }
+
+    inline long double floor(long double x) {
+        return ::floorl(x);
+    }
+
+    template<typename T>
+    T hypot(const T& x, const T& y) {
+        return sqrt<T>(x*x + y*y);
+    }
+
+    /**
+     * @return
+     *      Псевдо-случайное значение в диапазоне [0, 1 (не включительно!)]
+     */
+    double random();
 
 }//namespace math
 }//namespace jstd

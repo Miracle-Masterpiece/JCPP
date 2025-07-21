@@ -107,7 +107,7 @@ public:
      * @return 
      *      Количество записанных символов или -1 в случае ошибки.
      */
-    int to_string(char* buf, int bufsize) const;
+    int32_t to_string(char buf[], int32_t bufsize) const;
 
     /**
      * Сравнивает текущую дату с другой датой на равенство.

@@ -792,7 +792,7 @@ public:
         array<map_node<K, V>*> old_array;
         
         assert(_buckets.length > 0);
-        array<map_node<K, V>*> new_array = array<map_node<K, V>*>(_buckets.length * 1.5, _allocator);    
+        array<map_node<K, V>*> new_array = array<map_node<K, V>*>((int64_t) (_buckets.length * 1.5), _allocator);    
         new_array.set(nullptr);
         old_array   = std::move(_buckets);
         _buckets    = std::move(new_array);

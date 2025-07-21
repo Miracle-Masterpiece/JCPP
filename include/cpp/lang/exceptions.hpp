@@ -4,6 +4,7 @@
 #include <cstring>
 #include <cstdarg>
 #include <cstdio>
+#include <cstdint>
 #include <utility>
 #include <cpp/lang/utils/traits.hpp>
 #include <cpp/lang/stacktrace/stacktrace.hpp>
@@ -24,7 +25,7 @@ public:
     throwable& operator= (const throwable& t);
     throwable& operator= (throwable&& t);
     virtual ~throwable();
-    virtual int to_string(char buf[], int bufsize) const;
+    virtual int32_t to_string(char buf[], int32_t bufsize) const;
     const char* cause() const;
     void print_stack_trace() const;
     const calltrace& get_calltrace() const;

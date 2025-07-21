@@ -60,7 +60,7 @@ namespace jstd
         return m_values[hash & (m_values.length - 1)] / (float) num_limits<int8_t>::max();
     }
 
-    float smooth_noise::get(int64_t x, int64_t y, int64_t scale) const {
+    float smooth_noise::get(int64_t x, int64_t y, int32_t scale) const {
         if (scale == 0)
             return 0;
         int64_t xChunk = (x / scale);
@@ -69,8 +69,8 @@ namespace jstd
         int64_t xStart = xChunk * scale;
         int64_t yStart = yChunk * scale;
 
-        float xc = (x - xStart) / (float) scale;
-        float yc = (y - yStart) / (float) scale;
+        float xc = (float) ((x - xStart) / (double) scale);
+        float yc = (float) ((y - yStart) / (double) scale);
 
         float v0 = value_at(xChunk,     yChunk);
         float v1 = value_at(xChunk + 1, yChunk);
@@ -88,7 +88,7 @@ namespace jstd
         return c;
     }
 
-    float smooth_noise::get(int64_t x, int64_t y, int64_t scale, int32_t octaves, float scale_factor, float freeq_factor) const {
+    float smooth_noise::get(int64_t x, int64_t y, int32_t scale, int32_t octaves, float scale_factor, float freeq_factor) const {
         JSTD_DEBUG_CODE(
             if (scale <= 0)
                 throw_except<illegal_argument_exception>("Invalid scale: %lli", (long long) scale);
@@ -106,7 +106,7 @@ namespace jstd
         float c         = 0;
 
         while (octaves-- > 0) {
-            out += get(x, y, scale * freeq) * amplitude;
+            out += get(x, y, (int32_t) (scale * freeq)) * amplitude;
             c += amplitude;
             amplitude   *= scale_factor;
             freeq       *= freeq_factor;

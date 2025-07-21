@@ -51,8 +51,7 @@ namespace jstd
 namespace imageio 
 {
 
-    image load_image(istream* in, tca::base_allocator* allocator) {
-        
+    image load_image(istream* in, tca::base_allocator* allocator) {        
         int64_t size = in->available();
         unique_ptr<stbi_uc[]> raw_image(allocator, size);
         
@@ -136,11 +135,10 @@ namespace imageio
      
         else if (std::strcmp(ext, "bmp") == 0) {
             error = stbi_write_bmp_to_func(save_contex, out, width, height, channels, img->pixels());
-        }
+        } 
 
         if (error == 0)
             throw_except<illegal_state_exception>("stbi_write error: %i", error);
-
     }
 
 }

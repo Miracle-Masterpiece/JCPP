@@ -52,24 +52,18 @@ typedef base_vec3<uint64_t> vec3u64;
 template<typename T>
 struct base_vec3 {
 
-    /**
-     * Компоненты вектора по координатам: x, y, z.
-     */
     union {
-        struct {
-            T x, y, z;
-        };
-        /**
-         * Альтернативное именование компонентов как цвета: r, g, b.
-         */
-        struct {
-            T r, g, b;
-        };
-        /**
-         * Массив из трёх компонентов.
-         */
-        T m_data[3];
+        T x, r, A;
     };
+    
+    union {
+        T y, g, B;
+    };
+
+    union {
+        T z, b, C;
+    };
+
 
     /**
      * Конструктор по значениям компонентов.
@@ -648,20 +642,22 @@ struct base_vec3 {
 
     template<typename T>
     T& base_vec3<T>::get(int32_t index) {
-#ifndef NDEBUG
-        if (index > 2)
-            throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
-#endif
-        return m_data[index];
+        switch(index) {
+            case 0 : return x;
+            case 1 : return y;
+            case 2 : return z;
+            default: throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
+        }
     }
 
     template<typename T>
     const T& base_vec3<T>::get(int32_t index) const {
-#ifndef NDEBUG
-        if (index > 2)
-            throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
-#endif
-        return m_data[index];
+        switch(index) {
+            case 0 : return x;
+            case 1 : return y;
+            case 2 : return z;
+            default: throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
+        }
     }
 
     template<typename T>
@@ -705,7 +701,8 @@ struct base_vec3 {
     
     template<typename T>
     uint64_t base_vec3<T>::hashcode() const {
-        return objects::hashcode(m_data, 3);
+        const T data[] = {x, y, z};
+        return objects::hashcode(data, 3);
     }
 
     template<typename T>

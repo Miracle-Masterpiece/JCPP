@@ -372,7 +372,7 @@ namespace jstd
 
     directory_iterator::directory_iterator(directory_iterator&& it) : _dir(std::move(it._dir)), _entry(std::move(it._entry)) {
         it._dir     = {0};
-        it._entry   = {0};
+        //it._entry   = {0};
     }
     
     directory_iterator& directory_iterator::operator= (directory_iterator& it) {
@@ -381,7 +381,7 @@ namespace jstd
             _dir    = std::move(it._dir);
             _entry  = std::move(it._entry);
             it._dir     = {0};
-            it._entry   = {0};
+            //it._entry   = {0};
         } 
         return *this;
     }
@@ -390,7 +390,7 @@ namespace jstd
         if (_dir != INVALID_HANDLE_VALUE) {
             FindClose(_dir);
             _dir    = INVALID_HANDLE_VALUE;
-            _entry  = {0};
+            //_entry  = {0};
         }
     }
 

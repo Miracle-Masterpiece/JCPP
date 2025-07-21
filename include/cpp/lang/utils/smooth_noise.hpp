@@ -121,7 +121,7 @@ public:
      * @return 
      *      Значение шума в диапазоне [0.0, 1.0].
      */
-    float get(int64_t x, int64_t y, int64_t scale) const;
+    float get(int64_t x, int64_t y, int32_t scale) const;
 
     /**
      * Возвращает значение многослойного (фрактального) шума.
@@ -158,7 +158,7 @@ public:
      *      Если scale_factor < 0.
      *      Если freeq_factor < 0.
      */
-    float get(int64_t x, int64_t y, int64_t scale, int32_t octaves, float scale_factor = 0.5f, float freeq_factor = 0.5f) const;
+    float get(int64_t x, int64_t y, int32_t scale, int32_t octaves, float scale_factor = 0.5f, float freeq_factor = 0.5f) const;
 
     /**
      * Простая функция без сглаживания.

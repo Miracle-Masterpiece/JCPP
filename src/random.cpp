@@ -50,7 +50,7 @@ namespace jstd
     template<>
     float random::next() {
         int64_t v = next0();
-        return abs(v) / (float) num_limits<int64_t>::max();
+        return (int32_t) abs(v) / (float) num_limits<int64_t>::max();
     }
 
     template<>

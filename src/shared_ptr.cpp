@@ -9,17 +9,17 @@ namespace sptr
 {
     uint32_t calc_ctr_block_total_size(uint32_t data_type_sizeof, uint32_t data_type_alignof, uint32_t* offset_to_object) {
         const uint32_t ctrl_block_sz            = sizeof(shared_control_block);
-        const uint32_t padding                  = tca::calcAlignAddedSize(ctrl_block_sz, data_type_alignof);
+        const uint32_t padding                  = (uint32_t) tca::calcAlignAddedSize(ctrl_block_sz, data_type_alignof);
         const uint32_t ctrl_block_total_size    = ctrl_block_sz + padding + data_type_sizeof;
         if (offset_to_object != nullptr)
             (*offset_to_object) = (ctrl_block_sz + padding);
         return ctrl_block_total_size;
     }
 
-    shared_control_block* alloc_memory_to_control_block(tca::base_allocator* allocator, std::size_t object_size, std::size_t object_align, std::size_t n_objects) {        
+    shared_control_block* alloc_memory_to_control_block(tca::base_allocator* allocator, uint32_t object_size, uint32_t object_align, uint32_t n_objects) {        
         using u32 = uint32_t;
         u32 ctrl_block_size     = sizeof(shared_control_block);
-        u32 padding             = tca::calcAlignAddedSize(ctrl_block_size, object_align);
+        u32 padding             = (uint32_t) tca::calcAlignAddedSize(ctrl_block_size, object_align);
         u32 offset_to_object    = ctrl_block_size + padding;
         u32 objects_size        = object_size * n_objects;
         u32 total_size          = ctrl_block_size + padding + objects_size;

@@ -72,7 +72,7 @@ namespace sptr
      * @return
      *      Указатель на контролирующий блок или nullptr, если выделение не удалось.
      */
-    shared_control_block* alloc_memory_to_control_block(tca::base_allocator* allocator, std::size_t object_size, std::size_t object_align, std::size_t n_objects = 1);
+    shared_control_block* alloc_memory_to_control_block(tca::base_allocator* allocator, uint32_t object_size, uint32_t object_align, uint32_t n_objects = 1);
 
     /**
      * 

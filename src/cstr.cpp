@@ -13,7 +13,7 @@ namespace jstd {
     int32_t cstr::length() const {
         if (m_length == -1) {
             if (m_cstr != nullptr)
-                m_length = std::strlen(m_cstr);
+                m_length = (int32_t) std::strlen(m_cstr);
             else
                 m_length = 0;
         }

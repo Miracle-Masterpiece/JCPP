@@ -71,7 +71,7 @@ struct num_limits<type> {                                                       
         return (type)~((type) 1 << (sizeof(type) * (CHAR_BIT) - (type) 1));                 \
     }                                                                                       \
     static constexpr type min() {                                                           \
-        return (type) 1 << ((sizeof(type) * CHAR_BIT) - (type) 1);                          \
+        return (type) ((type) 1 << (sizeof(type) * CHAR_BIT - 1));                          \
     }                                                                                       \
 };                                                                                          \
 

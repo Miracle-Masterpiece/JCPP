@@ -10,28 +10,29 @@ namespace jstd {
      */
 
     /*static*/ bool utf8_t::is_header(char ch) {
-        if (ch < 127) {
+        if (ch < 0x7f) {
             return true;
-        } else if ((ch & 0b11100000U) == 0b11000000U) {
+        } else if ((ch & 0xE0) == 0xC0) {
             return true;
-        } else if ((ch & 0b11110000U) == 0b11100000U) {
+        } else if ((ch & 0xF0) == 0xE0) {
             return true;
-        } else if ((ch & 0b11111000U) == 0b11110000U) {
+        } else if ((ch & 0xF8) == 0xF0) {
             return true;
         }
         return false;
     }
     
     /*static*/ int utf8_t::symbol_size(char header) {
-        if ((header & 0b10000000U) == 0) 
+        if ((header & 0x80) == 0) 
             return 1;
-        else if ((header & 0b11100000U) == 0b11000000U)
+        else if ((header & 0xE0) == 0xC0)
             return 2;
-        else if ((header & 0b11110000U) == 0b11100000U)
+        else if ((header & 0xF0) == 0xE0)
             return 3;
-        else if ((header & 0b11111000U) == 0b11110000U)
+        else if ((header & 0xF8) == 0xF0)
             return 4;
-        throw_except<utf_format_exception>("Character %c is not header!", header);
+        else
+            throw_except<utf_format_exception>("Character %x is not header!", (unsigned int) header);
         return 0;
     }
     
@@ -39,22 +40,27 @@ namespace jstd {
         int char_size = symbol_size(*str);
         if (char_size == 1) {
             return *str;
-        } else if (char_size == 2) {
-            codepoint_t ch1 = {str[0] & 0b00011111U};
-            codepoint_t ch2 = {str[1] & 0b01111111U};
+        }
+        else if (char_size == 2) {
+            codepoint_t ch1 = str[0] & 0x1F;
+            codepoint_t ch2 = str[1] & 0x7F;
             return ch2 | (ch1 << 6);
-        } else if (char_size == 3) {
-            codepoint_t ch1 = {str[0] & 0b00001111U};
-            codepoint_t ch2 = {str[1] & 0b00111111U};
-            codepoint_t ch3 = {str[2] & 0b00111111U};
+        }
+        else if (char_size == 3) {
+            codepoint_t ch1 = str[0] & 0xF;
+            codepoint_t ch2 = str[1] & 0x3F;
+            codepoint_t ch3 = str[2] & 0x3F;
             return ch3 | (ch2 << 6) | (ch1 << 12);
-        } else if (char_size == 4) {
-            codepoint_t ch1 = {str[0] & 0b00000111U};
-            codepoint_t ch2 = {str[1] & 0b00111111U};
-            codepoint_t ch3 = {str[2] & 0b00111111U};
-            codepoint_t ch4 = {str[3] & 0b00111111U};
+        }
+        else if (char_size == 4) {
+            codepoint_t ch1 = str[0] & 0x7;
+            codepoint_t ch2 = str[1] & 0x3F;
+            codepoint_t ch3 = str[2] & 0x3F;
+            codepoint_t ch4 = str[3] & 0x3F;
             return ch4 | (ch3 << 6) | (ch2 << 12) | (ch1 << 18);
         }
+        else
+            throw_except<utf_format_exception>("Character %x is not header!", (unsigned int) *str);
         return 0;
     }
     
@@ -108,24 +114,24 @@ namespace jstd {
             buf[0] = (unsigned char) codepoint;
             return 1;
         } else if (codepoint >= 0x80      && codepoint < 0x7ff) {
-            char b1 = ((codepoint >> 6) & 0b00011111) | 0b11000000;
-            char b2 = ((codepoint >> 0) & 0b00111111) | 0b10000000;
+            char b1 = ((codepoint >> 6) & 0x1F) | 0xC0;
+            char b2 = ((codepoint >> 0) & 0x3F) | 0x80;
             buf[0] = b1;
             buf[1] = b2;
             return 2;
         } else if (codepoint >= 0x800     && codepoint < 0xffff) {
-            char b1 = ((codepoint >> 12) & 0b00001111) | 0b11100000;
-            char b2 = ((codepoint >> 6)  & 0b00111111) | 0b10000000;
-            char b3 = ((codepoint >> 0)  & 0b00111111) | 0b10000000;
+            char b1 = ((codepoint >> 12) & 0xF)     | 0xE0;
+            char b2 = ((codepoint >> 6)  & 0x3F)    | 0x80;
+            char b3 = ((codepoint >> 0)  & 0x3F)    | 0x80;
             buf[0] = b1;
             buf[1] = b2;
             buf[2] = b3;
             return 3;
         } else if (codepoint >= 0x10000   && codepoint < 0x10ffff) {
-            char b1 = ((codepoint >> 18)  & 0b00000111) | 0b11110000;
-            char b2 = ((codepoint >> 12)  & 0b00111111) | 0b10000000;
-            char b3 = ((codepoint >> 6)   & 0b00111111) | 0b10000000;
-            char b4 = ((codepoint >> 0)   & 0b00111111) | 0b10000000;
+            char b1 = ((codepoint >> 18)  & 0x7)  | 0xF0;
+            char b2 = ((codepoint >> 12)  & 0x3F) | 0x80;
+            char b3 = ((codepoint >> 6)   & 0x3F) | 0x80;
+            char b4 = ((codepoint >> 0)   & 0x3F) | 0x80;
             buf[0] = b1;
             buf[1] = b2;
             buf[2] = b3;
@@ -213,7 +219,7 @@ namespace jstd {
 
     /*static*/ int utf16_t::codepoint_to_chars(uint16_t buf[], codepoint_t cp, byte_order out) {
         if (cp < 0x10000) {
-            utils::write_with_order<uint16_t>(buf, cp, out);
+            utils::write_with_order<uint16_t>(buf, (uint16_t) cp, out);
             return 1;
         } else {
             cp -= 0x10000;
@@ -395,8 +401,8 @@ namespace jstd {
         return get_char(idx, system::native_byte_order());
     }
 
-    u16string make_utf16(const char* utf8_str, tca::base_allocator* allocator, byte_order out_order, int len) {
-        len = len < 0 ? std::strlen(utf8_str) : len;
+    u16string make_utf16(const char* utf8_str, tca::base_allocator* allocator, byte_order out_order, int32_t len) {
+        len = len < 0 ? (int32_t) std::strlen(utf8_str) : len;
         
         int u16_length = 0;
         {
@@ -501,7 +507,7 @@ namespace jstd {
     template<>
     typename tustring<uint16_t>::codepoint_sequence& tustring<uint16_t>::codepoint_sequence::operator++() {
         check_index(m_offset, m_length);
-        int32_t char_size = utf8_t::symbol_size(m_chars[m_offset]);
+        int32_t char_size = utf16_t::symbol_size(m_chars[m_offset]);
         if (m_offset + char_size > m_length)
             throw_except<utf_format_exception>("Invalid UTF-16 string!");
         m_offset += char_size;

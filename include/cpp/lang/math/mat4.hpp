@@ -41,13 +41,7 @@ typedef base_mat4<uint64_t> mat4u64;
 template<typename T>
 struct base_mat4 {
     
-    union {
-        T m_data[16];
-        T   m00, m01, m02, m03,
-            m10, m11, m12, m13,
-            m20, m21, m22, m23,
-            m30, m31, m32, m33;
-    };
+    T m_data[16];
 
     base_mat4(  T m00 = T(0), T m01 = T(0), T m02 = T(0), T m03 = T(0),
                 T m10 = T(0), T m11 = T(0), T m12 = T(0), T m13 = T(0),
@@ -86,6 +80,9 @@ struct base_mat4 {
     const T& get(int32_t row, int32_t col) const;
     T& get(int32_t row, int32_t col);
 
+    const T* get_data() const;
+    T* get_data();
+
     base_mat4<T> operator*(const base_mat4<T>&) const;
 };
     
@@ -94,9 +91,9 @@ struct base_mat4 {
         const int32_t y = row;
         const int32_t x = col;
         const int32_t idx = y + x * 4;
-#ifndef NDEBUG
-        check_index(idx, 16);
-#endif
+        JSTD_DEBUG_CODE(
+            check_index(idx, 16);
+        );
         return m_data[idx];
     }
 
@@ -105,9 +102,9 @@ struct base_mat4 {
         const int32_t y = row;
         const int32_t x = col;
         const int32_t idx = y + x * 4;
-#ifndef NDEBUG
-        check_index(idx, 16);
-#endif
+        JSTD_DEBUG_CODE(
+            check_index(idx, 16);
+        );
         return m_data[idx];
     }
 
@@ -123,7 +120,7 @@ struct base_mat4 {
     template<typename MT>
     base_vec4<MT> vec_mul_mat(const base_vec4<MT>& v, const base_mat4<MT>& m) {
         base_vec4<MT> result;
-         for (int32_t y = 0; y < 4; ++y)
+        for (int32_t y = 0; y < 4; ++y)
             for (int32_t x = 0; x < 4; ++x)
                 result.get(y) += v.get(x) * m.get(x, y);
         return result;
@@ -281,6 +278,16 @@ struct base_mat4 {
     template<typename T>
     base_mat4<T> base_mat4<T>::operator-(const base_mat4<T>& m) const {
         return sub(m);
+    }
+
+    template<typename T>
+    const T* base_mat4<T>::get_data() const {
+        return m_data;
+    }
+    
+    template<typename T>
+    T* base_mat4<T>::get_data() {
+        return m_data;
     }
 }
 

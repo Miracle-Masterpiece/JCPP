@@ -96,7 +96,7 @@ namespace internal
     }
 
     float parse_float(const char* value) {
-        return parse_double(value);
+        return (float) parse_double(value);
     }
 
     double parse_double(const char* value) {

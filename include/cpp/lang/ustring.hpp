@@ -327,7 +327,7 @@ public:
      * @return 
      *      Строка в кодировке UTF-16
      */
-    u16string make_utf16(const char* utf8_str, tca::base_allocator* allocator, byte_order out_order = system::native_byte_order() , int len = -1);
+    u16string make_utf16(const char* utf8_str, tca::base_allocator* allocator, byte_order out_order = system::native_byte_order() , int32_t len = -1);
 
     /**
      * Создаёт строку UTF-8 из последовательности символов UTF-16.

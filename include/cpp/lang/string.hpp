@@ -36,8 +36,8 @@ protected:
         CHAR_TYPE* _data;                // Указатель на данные строки.
         const CHAR_TYPE* _const_data;    // Указатель на константные данные строки.
     };
-    int _capacity;                   // Вместимость выделенной памяти.
-    int _size;                       // Текущий размер (длина) строки.
+    int32_t _capacity;                   // Вместимость выделенной памяти.
+    int32_t _size;                       // Текущий размер (длина) строки.
     char _order;                     // Порядок байтов строки (младший порядок или старший порядок).
     //TODO: даже не спрашивай какого чёрта функция просто не перенесена в секцию public
 public:
@@ -49,8 +49,8 @@ public:
      * @param str Строка, длину которой нужно вычислить.
      * @return Длина строки.
      */
-    static int strlen(const CHAR_TYPE* str) {
-        int len = 0;
+    static int32_t strlen(const CHAR_TYPE* str) {
+        int32_t len = 0;
         while (*(str + len)) 
             ++len;
         return len;
@@ -85,7 +85,7 @@ protected:
      * @return
      *      Нормализованная длина.
      */
-    static int normalize_length(const CHAR_TYPE* s, int len) {
+    static int32_t normalize_length(const CHAR_TYPE* s, int32_t len) {
         if (len < 0)
             return tstring<CHAR_TYPE>::strlen(s);
         return len;
@@ -103,7 +103,7 @@ protected:
      * 
      * @param sz Новый размер строки.
      */
-    void resize_for(int sz);
+    void resize_for(int32_t sz);
     
     /**
      * Изменяет размер строки, выделяя новую память.
@@ -112,7 +112,7 @@ protected:
      * 
      * @param new_size Новый размер для строки.
      */
-    void resize(int new_size);
+    void resize(int32_t new_size);
     
     /**
      * Проверяет, что аллокатор валиден (не равен нулю).
@@ -138,7 +138,7 @@ protected:
      *      Порядок байтов для созданной строки.
      */
     void construct_string(const CHAR_TYPE* str, tca::base_allocator* allocator, byte_order in, byte_order out) {
-        int len = tstring<CHAR_TYPE>::strlen(str);
+        int32_t len = tstring<CHAR_TYPE>::strlen(str);
         CHAR_TYPE* data = (CHAR_TYPE*) allocator->allocate_align(sizeof(CHAR_TYPE) * (len + 1), alignof(CHAR_TYPE));
         if (data == nullptr)
             throw_except<out_of_memory_error>("Out of memory!");
@@ -161,7 +161,7 @@ protected:
      * @param ch Символ для установки.
      * @param ch_order Порядок байтов символа.
      */
-    void set_char(int idx, CHAR_TYPE ch, byte_order ch_order) {
+    void set_char(int32_t idx, CHAR_TYPE ch, byte_order ch_order) {
         check_index(idx, _capacity);
         if (sizeof(CHAR_TYPE) == sizeof(char) || ch_order == _order) {
             _data[idx] = ch;
@@ -176,7 +176,7 @@ protected:
      * @param ret_order Порядок байтов для возвращаемого символа.
      * @return Символ в указанном индексе.
      */
-    CHAR_TYPE get_char(int idx, byte_order ret_order) const {
+    CHAR_TYPE get_char(int32_t idx, byte_order ret_order) const {
         check_index(idx, _capacity);
         if (sizeof(CHAR_TYPE) == sizeof(char) || ret_order == _order) {
             return _const_data[idx];
@@ -244,7 +244,7 @@ public:
      * @param str_order Порядок байтов добавляемой строки.
      * @return Ссылка на текущую строку.
      */
-    tstring<CHAR_TYPE>& append(const CHAR_TYPE* str, int slen = -1, byte_order str_order = system::native_byte_order());
+    tstring<CHAR_TYPE>& append(const CHAR_TYPE* str, int32_t slen = -1, byte_order str_order = system::native_byte_order());
     
     /**
      * Добавляет строку к текущей строке с заданного индекса.
@@ -254,7 +254,7 @@ public:
      * @param str_order Порядок байтов добавляемой строки.
      * @return Ссылка на текущую строку.
      */
-    tstring<CHAR_TYPE>& append(int idx, const CHAR_TYPE* str, int slen = -1, byte_order str_order = system::native_byte_order());
+    tstring<CHAR_TYPE>& append(int32_t idx, const CHAR_TYPE* str, int32_t slen = -1, byte_order str_order = system::native_byte_order());
     
     /**
      * Добавляет строку к текущей строке с заданного индекса.
@@ -262,7 +262,7 @@ public:
      * @param str Строка для добавления.
      * @return Ссылка на текущую строку.
      */
-    tstring<CHAR_TYPE>& append(int idx, const tstring<CHAR_TYPE>& str);
+    tstring<CHAR_TYPE>& append(int32_t idx, const tstring<CHAR_TYPE>& str);
 
     /**
      * Добавляет строку к текущей строке.
@@ -284,17 +284,17 @@ public:
     tstring<CHAR_TYPE>& replace(
         const CHAR_TYPE* regex, 
         const CHAR_TYPE* replacement, 
-        int regex_length             = -1, 
-        int replacement_length       = -1, 
+        int32_t regex_length             = -1, 
+        int32_t replacement_length       = -1, 
         byte_order regex_order       = system::native_byte_order(), 
         byte_order replacement_order = system::native_byte_order());
 
     tstring<CHAR_TYPE>& replace(
-        int idx,
+        int32_t idx,
         const CHAR_TYPE* regex, 
         const CHAR_TYPE* replacement, 
-        int regex_length             = -1, 
-        int replacement_length       = -1, 
+        int32_t regex_length             = -1, 
+        int32_t replacement_length       = -1, 
         byte_order regex_order       = system::native_byte_order(), 
         byte_order replacement_order = system::native_byte_order());
 
@@ -305,7 +305,7 @@ public:
      * @param str_order Порядок байтов подстроки.
      * @return Количество вхождений подстроки.
      */
-    int count_contains(const CHAR_TYPE* str, int len = -1, byte_order str_order = system::native_byte_order()) const;
+    int32_t count_contains(const CHAR_TYPE* str, int32_t len = -1, byte_order str_order = system::native_byte_order()) const;
     
     /**
      * Проверяет, содержит ли текущая строка подстроку.
@@ -314,7 +314,7 @@ public:
      * @param str_order Порядок байтов подстроки.
      * @return true, если подстрока найдена, false в противном случае.
      */
-    bool contains(const CHAR_TYPE* str, int len = -1, byte_order = system::native_byte_order()) const;
+    bool contains(const CHAR_TYPE* str, int32_t len = -1, byte_order = system::native_byte_order()) const;
 
     /**
      * Находит индекс первого вхождения подстроки.
@@ -323,7 +323,7 @@ public:
      * @param str_order Порядок байтов подстроки.
      * @return Индекс первого вхождения подстроки или -1, если не найдено.
      */
-    int index_of(const CHAR_TYPE* str, int len = -1, byte_order = system::native_byte_order()) const;
+    int32_t index_of(const CHAR_TYPE* str, int32_t len = -1, byte_order = system::native_byte_order()) const;
     
     /**
      * Находит индекс последнего вхождения подстроки.
@@ -332,7 +332,7 @@ public:
      * @param str_order Порядок байтов подстроки.
      * @return Индекс последнего вхождения подстроки или -1, если не найдено.
      */
-    int last_index_of(const CHAR_TYPE* str, int len = -1, byte_order = system::native_byte_order()) const;
+    int32_t last_index_of(const CHAR_TYPE* str, int32_t len = -1, byte_order = system::native_byte_order()) const;
 
     /**
      * Проверяет, начинается ли строка с указанной подстроки.
@@ -341,7 +341,7 @@ public:
      * @param str_order Порядок байтов подстроки.
      * @return true, если строка начинается с подстроки, false в противном случае.
      */
-    bool starts_with(const CHAR_TYPE* str, int len = -1, byte_order = system::native_byte_order()) const;
+    bool starts_with(const CHAR_TYPE* str, int32_t len = -1, byte_order = system::native_byte_order()) const;
     
     /**
      * Проверяет, заканчивается ли строка на указанную подстроку.
@@ -350,7 +350,7 @@ public:
      * @param str_order Порядок байтов подстроки.
      * @return true, если строка заканчивается на подстроку, false в противном случае.
      */
-    bool ends_with(const CHAR_TYPE* str, int len = -1, byte_order = system::native_byte_order()) const;
+    bool ends_with(const CHAR_TYPE* str, int32_t len = -1, byte_order = system::native_byte_order()) const;
 
     /**
      * Возвращает необработанное представление строки как C-строки.
@@ -381,7 +381,7 @@ public:
      * Возвращает вместимость (выделенный размер) строки. (НЕ В БАЙТАХ!!!)
      * @return Вместимость строки.
      */
-    int capacity() const {
+    int32_t capacity() const {
         return _capacity;
     }
 
@@ -389,7 +389,7 @@ public:
      * Возвращает текущую длину строки. (НЕ В БАЙТАХ!!!)
      * @return Длина строки.
      */
-    int length() const {
+    int32_t length() const {
         return _size;
     }
 
@@ -405,7 +405,7 @@ public:
      * @return
      *      Ссылка на текущую строку.
      */
-    tstring<CHAR_TYPE>& reserve(int size);
+    tstring<CHAR_TYPE>& reserve(int32_t size);
     
     /**
      * Обрезает ведущие и хвостовые пробелы в строке.
@@ -448,7 +448,7 @@ public:
      * 
      * @return Ссылка на текущую строку.
      */
-    tstring<CHAR_TYPE>& remove(int start, int end);
+    tstring<CHAR_TYPE>& remove(int32_t start, int32_t end);
     
     /**
      * Клонирует строку. И аллоцирует её содержимое в передаваемом аллокаторе.
@@ -469,14 +469,14 @@ public:
      *                  Если nullptr, то будет взят аллокатор текущей строки.
      * @return Новая строка, содержащая подстроку.
      */
-    tstring<CHAR_TYPE> substr(int start, int end, tca::base_allocator* allocator = nullptr);
+    tstring<CHAR_TYPE> substr(int32_t start, int32_t end, tca::base_allocator* allocator = nullptr);
 
     /**
      * Получить символ по заданному индексу.
      * @param idx Индекс для получения символа.
      * @return Символ по заданному индексу.
      */
-    CHAR_TYPE char_at(int idx) const {
+    CHAR_TYPE char_at(int32_t idx) const {
         return get_char(idx, system::native_byte_order());
     }
 
@@ -499,7 +499,7 @@ public:
      * @return  
      *      true - если строки равны, иначе false.
      */
-    bool equals(const CHAR_TYPE* str, int slen = -1, byte_order str_order = system::native_byte_order()) const;
+    bool equals(const CHAR_TYPE* str, int32_t slen = -1, byte_order str_order = system::native_byte_order()) const;
 
     /**
      * Является ли строка константной.
@@ -613,7 +613,7 @@ public:
     }
 
     template<typename CHAR_TYPE>
-    void tstring<CHAR_TYPE>::resize(int sz) {
+    void tstring<CHAR_TYPE>::resize(int32_t sz) {
         check_const_or_except();
         check_allocator();
         CHAR_TYPE* data = (CHAR_TYPE*) _allocator->allocate_align(sizeof(CHAR_TYPE) * sz, alignof(CHAR_TYPE));
@@ -627,37 +627,37 @@ public:
     }
 
     template<typename CHAR_TYPE>
-    void tstring<CHAR_TYPE>::resize_for(int new_size) {
+    void tstring<CHAR_TYPE>::resize_for(int32_t new_size) {
         check_const_or_except();
         if (new_size == 1) {
             if (_capacity < new_size) 
                 resize(new_size);
         } else {
-            int newCapacity = std::max(_capacity, 2);
+            int32_t newCapacity = std::max(_capacity, 2);
             while (new_size > newCapacity) {
-                newCapacity *= 1.5;
+                newCapacity = (int32_t) (newCapacity * 1.5);
             }
             resize(newCapacity);
         }
     }
 
     template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::reserve(int size) {
+    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::reserve(int32_t size) {
         check_const_or_except();
         resize(size + 1);
         return *this;
     }
 
     template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::append(const CHAR_TYPE* str, int slen, byte_order str_order) {
+    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::append(const CHAR_TYPE* str, int32_t slen, byte_order str_order) {
         return append(_size, str, slen, str_order);
     }
     
     template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::append(int idx, const CHAR_TYPE* str, int slen, byte_order str_order) {
+    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::append(int32_t idx, const CHAR_TYPE* str, int32_t slen, byte_order str_order) {
         check_const_or_except();
         check_index(idx, _size + 1);
-        int len = normalize_length(str, slen);
+        int32_t len = normalize_length(str, slen);
         if (_size + len + 1 > _capacity)
             resize_for(_size + len + 1);
         if (idx != _size) {
@@ -665,7 +665,7 @@ public:
             CHAR_TYPE* src = _data + idx;
             std::memmove(dst, src, sizeof(CHAR_TYPE) * (_size - idx));
         }
-        for (int i = 0; i < len; ++i) {
+        for (int32_t i = 0; i < len; ++i) {
             set_char(idx + i, str[i], str_order);
             ++_size;
         }
@@ -674,7 +674,7 @@ public:
     }
 
     template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::append(int idx, const tstring<CHAR_TYPE>& str) {
+    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::append(int32_t idx, const tstring<CHAR_TYPE>& str) {
         return append(idx, str.c_string(), str.length(), (byte_order) str._order);
     }
     
@@ -687,28 +687,28 @@ public:
     tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::replace(
         const CHAR_TYPE* regex, 
         const CHAR_TYPE* replacement, 
-        int regex_length, 
-        int replacement_length, 
+        int32_t regex_length, 
+        int32_t replacement_length, 
         byte_order regex_order, 
         byte_order replacement_order) 
     {
         check_const_or_except();
         regex_length        = normalize_length(regex, regex_length);
         replacement_length  = normalize_length(replacement, replacement_length);    
-        int count_equal     = count_contains(regex, regex_length, regex_order);
+        int32_t count_equal     = count_contains(regex, regex_length, regex_order);
 
         if (regex_length > _size || count_equal == 0)
             return *this;
         
-        int size = _size - (regex_length * count_equal) + (replacement_length * count_equal); 
+        int32_t size = _size - (regex_length * count_equal) + (replacement_length * count_equal); 
         if (size + 1 > _capacity)
             resize_for(size + 1);
 
-        for (int i = 0; i < _size;) {
+        for (int32_t i = 0; i < _size;) {
             if (i + regex_length > _size)
                 break;
             bool contains = true;
-            for (int j = 0; j < regex_length; ++j) {
+            for (int32_t j = 0; j < regex_length; ++j) {
                 const CHAR_TYPE ch1 = get_char(i + j, regex_order);
                 const CHAR_TYPE ch2 = regex[j];
                 if (ch1 != ch2){
@@ -732,11 +732,11 @@ public:
 
     template<typename CHAR_TYPE>
     tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::replace(
-        int idx,
+        int32_t idx,
         const CHAR_TYPE* regex, 
         const CHAR_TYPE* replacement, 
-        int regex_length, 
-        int replacement_length, 
+        int32_t regex_length, 
+        int32_t replacement_length, 
         byte_order regex_order, 
         byte_order replacement_order) 
     {
@@ -744,16 +744,16 @@ public:
         check_index(idx, _size);
         regex_length        = normalize_length(regex, regex_length);
         replacement_length  = normalize_length(replacement, replacement_length);
-        int size = _size - regex_length + replacement_length;
+        int32_t size = _size - regex_length + replacement_length;
         
         //[......................|...|..|.....]
 
         CHAR_TYPE* in   = _data + idx + regex_length;
         CHAR_TYPE* out  = _data + idx + replacement_length;
-        int off         = _size - (idx + regex_length);
+        int32_t off         = _size - (idx + regex_length);
         std::memmove(out, in, sizeof(CHAR_TYPE) * off);
 
-        for (int i = 0; i < replacement_length; ++i)
+        for (int32_t i = 0; i < replacement_length; ++i)
             set_char(idx + i, replacement[i], replacement_order);
 
         _size = size;
@@ -762,17 +762,17 @@ public:
     }
 
     template<typename CHAR_TYPE>
-    int tstring<CHAR_TYPE>::count_contains(const CHAR_TYPE* str, int len, byte_order str_order) const {
+    int32_t tstring<CHAR_TYPE>::count_contains(const CHAR_TYPE* str, int32_t len, byte_order str_order) const {
         len = normalize_length(str, len);
         if (len > _size)
             return 0;
 
-        int count_contains = 0;
-        for (int i = 0; i < _size; ) {
+        int32_t count_contains = 0;
+        for (int32_t i = 0; i < _size; ) {
             if (i + len > _size)
                 return count_contains;
             bool contains = true;
-            for (int j = 0; j < len; ++j) {
+            for (int32_t j = 0; j < len; ++j) {
                 const CHAR_TYPE ch1 = get_char(i + j, str_order);
                 const CHAR_TYPE ch2 = str[j];
                 if (ch1 != ch2) {
@@ -799,8 +799,8 @@ public:
             return *this;
         
         {//начало
-            int end = 0;
-            for (int i = 0; i < _size; ++i) {
+            int32_t end = 0;
+            for (int32_t i = 0; i < _size; ++i) {
                 if (get_char(i, system::native_byte_order()) <= ' ') {
                     ++end;
                 } else {
@@ -812,8 +812,8 @@ public:
         }
 
         {//конец
-            int start = _size;
-            for (int i = _size - 1; i >= 0; --i) {
+            int32_t start = _size;
+            for (int32_t i = _size - 1; i >= 0; --i) {
                 if (get_char(i, system::native_byte_order()) <= ' ') {
                     --start;
                 } else {
@@ -868,13 +868,13 @@ public:
     }
 
     template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::remove(int start, int end) {
+    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::remove(int32_t start, int32_t end) {
         check_const_or_except();
         check_index(start,  _size + 1);
         check_index(end,    _size + 1);
         if (start > end)
             throw_except<illegal_argument_exception>("start = %i > end = %i", start, end);
-        int len = end - start;
+        int32_t len = end - start;
         std::memmove(_data + start, _data + end, sizeof(CHAR_TYPE) * (_size - end));
         _size -= len;
         _data[_size] = 0;
@@ -896,20 +896,20 @@ public:
     }
 
     template<typename CHAR_TYPE>
-    bool tstring<CHAR_TYPE>::contains(const CHAR_TYPE* str, int in_len, byte_order str_order) const {
+    bool tstring<CHAR_TYPE>::contains(const CHAR_TYPE* str, int32_t in_len, byte_order str_order) const {
         return index_of(str, in_len, str_order) != -1;
     }
 
     template<typename CHAR_TYPE>
-    int tstring<CHAR_TYPE>::index_of(const CHAR_TYPE* str, int in_len, byte_order str_order) const {
+    int32_t tstring<CHAR_TYPE>::index_of(const CHAR_TYPE* str, int32_t in_len, byte_order str_order) const {
         in_len = normalize_length(str, in_len);
         if (in_len > _size)
             return -1;
-        for (int i = 0; i < _size; ++i) {
+        for (int32_t i = 0; i < _size; ++i) {
             if (i + in_len > _size)
                 return -1;
             bool contains = true;    
-            for (int j = 0; j < in_len; ++j) {
+            for (int32_t j = 0; j < in_len; ++j) {
                 if (get_char(i + j, str_order) != str[j]) {
                     contains = false;
                     break;
@@ -922,16 +922,16 @@ public:
     }
     
     template<typename CHAR_TYPE>
-    int tstring<CHAR_TYPE>::last_index_of(const CHAR_TYPE* str, int in_len, byte_order str_order) const {
+    int32_t tstring<CHAR_TYPE>::last_index_of(const CHAR_TYPE* str, int32_t in_len, byte_order str_order) const {
         in_len = normalize_length(str, in_len);
         if (in_len > _size)
             return -1;
         
-        for (int i = _size - 1; i >= 0; --i) {
+        for (int32_t i = _size - 1; i >= 0; --i) {
             if (i - in_len < 0)
                 return -1;
             bool contains = true;
-            for (int j = in_len - 1; j >= 0; --j) {
+            for (int32_t j = in_len - 1; j >= 0; --j) {
                 if (get_char(i + j, str_order) != str[j]) {
                     contains = false;
                     break;
@@ -945,35 +945,35 @@ public:
     }
 
     template<typename CHAR_TYPE>
-    bool tstring<CHAR_TYPE>::starts_with(const CHAR_TYPE* str, int in_len, byte_order str_order) const {
+    bool tstring<CHAR_TYPE>::starts_with(const CHAR_TYPE* str, int32_t in_len, byte_order str_order) const {
         in_len = normalize_length(str, in_len);
         if (in_len > _size)
             return false;
-        for (int i = 0; i < in_len; ++i)
+        for (int32_t i = 0; i < in_len; ++i)
             if (get_char(i, str_order) != str[i])
                 return false;
         return true;
     }
 
     template<typename CHAR_TYPE>
-    bool tstring<CHAR_TYPE>::ends_with(const CHAR_TYPE* str, int in_len, byte_order str_order) const {
+    bool tstring<CHAR_TYPE>::ends_with(const CHAR_TYPE* str, int32_t in_len, byte_order str_order) const {
         in_len = normalize_length(str, in_len);
         if (in_len > _size)
             return false;
-        for (int i = _size - 1, off = in_len - 1; off >= 0; --i, --off)
+        for (int32_t i = _size - 1, off = in_len - 1; off >= 0; --i, --off)
             if (get_char(i, str_order) != str[off])
                 return false;
         return true;
     }
 
     template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE> tstring<CHAR_TYPE>::substr(int start, int end, tca::base_allocator* allocator) {
+    tstring<CHAR_TYPE> tstring<CHAR_TYPE>::substr(int32_t start, int32_t end, tca::base_allocator* allocator) {
         check_const_or_except();
         check_index(start,  _size + 1);
         check_index(end,    _size + 1);
         if (start > end)
             throw_except<illegal_argument_exception>("start = %i > end = %i", start, end);
-        int len = end - start;
+        int32_t len = end - start;
         tstring<CHAR_TYPE> result(allocator != nullptr ? allocator : _allocator);
         if (len != 0 && result._allocator != nullptr)
             result.reserve(len).append(_data + start, len, (byte_order) _order);
@@ -991,18 +991,18 @@ public:
     bool tstring<CHAR_TYPE>::equals(const tstring<CHAR_TYPE>& str) const {
         if (_size != str._size)
             return false;
-        for (int i = 0; i < _size; ++i)
+        for (int32_t i = 0; i < _size; ++i)
             if (get_char(i, (byte_order) str._order) != str.get_char(i, (byte_order) str._order))
                 return false;
         return true;
     }
 
     template<typename CHAR_TYPE>    
-    bool tstring<CHAR_TYPE>::equals(const CHAR_TYPE* str, int slen, byte_order str_order) const {
+    bool tstring<CHAR_TYPE>::equals(const CHAR_TYPE* str, int32_t slen, byte_order str_order) const {
         slen = normalize_length(str, slen);
         if (slen != _size)
             return false;
-        for (int i = 0; i < _size; ++i) {
+        for (int32_t i = 0; i < _size; ++i) {
             if (get_char(i, str_order) != str[i])
                 return false;
         }

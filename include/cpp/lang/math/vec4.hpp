@@ -54,13 +54,19 @@ typedef base_vec4<uint64_t> vec4u64;
 template<typename T>
 struct base_vec4 {
     union {
-        struct {
-            T x, y, z, w;
-        };
-        struct {
-            T r, g, b, a;
-        };
-        T m_data[4];
+        T x, r, A;
+    };
+
+    union {
+        T y, g, B;
+    };
+
+    union {
+        T z, b, C;
+    };
+
+    union {
+        T w, a, D;
     };
 
     /**
@@ -689,20 +695,24 @@ struct base_vec4 {
 
     template<typename T>
     T& base_vec4<T>::get(int32_t idx) {
-#ifndef NDEBUG
-        if (idx > 3)
-            throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
-#endif
-        return m_data[idx];        
+        switch (idx) {
+            case 0 : return x;
+            case 1 : return y;
+            case 2 : return z;
+            case 3 : return w;
+            default: throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
+        }
     }
     
     template<typename T>
     const T& base_vec4<T>::get(int32_t idx) const {
-#ifndef NDEBUG
-        if (idx > 3)
-            throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
-#endif
-        return m_data[idx];
+        switch (idx) {
+            case 0 : return x;
+            case 1 : return y;
+            case 2 : return z;
+            case 3 : return w;
+            default: throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
+        }
     }
 
     template<typename T>
@@ -738,62 +748,79 @@ struct base_vec4 {
     
     template<typename T>
     uint64_t base_vec4<T>::hashcode() const {
-        return objects::hashcode(m_data, 4);
+        const T data[] = {x, y, z, w};
+        return objects::hashcode(data, 4);
     }
 
     template<typename T>
     base_vec4<T>& base_vec4<T>::operator +=(const base_vec4<T>& other) {
-        for (int32_t i = 0; i < 4; ++i)
-            m_data[i] += other.m_data[i];
+        x += other.x;
+        y += other.y;
+        z += other.z;
+        w += other.w;
         return *this;
     }
     
     template<typename T>
     base_vec4<T>& base_vec4<T>::operator -=(const base_vec4<T>& other) {
-        for (int32_t i = 0; i < 4; ++i)
-            m_data[i] -= other.m_data[i];
+        x -= other.x;
+        y -= other.y;
+        z -= other.z;
+        w -= other.w;
         return *this;
     }
     
     template<typename T>
     base_vec4<T>& base_vec4<T>::operator *=(const base_vec4<T>& other) {
-        for (int32_t i = 0; i < 4; ++i)
-            m_data[i] *= other.m_data[i];
+        x *= other.x;
+        y *= other.y;
+        z *= other.z;
+        w *= other.w;
         return *this;
     }
     
     template<typename T>
     base_vec4<T>& base_vec4<T>::operator /=(const base_vec4<T>& other) {
-        for (int32_t i = 0; i < 4; ++i)
-            m_data[i] /= other.m_data[i];
+        x /= other.x;
+        y /= other.y;
+        z /= other.z;
+        w /= other.w;
         return *this;
     }
     
     template<typename T>
     base_vec4<T>& base_vec4<T>::operator +=(const T& scalar) {
-        for (int32_t i = 0; i < 4; ++i)
-            m_data[i] += scalar;
+        x += scalar;
+        y += scalar;
+        z += scalar;
+        w += scalar;
         return *this;
     }
     
     template<typename T>
     base_vec4<T>& base_vec4<T>::operator -=(const T& scalar) {
-        for (int32_t i = 0; i < 4; ++i)
-            m_data[i] -= scalar;
+        x -= scalar;
+        y -= scalar;
+        z -= scalar;
+        w -= scalar;
         return *this;
     }
     
     template<typename T>
     base_vec4<T>& base_vec4<T>::operator *=(const T& scalar) {
-        for (int32_t i = 0; i < 4; ++i)
-            m_data[i] *= scalar;
+        x *= scalar;
+        y *= scalar;
+        z *= scalar;
+        w *= scalar;
         return *this;
     }
     
     template<typename T>
     base_vec4<T>& base_vec4<T>::operator /=(const T& scalar) {
-        for (int32_t i = 0; i < 4; ++i)
-            m_data[i] /= scalar;
+        x /= scalar;
+        y /= scalar;
+        z /= scalar;
+        w /= scalar;
         return *this;
     }
 

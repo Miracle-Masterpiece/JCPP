@@ -72,8 +72,8 @@ namespace utils {
     template<>
     inline uint32_t bswap<uint32_t>(uint32_t x) {
         return 
-            bswap<uint16_t>(((x >> 16) & 0xffff)) | 
-            bswap<uint16_t>((x & 0xffff)) << 16;
+            bswap<uint16_t>((uint16_t) ((x >> 16) & 0xffff)) | 
+            bswap<uint16_t>((uint16_t) (x & 0xffff)) << 16;
     }
 
     /**
@@ -108,8 +108,8 @@ namespace utils {
     template<>
     inline int32_t bswap<int32_t>(int32_t x) {
         return 
-            bswap<uint16_t>(((x >> 16) & 0xffff)) | 
-            bswap<uint16_t>((x & 0xffff)) << 16;
+            bswap<uint16_t>((uint16_t) ((x >> 16) & 0xffff)) | 
+            bswap<uint16_t>((uint16_t) (x & 0xffff)) << 16;
     }
 
     /**

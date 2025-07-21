@@ -187,13 +187,13 @@ namespace jstd {
                             } 
 
                             else if (img.get_channels() == 3) {
-                                const image::rgb& rgb = img.get_rgb(xo, yo);
-                                m_atlas->get_rgba(xx, yy) = {.r = rgb.r, .g = rgb.g, .b = rgb.b, .a = 0xff};
+                                const image::rgb& col = img.get_rgb(xo, yo);
+                                m_atlas->get_rgba(xx, yy) = image::rgba(col.r, col.g, col.b, 0xff);
                             }
                             
                             else if (img.get_channels() == 1) {
-                                image::byte col = img.get_gray(xo, yo).gray;
-                                m_atlas->get_rgba(xx, yy) = {.r = col, .g = col, .b = col, .a = 0xff};
+                                image::byte col = img.get_gray(xo, yo).brightness;
+                                m_atlas->get_rgba(xx, yy) = image::rgba(col, col, col, 0xff);
                             }
 
                             else {
@@ -212,17 +212,16 @@ namespace jstd {
                             
                             if (img.get_channels() == 4) {
                                 const image::rgba& col = img.get_rgba(xo, yo);
-                                m_atlas->get_rgb(xx, yy) = {.r = col.r, .g = col.g, .b = col.b};   
+                                m_atlas->get_rgb(xx, yy) = image::rgb(col.r, col.g, col.b);   
                             } 
 
                             else if (img.get_channels() == 3) {
-                                const image::rgb& rgb = img.get_rgb(xo, yo);
-                                m_atlas->get_rgb(xx, yy) = rgb;
+                                m_atlas->get_rgb(xx, yy) = img.get_rgb(xo, yo);
                             }
                             
                             else if (img.get_channels() == 1) {
-                                image::byte col = img.get_gray(xo, yo).gray;
-                                m_atlas->get_rgb(xx, yy) = {.r = col, .g = col, .b = col};
+                                image::byte col     = img.get_gray(xo, yo).brightness;
+                                m_atlas->get_rgb(xx, yy) = image::rgb(col, col, col);
                             }
 
                             else {
@@ -234,9 +233,9 @@ namespace jstd {
                 
                 else if (m_atlas->get_channels() == 1) {
                     
-                    const float r_gamma = 0.30;
-                    const float g_gamma = 0.59;
-                    const float b_gamma = 0.11;
+                    const float r_gamma = 0.30f;
+                    const float g_gamma = 0.59f;
+                    const float b_gamma = 0.11f;
                     image::byte gray    = 0;                            
 
                     for (int32_t yo = 0; yo < h; ++yo) {
@@ -257,14 +256,13 @@ namespace jstd {
                             }
                             
                             else if (img.get_channels() == 1) {
-                                gray = img.get_gray(xo, yo).gray;
+                                gray = img.get_gray(xo, yo).brightness;
                             }
                             
                             else {
                                 throw_except<illegal_state_exception>("");
                             }  
-                            
-                            m_atlas->get_gray(xx, yy) = {.gray = gray};   
+                            m_atlas->get_gray(xx, yy).brightness = gray;   
                         }
                     }
                 }
@@ -278,13 +276,12 @@ namespace jstd {
             }
         };
 
-        callback_image callback = {
-            .m_array_of_image   = &m_images, 
-            .m_atlas            = &result, 
-            .m_rescale          = scale_factor, 
-            .m_allocator_for_tmp_resized_image = scale_factor > 1 ? &allocator_for_rescaled_image : nullptr
-        };
-        
+        callback_image callback;
+        callback.m_array_of_image   = &m_images;
+        callback.m_atlas            = &result;
+        callback.m_rescale          = scale_factor;
+        callback.m_allocator_for_tmp_resized_image = scale_factor > 1 ? &allocator_for_rescaled_image : nullptr;
+
         m_root->depth_search(callback);
 
         return image(std::move(result));
@@ -301,14 +298,18 @@ namespace jstd {
                 const int32_t v0 = pos.y;
                 const int32_t u1 = pos.x + pos.w;
                 const int32_t v1 = pos.y + pos.h;
-                (*m_array)[n->get_id()] = {.u0 = u0, .v0 = v0, .u1 = u1, .v1 = v1};
+                image_packer::uv texcoord;
+                texcoord.u0 = u0;
+                texcoord.v0 = v0;
+                texcoord.u1 = u1;
+                texcoord.v1 = v1;
+                (*m_array)[n->get_id()] = texcoord;
             }
         };
 
-        node_visitor visitor = {
-            .m_array = &uvs
-        };
-
+        node_visitor visitor;
+        visitor.m_array = &uvs;
+        
         m_root->depth_search(visitor);
 
         return array<image_packer::uv>(std::move(uvs));

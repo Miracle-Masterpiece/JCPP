@@ -83,7 +83,7 @@ namespace jstd {
                 buffer.clear();
             }
             
-            ch = reader & 0xff;
+            ch = (char) (reader & 0xff);
             if (reader == '=') {
                 key.clear();
                 key.append(buffer.c_string());

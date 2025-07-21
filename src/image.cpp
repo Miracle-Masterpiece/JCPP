@@ -18,7 +18,7 @@ namespace jstd {
     }
     
     image::image(int32_t width, int32_t height, int8_t channels, tca::base_allocator* allocator) : image() {
-        byte* pixels = reinterpret_cast<byte*>(allocator->allocate_align(width * height * channels, alignof(byte)));
+        byte* pixels = reinterpret_cast<byte*>(allocator->allocate_align(sizeof(byte) * (width * height * channels), alignof(byte)));
         if (pixels == nullptr)
             throw_except<out_of_memory_error>("Out of memory!");
         std::memset(pixels, 0, width * height * channels);
@@ -31,7 +31,7 @@ namespace jstd {
     
     void image::cleanup() {
         if (m_allocator != nullptr && m_pixels != nullptr) {
-            m_allocator->deallocate(m_pixels, m_width * m_height * m_channels);
+            m_allocator->deallocate(m_pixels, sizeof(byte) * (m_width * m_height * m_channels));
             m_pixels    = nullptr;
             m_allocator = nullptr;
         }
@@ -172,15 +172,18 @@ namespace jstd {
     }
 
     int image::rgba::to_string(char buf[], int bufsize) const {
-        return snprintf(buf, bufsize, "[R: %i, G: %i, B: %i, A: %i]", (int) r, (int) g, (int) b, (int) a);
+        using ui = unsigned int;
+        return snprintf(buf, bufsize, "[R: %u, G: %u, B: %u, A: %u]", (ui) r, (ui) g, (ui) b, (ui) a);
     }
 
     int image::rgb::to_string(char buf[], int bufsize) const {
-        return snprintf(buf, bufsize, "[R: %i, G: %i, B: %i]", (int) r, (int) g, (int) b);
+        using ui = unsigned int;
+        return snprintf(buf, bufsize, "[R: %u, G: %u, B: %u]", (ui) r, (ui) g, (ui) b);
     }
 
     int image::gray::to_string(char buf[], int bufsize) const {
-        return snprintf(buf, bufsize, "[GRAY: %i]", (int) gray);
+        using ui = unsigned int;
+        return snprintf(buf, bufsize, "[GRAY: %u]", (ui) brightness);
     }
 
     image image::resize(int32_t neww, int32_t newh, tca::base_allocator* allocator) const {

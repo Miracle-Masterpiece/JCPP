@@ -16,14 +16,32 @@ public:
     using byte = unsigned char;
     struct rgba {
         byte r, g, b, a;
+        rgba(byte r = 0, byte g = 0, byte b = 0, byte a = 0) : r(r), g(g), b(b), a(a) {}
+        rgba(const rgba&)               = default;
+        rgba(rgba&&)                    = default;
+        rgba& operator=(const rgba&)    = default;
+        rgba& operator=(rgba&&)         = default;
+        ~rgba()                         = default;
         int to_string(char buf[], int bufsize) const;
     };
     struct rgb {
         byte r, g, b;
+        rgb(byte r = 0, byte g = 0, byte b = 0, byte a = 0) : r(r), g(g), b(b) {}
+        rgb(const rgb&)             = default;
+        rgb(rgb&&)                  = default;
+        rgb& operator=(const rgb&)  = default;
+        rgb& operator=(rgb&&)       = default;
+        ~rgb()                      = default;
         int to_string(char buf[], int bufsize) const;
     };
     struct gray {
-        byte gray;
+        byte brightness;
+        gray(byte brightness = 0) : brightness(brightness) {}
+        gray(const gray&)               = default;
+        gray(gray&&)                    = default;
+        gray& operator=(const gray&)    = default;
+        gray& operator=(gray&&)         = default;
+        ~gray()                         = default;
         int to_string(char buf[], int bufsize) const;
     };
 private:

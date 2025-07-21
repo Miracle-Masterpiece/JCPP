@@ -110,7 +110,7 @@ namespace tca {
     }
 
     void stack_allocator::frame_print(stack_frame_t* frame) const {
-        printf("[allocated: %zu | prev: %p]\n", frame->m_allocated, frame->m_prev);
+        printf("[allocated: %zu | prev: %p]\n", frame->m_allocated, (void*) frame->m_prev);
     }
 
     void stack_allocator::print() const {
