@@ -106,21 +106,3 @@ namespace internal
 }//namespace system
 
 }//namespace jstd
-
-
-#include <iostream>
-
-#include <cpp/lang/utils/limits.hpp>
-#include <cpp/lang/math/mat4.hpp>
-#include <cpp/lang/math/math.hpp>
-
-int main() {
-    std::cout << 4545 << std::endl;
-    const long long sz = jstd::num_limits<signed long long>::min();
-    using jstd::mat4;
-
-    for (int i = 0; i < 100; ++i) {
-        std::cout << (jstd::math::random() * 2 - 0.5) << std::endl;
-    }
-
-}
