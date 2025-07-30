@@ -123,7 +123,7 @@ namespace jstd
         );
     }
     
-    uint64_t file_channel::size() const {
+    int64_t file_channel::size() const {
         require_fd();
         uint64_t len = 0;
         JSTD_WIN_CODE(
@@ -133,7 +133,7 @@ namespace jstd
                     throw_except<sequrity_exception>(std::strerror(errno));
                 throw_except<io_exception>(std::strerror(errno));
             }
-            return stat.st_size;
+            return (int64_t) stat.st_size;
         );
 
         JSTD_POSIX_CODE(
@@ -143,7 +143,7 @@ namespace jstd
                     throw_except<sequrity_exception>(std::strerror(errno));
                 throw_except<io_exception>(std::strerror(errno));
             }
-            return stat.st_size;
+            return (int64_t) stat.st_size;
         );
 
         return len;
