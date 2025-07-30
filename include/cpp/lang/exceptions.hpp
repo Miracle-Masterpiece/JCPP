@@ -77,6 +77,7 @@ ___MAKE_EXCEPT_CLASS__(unsupported_operation_exception,             exception)
 ___MAKE_EXCEPT_CLASS__(utf_format_exception,                runtime_exception)
 ___MAKE_EXCEPT_CLASS__(invalid_data_format_exception,       runtime_exception)
 ___MAKE_EXCEPT_CLASS__(number_format_exception,             runtime_exception)
+___MAKE_EXCEPT_CLASS__(class_cast_exception,                runtime_exception)
 
                 
 /**

@@ -3,7 +3,7 @@
 
 #include <allocators/base_allocator.hpp>
 #include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/utils/arrays.h>
+#include <cpp/lang/utils/arrays.hpp>
 #include <utility>
 #include <cstdint>
 

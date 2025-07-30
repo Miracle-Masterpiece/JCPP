@@ -10,7 +10,8 @@
 #include <cstdio>
 #include <new>
 #include <cassert>
-#include <cpp/lang/utils/arrays.h>
+#include <cpp/lang/utils/arrays.hpp>
+#include <typeinfo>
 
 namespace jstd 
 {
@@ -84,7 +85,7 @@ namespace sptr
             return nullptr;
         try {
             assert((std::intptr_t) ctrl_block->m_object % alignof(T) == 0);
-            new (ctrl_block->m_object) T(obj);
+            new (ctrl_block->m_object) T(std::forward<_T>(obj));
         } catch (...) {
             using u32 = uint32_t;
             const u32 size = ctrl_block->m_blocksize;
@@ -435,6 +436,26 @@ public:
     template<typename E>
     shared_ptr<E> const_pointer_cast() const;
 
+    /**
+     * Преобразует shared_ptr<T> в shared_ptr<E> с использованием dynamic_cast.
+     */
+    template<typename E>
+    explicit operator shared_ptr<E>() const {
+        return dynamic_pointer_cast<E>();
+    }
+
+    /**
+     * Сравнивает значения указателей.
+     * 
+     * @return
+     *      true тогда, и только тогда, когда оба shared_ptr указывают на один блок памяти.
+     *      в остальных случаях всегда false.
+     */
+    template<typename E>
+    bool operator== (const shared_ptr<E>& ptr) const {
+        return ptr.get() == get();
+    }
+
     const static int32_t TO_STRING_MIN_BUFFER_SIZE = 48;
     /**
      * Возвращает отладочную строку о состоянии shared_ptr.
@@ -602,7 +623,9 @@ public:
     template<typename E>
     shared_ptr<E> shared_ptr<T>::dynamic_pointer_cast() const {
         if (m_block == nullptr || m_block->m_object == nullptr)
-            return shared_ptr<E>();
+            throw_except<null_pointer_exception>("pointer is null");
+        if (!dynamic_cast<E*>(reinterpret_cast<T*>(m_block->m_object)))
+            throw_except<class_cast_exception>("Type %s cannot cast to %s", typeid(T).name(), typeid(E).name());
         return shared_ptr<E>(m_block);
     }
 
@@ -710,6 +733,12 @@ public:
             return shared_ptr<T>();
         return shared_ptr<T>(m_block);
     }
+
+    template<typename T>
+    weak_ptr<T> make_weak() {
+        return weak_ptr<T>();
+    }
+
 } //namespace jstd
 
 #endif//JSTD_INTERNAL_SMART_PTRS_SHARED_PTR_T_H

@@ -7,6 +7,10 @@
 #include <initializer_list>
 #include <cstdint>
 
+#ifndef NDEBUG
+    #include <cpp/lang/exceptions.hpp>
+#endif
+
 #define JSTD_TRIVIAL_COPY_CHECK 
 
 namespace jstd {

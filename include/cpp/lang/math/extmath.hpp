@@ -193,7 +193,7 @@ namespace math {
         return ::powf(x, power);
     }
 
-    mat4 quat_to_matrix(const quat& q){
+    inline mat4 quat_to_matrix(const quat& q){
         using internal::real_t;
         const real_t x = q.x;
         const real_t y = q.y;

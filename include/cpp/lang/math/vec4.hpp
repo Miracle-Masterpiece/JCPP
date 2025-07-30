@@ -1,12 +1,7 @@
 #ifndef JSTD_CPP_LANG_MATH_VEC4_H
 #define JSTD_CPP_LANG_MATH_VEC4_H
 
-
-#ifndef NDEBUG
 #include <cpp/lang/exceptions.hpp>
-#endif
-
-
 #include <cstdint>
 #include <cpp/lang/utils/objects.hpp>
 #include <cpp/lang/math/math.hpp>
@@ -355,7 +350,7 @@ struct base_vec4 {
      * @return 
      *      Результат скалярного произведения.
      */
-    base_vec4<T> dot(const base_vec4<T>& other) const;
+    T dot(const base_vec4<T>& other) const;
 
     /**
      * Нормализация вектора.
@@ -716,7 +711,7 @@ struct base_vec4 {
     }
 
     template<typename T>
-    base_vec4<T> base_vec4<T>::dot(const base_vec4<T>& v) const {
+    T base_vec4<T>::dot(const base_vec4<T>& v) const {
         return x * v.x + y * v.y + z * v.z + w * v.w;
     }
     

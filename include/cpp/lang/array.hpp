@@ -7,7 +7,7 @@
 #include <allocators/base_allocator.hpp>
 #include <utility>
 #include <new>
-#include <cpp/lang/utils/arrays.h>
+#include <cpp/lang/utils/arrays.hpp>
 #include <cpp/lang/utils/objects.hpp>
 #include <initializer_list>
 

@@ -360,15 +360,15 @@ namespace jstd
 {
     namespace internal
     {
-        JSTD_WIN_CODE (
+        #if defined(JSTD_OS_WINDOWS)
             std::size_t get_page_size() {
                 SYSTEM_INFO sys_info;
                 GetSystemInfo(&sys_info);
                 return sys_info.dwAllocationGranularity;
             }
-        );
-
-        JSTD_POSIX_CODE(
+        #endif
+        
+        #if defined(JSTD_OS_LINUX) || defined(JSTD_OS_MAC) || defined(JSTD_OS_UNIX)
             std::size_t get_page_size() {
                 #if defined(_SC_PAGESIZE)
                     return sysconf(_SC_PAGESIZE);
@@ -378,6 +378,6 @@ namespace jstd
                     throw_except<error>("Current platform not defined _SC_PAGESIZE or _SC_PAGE_SIZE");
                 #endif
             }
-        );
+        #endif
     }
 }

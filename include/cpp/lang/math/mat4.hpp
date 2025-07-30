@@ -1,10 +1,7 @@
 #ifndef CPP_LANG_MATH_MAT4_H
 #define CPP_LANG_MATH_MAT4_H
 
-#ifndef NDEBUG
 #include <cpp/lang/exceptions.hpp>
-#endif
-
 #include <cpp/lang/utils/objects.hpp>
 #include <cpp/lang/math/vec4.hpp>
 #include <cstdint>

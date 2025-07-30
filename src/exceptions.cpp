@@ -135,6 +135,7 @@ __TEMPLATE__EXCEPT_CLASS_IMPL(unsupported_operation_exception,             excep
 __TEMPLATE__EXCEPT_CLASS_IMPL(utf_format_exception,                runtime_exception)
 __TEMPLATE__EXCEPT_CLASS_IMPL(invalid_data_format_exception,       runtime_exception)
 __TEMPLATE__EXCEPT_CLASS_IMPL(number_format_exception,             runtime_exception)
+__TEMPLATE__EXCEPT_CLASS_IMPL(class_cast_exception,                runtime_exception)
 
 /**
  * #################################################################

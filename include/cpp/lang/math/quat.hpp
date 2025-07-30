@@ -23,17 +23,26 @@ typedef base_quat<double> quatd;
  * 
  * Также доступ к компонентам можно получить через альтернативные имена: x, y, z, w.
  * 
- * Хранение данных реализовано через объединение, что позволяет обращаться к ним как к массиву.
- * 
  * @tparam T 
  *      Тип компонент кватерниона (например, float, double).
  */
 template<typename T>
 struct base_quat {
-    union{
-        struct {T i, j, k, a;}; 
-        struct {T x, y, z, w;}; 
-        T m_data[4];            // Массив, содержащий все компоненты.
+
+    union {
+        T i, x;
+    };
+
+    union {
+        T j, y;
+    };
+
+    union {
+        T k, z;
+    };
+
+    union {
+        T a, w;
     };
 
     /**
@@ -492,7 +501,8 @@ struct base_quat {
 
     template<typename T>
     uint64_t base_quat<T>::hashcode() const {
-        return objects::hashcode(m_data, 4);
+        const T data[] = {i, j, k, a};
+        return objects::hashcode(data, 4);
     }    
 }
 

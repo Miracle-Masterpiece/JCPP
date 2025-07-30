@@ -1,11 +1,7 @@
 #ifndef JSTD_CPP_LANG_MATH_VEC3_H
 #define JSTD_CPP_LANG_MATH_VEC3_H
 
-
-#ifndef NDEBUG
-    #include <cpp/lang/exceptions.hpp>
-#endif
-
+#include <cpp/lang/exceptions.hpp>
 #include <cstdint>
 #include <cpp/lang/utils/objects.hpp>
 #include <cpp/lang/math/math.hpp>
