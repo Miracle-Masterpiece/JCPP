@@ -90,7 +90,7 @@ namespace tca {
         std::size_t padding = calcAlign(start, align);
         std::size_t total   = size + padding;
         if ((m_stack_size - m_total_allocated) < total + padding)
-            throw std::bad_alloc();
+            return nullptr;
         void* aligned_address   = (void*) (start + padding);
         frame->m_allocated      += total;
         m_total_allocated       += total;

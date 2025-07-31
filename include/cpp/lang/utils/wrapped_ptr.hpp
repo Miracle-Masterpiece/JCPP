@@ -209,6 +209,12 @@ public:
         );
         return wrapped_ptr<E>(reinterpret_cast<E*>(m_pointer));
     }
+
+    template<typename T>
+    wrapped_ptr<T> make_wrapped(T* pointer) {
+        return wrapped_ptr<T>(pointer);
+    }
+
 }
 
 

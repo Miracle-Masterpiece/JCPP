@@ -49,7 +49,7 @@ namespace tca {
 
     compact_linear_allocator::compact_linear_allocator(std::size_t capacity, base_allocator* allocator) : 
     _allocator(allocator), 
-    m_ctrl_block_allocator(sizeof(jstd::internal::sptr::shared_control_block), allocator), 
+    m_ctrl_block_allocator(sizeof(jstd::internal::sptr::shared_control_block), pool_allocator::DEFAULT_COUNT_BUCKETS, allocator), 
     _capacity(capacity),
     _offset(0) {
         _data           = allocator->allocate_align(capacity, ALLOC_LIB_MAX_ALIGN);

@@ -149,9 +149,25 @@ class scope_allocator {
      * Указатель на предыдущий распределитель.
      */
     base_allocator* m_prev;
+    
+    /**
+     * 
+     */
     scope_allocator(const scope_allocator&)             = delete;
+    
+    /**
+     * 
+     */
     scope_allocator& operator= (const scope_allocator&) = delete;
+    
+    /**
+     * 
+     */
     scope_allocator(scope_allocator&&)                  = delete;
+    
+    /**
+     * 
+     */
     scope_allocator& operator= (scope_allocator&&)      = delete;
 public:
     /**
@@ -160,6 +176,9 @@ public:
      */
     scope_allocator(base_allocator* allocator);
     
+    /**
+     * 
+     */
     ~scope_allocator();
     
     /**

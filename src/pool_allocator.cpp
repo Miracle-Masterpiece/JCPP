@@ -51,11 +51,12 @@ namespace internal {
     m_byte_size(0), 
     m_bucket_size(0), 
     m_bucket_count(0), 
-    m_freelist(nullptr) {
+    m_freelist(nullptr),
+    m_allocated(0) {
 
     }
     
-    pool::pool(base_allocator* allocator, std::size_t blocksize, std::size_t count_blocks) : pool() {
+    pool::pool(std::size_t blocksize, std::size_t count_blocks, base_allocator* allocator) : pool() {
         blocksize = calcAlignSize(blocksize, alignof(std::max_align_t));
         void* data = allocator->allocate_align((blocksize + HEADER_SIZE) * count_blocks, alignof(std::max_align_t));
         if (data != nullptr) {
@@ -65,7 +66,8 @@ namespace internal {
             m_bucket_size   = blocksize + HEADER_SIZE;
             m_bucket_count  = count_blocks;
             m_freelist      = nullptr;
-            
+            m_allocated     = 0;
+
             for (std::size_t i = 0; i < count_blocks; ++i) {
                 std::size_t offset = i * m_bucket_size;
                 memblock* block = new(reinterpret_cast<char*>(data) + offset) memblock();
@@ -92,13 +94,15 @@ namespace internal {
     m_byte_size(p.m_byte_size),
     m_bucket_size(p.m_bucket_size),
     m_bucket_count(p.m_bucket_count),
-    m_freelist(p.m_freelist) {
+    m_freelist(p.m_freelist), 
+    m_allocated(p.m_allocated) {
         p.m_allocator       = nullptr;
         p.m_data            = nullptr;
         p.m_byte_size       = 0;
         p.m_bucket_size     = 0;
         p.m_bucket_count    = 0;
         p.m_freelist        = nullptr;
+        p.m_allocated       = 0;
         update_owner(&p);
     }
 
@@ -111,13 +115,15 @@ namespace internal {
             m_bucket_size   = p.m_bucket_size;
             m_bucket_count  = p.m_bucket_count;
             m_freelist      = p.m_freelist;
-            
+            m_allocated     = p.m_allocated;
+
             p.m_allocator       = nullptr;
             p.m_data            = nullptr;
             p.m_byte_size       = 0;
             p.m_bucket_size     = 0;
             p.m_bucket_count    = 0;
             p.m_freelist        = nullptr;
+            p.m_allocated       = 0;
 
             update_owner(&p);
         }
@@ -152,6 +158,7 @@ namespace internal {
         if (block == nullptr)
             return nullptr;
         block->m_owner = this;
+        ++m_allocated;
         return reinterpret_cast<void*>(reinterpret_cast<char*>(block) + HEADER_SIZE);
     }
     
@@ -161,6 +168,7 @@ namespace internal {
         memblock* block = void_to_memblock(p);
         tca_check_currupt_memblock(block);
         link(block);
+        --m_allocated;
     }
 
 }//namespace internal
@@ -195,8 +203,8 @@ namespace internal {
 
 
 
-    pool_allocator::pool_allocator(std::size_t size, base_allocator* allocator) : 
-    m_allocator(allocator), m_pool(allocator), m_pool_size(size) {
+    pool_allocator::pool_allocator(std::size_t size, std::size_t buckets_count, base_allocator* allocator) : 
+    m_allocator(allocator), m_pool(allocator), m_count_buckets(buckets_count), m_pool_size(size) {
 
     }
     
@@ -204,19 +212,24 @@ namespace internal {
     base_allocator(std::move(pa)),
     m_allocator(pa.m_allocator),
     m_pool(std::move(pa.m_pool)),
+    m_count_buckets(pa.m_count_buckets),
     m_pool_size(pa.m_pool_size) {
-        pa.m_allocator = nullptr;
-        pa.m_pool_size = 0;
+        pa.m_allocator      = nullptr;
+        pa.m_pool_size      = 0;
+        pa.m_count_buckets  = 0;
     }
 
     pool_allocator& pool_allocator::operator= (pool_allocator&& pa) {
         if (&pa != this) {
             base_allocator::operator=(std::move(pa));
-            m_allocator = pa.m_allocator;
-            m_pool      = std::move(pa.m_pool);
-            m_pool_size = pa.m_pool_size;
-            pa.m_allocator = nullptr;
-            pa.m_pool_size = 0;
+            m_allocator     = pa.m_allocator;
+            m_pool          = std::move(pa.m_pool);
+            m_count_buckets = pa.m_count_buckets;
+            m_pool_size     = pa.m_pool_size;
+            pa.m_allocator      = nullptr;
+            pa.m_pool_size      = 0;
+            pa.m_count_buckets  = 0;
+            
         }
         return *this;
     }
@@ -248,7 +261,7 @@ namespace internal {
         }
 
         {
-            internal::pool pool(m_allocator, m_pool_size, COUNT_POOL_BUCKETS);
+            internal::pool pool(m_pool_size, m_count_buckets, m_allocator);
             p = pool.allocate();
             if (p != nullptr)
                 m_pool.add(std::move(pool));
@@ -263,6 +276,14 @@ namespace internal {
         internal::pool::memblock* memblock = internal::pool::void_to_memblock(p);
         internal::pool* pool = memblock->m_owner;
         pool->deallocate(p);
+    }
+
+    void pool_allocator::free_unsused_pools() {
+        for (uint64_t i = 0; i < m_pool.size(); ++i) {
+            internal::pool& pool = m_pool.at(i);
+            if (pool.is_free())
+                m_pool.remove_at(i--);
+        }
     }
 
 
