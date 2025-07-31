@@ -172,7 +172,7 @@ public:
     /**
      * 
      */
-    static std::size_t byte_size_for_pool(std::size_t block_size, std::size_t count_buckets) {
+    static constexpr std::size_t byte_size_for_pool(std::size_t block_size, std::size_t count_buckets) {
         return (block_size + HEADER_SIZE) * count_buckets;
     }
 
