@@ -125,7 +125,7 @@ namespace jstd {
         
         //Если делитель больше 1, то масштабирование изображения требуется, а значит требуется и временный буфер.
         if (scale_factor > 1)
-            allocator_for_rescaled_image = tca::linear_allocator(m_allocator, buffer_size_for_resized_image);        
+            allocator_for_rescaled_image = tca::linear_allocator(buffer_size_for_resized_image, m_allocator);
 
         struct callback_image {
             /**
