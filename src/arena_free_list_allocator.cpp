@@ -19,7 +19,7 @@ namespace tca
     }
     
     void* arena_free_list_allocator::allocate_align(std::size_t sz, std::size_t align) {
-        return m_arena.allocate_best_fit(sz);
+        return m_arena.allocate_first_fit(sz);
     }
     
     void arena_free_list_allocator::deallocate(void* p, std::size_t sz) {
@@ -27,7 +27,8 @@ namespace tca
     }
     
     arena_free_list_allocator::arena_free_list_allocator(arena_free_list_allocator&& alloc) :
-    base_allocator(std::move(alloc)), m_arena(std::move(alloc.m_arena)) {
+    base_allocator(std::move(alloc)), 
+    m_arena(std::move(alloc.m_arena)) {
 
     }
 
