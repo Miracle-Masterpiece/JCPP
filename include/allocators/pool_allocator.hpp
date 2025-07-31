@@ -173,7 +173,7 @@ public:
      * 
      */
     static constexpr std::size_t byte_size_for_pool(std::size_t block_size, std::size_t count_buckets) {
-        return (block_size + HEADER_SIZE) * count_buckets;
+        return (calcAlignSize(block_size, alignof(std::max_align_t)) + HEADER_SIZE) * count_buckets;
     }
 
     /**
