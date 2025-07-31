@@ -172,6 +172,13 @@ public:
     /**
      * 
      */
+    static std::size_t byte_size_for_pool(std::size_t block_size, std::size_t count_buckets) {
+        return (block_size + HEADER_SIZE) * count_buckets;
+    }
+
+    /**
+     * 
+     */
     static memblock* void_to_memblock(void* p) {
         return reinterpret_cast<memblock*>(reinterpret_cast<char*>(p) - HEADER_SIZE);
     }

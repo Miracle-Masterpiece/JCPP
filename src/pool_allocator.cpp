@@ -58,7 +58,7 @@ namespace internal {
     
     pool::pool(std::size_t blocksize, std::size_t count_blocks, base_allocator* allocator) : pool() {
         blocksize = calcAlignSize(blocksize, alignof(std::max_align_t));
-        void* data = allocator->allocate_align((blocksize + HEADER_SIZE) * count_blocks, alignof(std::max_align_t));
+        void* data = allocator->allocate_align(byte_size_for_pool(blocksize, count_blocks), alignof(std::max_align_t));
         if (data != nullptr) {
             m_allocator     = allocator;
             m_data          = data;
@@ -73,7 +73,6 @@ namespace internal {
                 memblock* block = new(reinterpret_cast<char*>(data) + offset) memblock();
                 link(block);
             }
-
         }
     }
     
