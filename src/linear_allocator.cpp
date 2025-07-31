@@ -22,7 +22,7 @@ namespace tca {
 
     }
 
-    linear_allocator::linear_allocator(base_allocator* baseAllocator, std::size_t capacity) : 
+    linear_allocator::linear_allocator(std::size_t capacity, base_allocator* baseAllocator) : 
     base_allocator(baseAllocator), 
     _buffer(nullptr), 
     _capacity(capacity),

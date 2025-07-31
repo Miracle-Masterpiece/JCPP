@@ -39,6 +39,11 @@ class linear_allocator : public base_allocator {
 public:
     
     /**
+     * 
+     */
+    linear_allocator();
+
+    /**
      * @param size
      *      Размер выделенной арены.
      * 
