@@ -91,7 +91,7 @@ namespace jstd
         subchunk2Size   = header_buffer.get<uint32_t>();
 
         unique_ptr<char> l_data(m_allocator, reinterpret_cast<char*>(m_allocator->allocate(subchunk2Size)));
-        if (l_data.is_null())
+        if (!l_data)
             throw_except<out_of_memory_error>("Out of memory");
         readed = in->read(l_data.raw_ptr(), subchunk2Size);
         if (readed != subchunk2Size)

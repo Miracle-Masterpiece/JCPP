@@ -77,8 +77,8 @@ namespace jstd {
         if (m_node_allocator == nullptr) 
             throw_except<illegal_state_exception>("m_node_allocator must be != null");
 #endif//NDEBUG
-        if (m_root.is_null())
-            m_root  = unique_ptr<node>(m_node_allocator, node(m_width, m_height, m_node_allocator));
+        if (!m_root) 
+            m_root = make_unique(node(m_width, m_height, m_node_allocator), m_node_allocator);
         BEGIN: 
         for (int64_t i = 0; i < m_images.length; ++i) {
             const image& img = m_images[i];
@@ -106,7 +106,7 @@ namespace jstd {
             throw_except<illegal_state_exception>("m_allocator must be != null");
         if (m_node_allocator == nullptr) 
             throw_except<illegal_state_exception>("m_node_allocator must be != null");
-        if (m_root.is_null())
+        if (!m_root)
             create_tree();
 #endif//NDEBUG
         

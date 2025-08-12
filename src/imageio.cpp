@@ -65,23 +65,26 @@ namespace imageio
          * Простая обёртка над malloc/free
          */
         tca::malloc_free_allocator jstd_malloc_allocator;
-        unique_ptr<stbi_uc> pixels(&jstd_malloc_allocator, stbi_load_from_memory(raw_image.raw_ptr(), size, &width, &heigth, &channels, 0));
-        
-        if (pixels.is_null())
+
+        stbi_uc* pixels = stbi_load_from_memory(raw_image.raw_ptr(), size, &width, &heigth, &channels, 0);
+        if (pixels == nullptr)
             throw_except<illegal_state_exception>("%s", stbi_failure_reason());
-        
-        image img(width, heigth, channels, allocator);
+
+        image img;
+        try {
+            img = image(width, heigth, channels, allocator);
+        } catch (...) {
+            stbi_image_free(pixels);
+            throw;
+        }
         
         image::byte* img_raw_data = img.pixels();
         int32_t len = width * heigth * channels;
         
         for (int32_t i = 0; i < len; ++i)
             img_raw_data[i] = (image::byte) pixels[i];
-        
-        // Собственно, данная штука, конечно, нужна. 
-        // Но поскольку выделитель памяти переопределён в stbimage, то я и так знаю, что unique_ptr правильно освободит память.
-        //
-        // stbi_image_free(pixels);
+
+        stbi_image_free(pixels);
         return img;
     }
 
