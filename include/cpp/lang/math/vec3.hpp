@@ -494,6 +494,18 @@ struct base_vec3 {
      *     Новый вектор с противоположными по знаку компонентами.
      */
     base_vec3<T> operator-() const;
+
+    /**
+     * Приводит этот вектор к другому типу.
+     * 
+     * @tparam
+     *      Тип, в который будет преобразован этот вектор.
+     * 
+     * @return
+     *      Новый, преобразованный, вектор.
+     */
+    template<typename E>
+    explicit operator base_vec3<E>() const;
 };
 
 
@@ -642,8 +654,8 @@ struct base_vec3 {
             case 0 : return x;
             case 1 : return y;
             case 2 : return z;
-            default: throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
         }
+        throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
     }
 
     template<typename T>
@@ -652,8 +664,8 @@ struct base_vec3 {
             case 0 : return x;
             case 1 : return y;
             case 2 : return z;
-            default: throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
         }
+        throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
     }
 
     template<typename T>
@@ -800,6 +812,12 @@ struct base_vec3 {
     template<typename T>
     base_vec3<T> base_vec3<T>::operator-() const {
         return base_vec3<T>(-x, -y, -z);
+    }
+
+    template<typename T>
+    template<typename E>
+    base_vec3<T>::operator base_vec3<E>() const {
+        return base_vec3<E>((E) x, (E) y, (E) z);
     }
 }
 #endif//JSTD_CPP_LANG_MATH_VEC3_H

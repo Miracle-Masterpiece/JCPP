@@ -554,6 +554,18 @@ struct base_vec4 {
      *     Новый вектор с противоположными по знаку компонентами.
      */
     base_vec4<T> operator-() const;
+
+    /**
+     * Приводит этот вектор к другому типу.
+     * 
+     * @tparam
+     *      Тип, в который будет преобразован этот вектор.
+     * 
+     * @return
+     *      Новый, преобразованный, вектор.
+     */
+    template<typename E>
+    explicit operator base_vec4<E>() const;
 };
 
 
@@ -695,8 +707,8 @@ struct base_vec4 {
             case 1 : return y;
             case 2 : return z;
             case 3 : return w;
-            default: throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
         }
+        throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
     }
     
     template<typename T>
@@ -706,8 +718,8 @@ struct base_vec4 {
             case 1 : return y;
             case 2 : return z;
             case 3 : return w;
-            default: throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
         }
+        throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
     }
 
     template<typename T>
@@ -859,6 +871,12 @@ struct base_vec4 {
     template<typename T>
     int32_t base_vec4<T>::to_string(char buf[], int32_t bufsize) const {
         return std::snprintf(buf, bufsize, "[x=%g, y=%g, z=%g, w=%g]", (double) x, (double) y, (double) z, (double) w);
+    }
+
+    template<typename T>
+    template<typename E>
+    base_vec4<T>::operator base_vec4<E>() const {
+        return base_vec4<E>((E) x, (E) y, (E) z, (E) w);
     }
 }
 

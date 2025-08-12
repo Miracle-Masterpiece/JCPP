@@ -9,34 +9,113 @@
 
 namespace jstd {
 
+/**
+ * 
+ */
 template<typename E>
 class unique_ptr {
+    
+    /**
+     * 
+     */
+    tca::base_allocator* m_allocator;
+    
+    /**
+     * 
+     */
+    E* m_element;
+    
+    /**
+     * 
+     */
     unique_ptr(const unique_ptr<E>&) = delete;
+    
+    /**
+     * 
+     */
     unique_ptr& operator= (const unique_ptr<E>&) = delete;
 
-    tca::base_allocator*    m_allocator;
-    E*                      m_element;
-    
+    /**
+     * 
+     */
     inline void check_access() const;
+    
+    /**
+     * 
+     */
     void cleanup();
 public:
+    
+    /**
+     * 
+     */
     unique_ptr();
+    
+    /**
+     * 
+     */
     unique_ptr(tca::base_allocator* allocator);
+    
+    /**
+     * 
+     */
     unique_ptr(tca::base_allocator* allocator, E* data);
+    
+    /**
+     * 
+     */
     template<typename _E>
     unique_ptr(tca::base_allocator* allocator, _E&&);
+    
+    /**
+     * 
+     */
     unique_ptr(unique_ptr<E>&&);
+    
+    /**
+     * 
+     */
     unique_ptr<E>& operator= (unique_ptr<E>&&);
+    
+    /**
+     * 
+     */
     ~unique_ptr();
     
+    /**
+     * 
+     */
     E* release();
+    
+    /**
+     * 
+     */
     E& operator*() const;
+    
+    /**
+     * 
+     */
     E* operator->() const;
+    
+    /**
+     * 
+     */
     E* operator() () const;
+    
+    /**
+     * 
+     */
     E* raw_ptr() const;
+    
+    /**
+     * 
+     */
     E& operator[] (std::size_t idx) const;
-    bool is_null() const;
-
+    
+    /**
+     * 
+     */
+    operator bool() const;
 };
     template<typename E>
     unique_ptr<E> take(tca::base_allocator* allocator, E* ptr) {
@@ -69,7 +148,12 @@ public:
         void* raw_data = allocator->allocate_align(sizeof(E), alignof(E));
         if (raw_data == nullptr)
             throw_except<out_of_memory_error>("Out of memory!");
-        m_element   = new(raw_data) E(std::forward<_E>(e));
+        try {
+            m_element   = new(raw_data) E(std::forward<_E>(e));
+        } catch (...) {
+            allocator->deallocate(raw_data, sizeof(E));
+            throw;
+        }
         m_allocator = allocator;
     }
     
@@ -145,11 +229,6 @@ public:
     }
 
     template<typename E>
-    bool unique_ptr<E>::is_null() const {
-        return m_element == nullptr;
-    }
-
-    template<typename E>
     E* unique_ptr<E>::raw_ptr() const {
         return reinterpret_cast<E*>(m_element);
     }
@@ -160,24 +239,78 @@ public:
         return m_element[idx];
     }
     
+    template<typename E>
+    unique_ptr<E>::operator bool() const {
+        return m_element != nullptr;
+    }
+
+/**
+ * 
+ */
 template<typename E>
 class unique_ptr<E[]> {
-    
+   
+    /**
+     * 
+     */
     tca::base_allocator*    m_allocator;
+    
+    /**
+     * 
+     */
     E*                      m_element;
+    
+    /**
+     * 
+     */
     int64_t                 m_length;
 
+    /**
+     * 
+     */
     inline void check_access() const;
 
 public:
+    
+    /**
+     * 
+     */
     unique_ptr();
+    
+    /**
+     * 
+     */
     unique_ptr(tca::base_allocator* allocator, int64_t length);
+    
+    /**
+     * 
+     */
     ~unique_ptr();
-    bool is_null() const;
+    
+    /**
+     * 
+     */
     E& operator*() const;
+    
+    /**
+     * 
+     */
     E* operator->() const;
+    
+    /**
+     * 
+     */
     E& operator[] (std::size_t idx) const;
+    
+    /**
+     * 
+     */
     E* raw_ptr() const;
+
+    /**
+     * 
+     */
+    operator bool() const;
 };
 
     template<typename E>
@@ -223,14 +356,14 @@ public:
     }
 
     template<typename E>
-    bool unique_ptr<E[]>::is_null() const {
-        return m_element == nullptr;
-    }
-
-    template<typename E>
     E* unique_ptr<E[]>::raw_ptr() const {
         check_access();
         return m_element;
+    }
+
+    template<typename E>
+    unique_ptr<E[]>::operator bool() const {
+        return m_element != nullptr;
     }
 };
 
