@@ -44,8 +44,8 @@ class unique_ptr {
      * 
      */
     void cleanup();
-public:
-    
+
+public:    
     /**
      * 
      */
@@ -55,11 +55,6 @@ public:
      * 
      */
     unique_ptr(tca::base_allocator* allocator);
-    
-    /**
-     * 
-     */
-    unique_ptr(tca::base_allocator* allocator, E* data);
     
     /**
      * 
@@ -117,13 +112,11 @@ public:
      */
     operator bool() const;
 };
-    template<typename E>
-    unique_ptr<E> take(tca::base_allocator* allocator, E* ptr) {
-        return unique_ptr<E>(allocator, ptr);
-    }
     
     template<typename E>
-    unique_ptr<E>::unique_ptr() : m_allocator(nullptr), m_element(nullptr) {
+    unique_ptr<E>::unique_ptr() : 
+    m_allocator(nullptr), 
+    m_element(nullptr) {
 
     }
 
@@ -132,11 +125,6 @@ public:
         
     }
     
-    template<typename E>
-    unique_ptr<E>::unique_ptr(tca::base_allocator* allocator, E* data) : m_allocator(allocator), m_element(data) {
-        
-    }
-
     template<typename T>
     unique_ptr<T> make_unique(T&& object, tca::base_allocator* allocator = tca::get_scoped_or_default()) {
         return unique_ptr<T>(allocator, std::forward<T>(object));
@@ -149,16 +137,18 @@ public:
         if (raw_data == nullptr)
             throw_except<out_of_memory_error>("Out of memory!");
         try {
-            m_element   = new(raw_data) E(std::forward<_E>(e));
+            m_element = new(raw_data) E(std::forward<_E>(e));
         } catch (...) {
             allocator->deallocate(raw_data, sizeof(E));
             throw;
         }
-        m_allocator = allocator;
+        m_allocator     = allocator;
     }
     
     template<typename E>
-    unique_ptr<E>::unique_ptr(unique_ptr<E>&& p) : m_allocator(p.m_allocator), m_element(p.m_element) {
+    unique_ptr<E>::unique_ptr(unique_ptr<E>&& p) : 
+    m_allocator(p.m_allocator), 
+    m_element(p.m_element) {
         p.m_allocator   = nullptr;
         p.m_element     = nullptr;
     }
@@ -167,8 +157,8 @@ public:
     unique_ptr<E>& unique_ptr<E>::operator= (unique_ptr<E>&& p) {
         if (&p != this) {
             cleanup();
-            m_allocator = p.m_allocator;
-            m_element   = p.m_element;
+            m_allocator     = p.m_allocator;
+            m_element       = p.m_element;
             
             p.m_allocator   = nullptr;
             p.m_element     = nullptr;
@@ -183,8 +173,8 @@ public:
                 m_element->~E();
                 m_allocator->deallocate(m_element, sizeof(E));
             }
-            m_element   = nullptr;
-            m_allocator = nullptr;
+            m_element       = nullptr;
+            m_allocator     = nullptr;
         }
     }
 
@@ -217,8 +207,8 @@ public:
     E* unique_ptr<E>::release() {
         check_access();
         E* data = m_element;
-        m_allocator = nullptr;
-        m_element   = nullptr;
+        m_allocator     = nullptr;
+        m_element       = nullptr;
         return data;
     }
 
@@ -235,7 +225,7 @@ public:
 
     template<typename E>
     E& unique_ptr<E>::operator[] (std::size_t idx) const {
-        check_access();
+        check_access();        
         return m_element[idx];
     }
     
@@ -253,17 +243,17 @@ class unique_ptr<E[]> {
     /**
      * 
      */
-    tca::base_allocator*    m_allocator;
+    tca::base_allocator* m_allocator;
     
     /**
      * 
      */
-    E*                      m_element;
+    E* m_element;
     
     /**
      * 
      */
-    int64_t                 m_length;
+    std::size_t m_length;
 
     /**
      * 
@@ -323,7 +313,12 @@ public:
         E* data = (E*) allocator->allocate_align(sizeof(E) * length, alignof(E));
         if (data == nullptr)
             throw_except<out_of_memory_error>("Out of memory!");        
-        placement_new(data, length);
+        try {
+            placement_new(data, length);
+        } catch (...) {
+            allocator->deallocate(data, sizeof(E) * length);
+            throw;
+        }
         m_element   = data;
         m_allocator = allocator;
         m_length    = length;
