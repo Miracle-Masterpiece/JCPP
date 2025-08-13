@@ -656,6 +656,8 @@ struct base_vec3 {
             case 2 : return z;
         }
         throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
+        //for suppress warning
+        return x;
     }
 
     template<typename T>
@@ -666,6 +668,8 @@ struct base_vec3 {
             case 2 : return z;
         }
         throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
+        //for suppress warning
+        return x;
     }
 
     template<typename T>

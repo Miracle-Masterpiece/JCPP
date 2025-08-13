@@ -709,6 +709,8 @@ struct base_vec4 {
             case 3 : return w;
         }
         throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
+        //for suppress warning
+        return x;
     }
     
     template<typename T>
@@ -720,6 +722,8 @@ struct base_vec4 {
             case 3 : return w;
         }
         throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
+        //for suppress warning
+        return x;
     }
 
     template<typename T>
