@@ -25,14 +25,27 @@ namespace jstd {
  */
 template<typename K, typename KEY_HASH = hash_for<K>, typename KEY_EQUAL = equal_to<K>>
 class hash_set {
+    
+    /**
+     * 
+     */
     static const int32_t INIT_CAPACITY  = 16;
+    
+    /**
+     * 
+     */
     static const char DEFAULT_VALUE     = '\0';
+    
+    /**
+     * 
+     */
     hash_map<K, char, KEY_HASH, KEY_EQUAL> m_storage;
+
 public:
     /**
-     * Создаёт пустое множество.
+     * 
      */
-    hash_set();
+    typedef typename hash_map<K, char, KEY_HASH, KEY_EQUAL>::entry entry;
 
     /**
      * Создаёт пустое множество с заданным аллокатором и (опционально) начальной ёмкостью.
@@ -43,7 +56,22 @@ public:
      * @param init_capacity 
      *      Начальная ёмкость.
      */
-    hash_set(tca::base_allocator* allocator, int64_t init_capacity = INIT_CAPACITY);
+    hash_set(tca::allocator* allocator = tca::get_scoped_or_default());
+
+    /**
+     * Создаёт пустое множество с заданным аллокатором и (опционально) начальной ёмкостью.
+     *
+     * @param init_capacity 
+     *      Начальная ёмкость.
+     *
+     * @param load_factor
+     *      Соотношение количества элементов и ёмкостью при котором будет расширение хеш-сета.
+     *  
+     * @param allocator 
+     *      Указатель на пользовательский аллокатор.
+     * 
+     */
+    hash_set(int64_t init_capacity, float load_factor = 0.75f, tca::allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Конструктор копирования.
@@ -100,7 +128,7 @@ public:
      *      Ключ для добавления.
      */
     template<typename _K>
-    void put(_K&& key);
+    void add(_K&& key);
 
     /**
      * Удаляет ключ из множества.
@@ -111,6 +139,17 @@ public:
      *      true, если ключ был найден и удалён, иначе false.
      */
     bool remove(const K& key);
+
+    /**
+     * Удаляет из данного множества все элементы, содержащиеся в передаваемом множестве.
+     * 
+     * @param set
+     *      Передаваемое множество.
+     * 
+     * @return
+     *      true, если был удалён хотя бы один элемент.
+     */
+    bool remove_all(const hash_set<K>& set);
 
     /**
      * Проверяет, содержится ли ключ в множестве.
@@ -140,7 +179,7 @@ public:
      * @param set 
      *      Множество, ключи которого будут добавлены.
      */
-    void put_all(const hash_set<K, KEY_HASH, KEY_EQUAL>& set);
+    void add_all(const hash_set<K, KEY_HASH, KEY_EQUAL>& set);
 
     /**
      * Удаляет все элементы из множества.
@@ -173,18 +212,45 @@ public:
      * @return 
      *      Новый экземпляр множества, содержащий те же элементы.
      */
-    hash_set<K, KEY_HASH, KEY_EQUAL> clone(tca::base_allocator* allocator = nullptr) const;
+    hash_set<K, KEY_HASH, KEY_EQUAL> clone(tca::allocator* allocator = nullptr) const;
+
+    /**
+     * 
+     */
+    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>::iterator<const entry> begin() const {
+        return m_storage.begin();
+    }
+    
+    /**
+     * 
+     */
+    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>::iterator<const entry> end() const {
+        return m_storage.end();
+    }
+    
+    /**
+     * 
+     */
+    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>::iterator<entry> begin() {
+        return m_storage.begin();
+    }
+    
+    /**
+     * 
+     */
+    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>::iterator<entry> end() {
+        return m_storage.end();
+    }
 };
 
-
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
-    hash_set<K, KEY_HASH, KEY_EQUAL>::hash_set() : m_storage() {
-
+    hash_set<K, KEY_HASH, KEY_EQUAL>::hash_set(tca::allocator* allocator) :
+        m_storage(allocator) {
     }
 
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
-    hash_set<K, KEY_HASH, KEY_EQUAL>::hash_set(tca::base_allocator* allocator, int64_t init_capacity) : m_storage(allocator, init_capacity) {
-
+    hash_set<K, KEY_HASH, KEY_EQUAL>::hash_set(int64_t init_capacity, float load_factor, tca::allocator* allocator) :
+        m_storage(init_capacity, load_factor, allocator) {
     }
 
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
@@ -216,14 +282,24 @@ public:
     
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
     template<typename _K>
-    void hash_set<K, KEY_HASH, KEY_EQUAL>::put(_K&& key) {
+    void hash_set<K, KEY_HASH, KEY_EQUAL>::add(_K&& key) {
         const char value = DEFAULT_VALUE;
         m_storage.put(std::forward<_K>(key), value);
     }
 
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
     bool hash_set<K, KEY_HASH, KEY_EQUAL>::remove(const K& key) {
-        return m_storage.remove(key, nullptr);
+        return m_storage.remove(key);
+    }
+
+    template<typename K, typename KEY_HASH, typename KEY_EQUAL>
+    bool hash_set<K, KEY_HASH, KEY_EQUAL>::remove_all(const hash_set<K>& set) {
+        bool changed = false;
+        for (const entry& e : set) {
+            if (remove(e.get_key()))
+                changed = true;
+        }
+        return changed;
     }
 
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
@@ -232,7 +308,7 @@ public:
     }
 
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
-    void hash_set<K, KEY_HASH, KEY_EQUAL>::put_all(const hash_set<K, KEY_HASH, KEY_EQUAL>& set) {
+    void hash_set<K, KEY_HASH, KEY_EQUAL>::add_all(const hash_set<K, KEY_HASH, KEY_EQUAL>& set) {
         m_storage.put_all(set.m_storage);
     }
 
@@ -257,7 +333,7 @@ public:
     }
 
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
-    hash_set<K, KEY_HASH, KEY_EQUAL> hash_set<K, KEY_HASH, KEY_EQUAL>::clone(tca::base_allocator* allocator) const {
+    hash_set<K, KEY_HASH, KEY_EQUAL> hash_set<K, KEY_HASH, KEY_EQUAL>::clone(tca::allocator* allocator) const {
         hash_map<K, char, KEY_HASH, KEY_EQUAL> storage = m_storage.clone(allocator);
         hash_set<K, KEY_HASH, KEY_EQUAL> result;
         result.m_storage = std::move(storage);

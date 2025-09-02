@@ -1,7 +1,7 @@
 #ifndef _ALLOCATORS_MALLOC_FREE_ALLOCATOR_H
 #define _ALLOCATORS_MALLOC_FREE_ALLOCATOR_H
 
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 
 namespace tca {
 
@@ -12,11 +12,19 @@ namespace tca {
  * и освобождает её с помощью free(). Он не отслеживает выделенные блоки и предназначен для простого  
  * управления памятью в стиле стандартного malloc/free.  
  */  
-class malloc_free_allocator : public base_allocator {  
-    malloc_free_allocator(const malloc_free_allocator&)             = delete;
-    malloc_free_allocator& operator= (const malloc_free_allocator&) = delete;
-public:  
+class malloc_free_allocator : public allocator {
     
+    /**
+     * 
+     */
+    malloc_free_allocator(const malloc_free_allocator&)             = delete;
+
+    /**
+     * 
+     */
+    malloc_free_allocator& operator= (const malloc_free_allocator&) = delete;
+
+public:      
     /**
      * Создаёт аллокатор с nullptr m_parent аллокатором.
      */
@@ -64,16 +72,13 @@ public:
     void* allocate_align(std::size_t sz, std::size_t align) override;  
 
     /**  
-     * Освобождает блок памяти, выделенный через allocate() или allocateAlign(),  
+     * Освобождает блок памяти, выделенный через allocate() или allocate_aling(),  
      * с использованием free().  
      *  
      * @param p 
      *      Указатель на освобождаемый блок памяти.  
-     * 
-     * @param sz 
-     *      Размер блока памяти (может игнорироваться в реализации).  
      */  
-    void deallocate(void* p, std::size_t sz) override;  
+    void deallocate(void* p) override;  
 };
 
 }

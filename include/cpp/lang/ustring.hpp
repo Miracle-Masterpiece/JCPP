@@ -67,13 +67,13 @@ namespace utf {
 template<typename CHAR_TYPE> 
 class tustring : public tstring<CHAR_TYPE> {
 public:
-    tustring(tca::base_allocator* allocator = tca::get_scoped_or_default());
+    tustring(tca::allocator* allocator = tca::get_scoped_or_default());
  
     /**
      * @deprecated in @since 1.1
      */
-    tustring(tca::base_allocator* allocator, const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order());
-    tustring(const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order(), tca::base_allocator* allocator = tca::get_scoped_or_default());
+    tustring(tca::allocator* allocator, const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order());
+    tustring(const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order(), tca::allocator* allocator = tca::get_scoped_or_default());
  
     tustring(const tustring<CHAR_TYPE>& str);
     tustring(tstring<CHAR_TYPE>&& str);
@@ -185,7 +185,7 @@ public:
      * @since 1.0
      */
     template<typename OUT_CHAR_TYPE>
-    tustring<OUT_CHAR_TYPE> recode(byte_order out_order = system::native_byte_order(), tca::base_allocator* allocator = tca::get_scoped_or_default()) const;
+    tustring<OUT_CHAR_TYPE> recode(byte_order out_order = system::native_byte_order(), tca::allocator* allocator = tca::get_scoped_or_default()) const;
 
     /**
      * Позволяет итерироваться по кодовым точкам юникода в строке.
@@ -225,16 +225,16 @@ public:
 };
     
     template<typename CHAR_TYPE>
-    tustring<CHAR_TYPE>::tustring(tca::base_allocator* allocator) : tstring<CHAR_TYPE>(allocator) {
+    tustring<CHAR_TYPE>::tustring(tca::allocator* allocator) : tstring<CHAR_TYPE>(allocator) {
     }
     
     template<typename CHAR_TYPE>
-    tustring<CHAR_TYPE>::tustring(tca::base_allocator* allocator, const CHAR_TYPE* str, byte_order in, byte_order out) :
+    tustring<CHAR_TYPE>::tustring(tca::allocator* allocator, const CHAR_TYPE* str, byte_order in, byte_order out) :
     tstring<CHAR_TYPE>(allocator, str, in, out) {
     }
 
     template<typename CHAR_TYPE>
-    tustring<CHAR_TYPE>::tustring(const CHAR_TYPE* str, byte_order in, byte_order out, tca::base_allocator* allocator) :
+    tustring<CHAR_TYPE>::tustring(const CHAR_TYPE* str, byte_order in, byte_order out, tca::allocator* allocator) :
     tustring<CHAR_TYPE>(allocator, str, in, out) {
 
     }
@@ -327,7 +327,7 @@ public:
      * @return 
      *      Строка в кодировке UTF-16
      */
-    u16string make_utf16(const char* utf8_str, tca::base_allocator* allocator, byte_order out_order = system::native_byte_order() , int32_t len = -1);
+    u16string make_utf16(const char* utf8_str, tca::allocator* allocator, byte_order out_order = system::native_byte_order() , int32_t len = -1);
 
     /**
      * Создаёт строку UTF-8 из последовательности символов UTF-16.
@@ -348,7 +348,7 @@ public:
      * @return
      *      Строка в кодировке UTF-&
      */
-    u8string make_utf8(const uint16_t* utf16_str, tca::base_allocator* allocator, byte_order in_order = system::native_byte_order() , int len = -1);
+    u8string make_utf8(const uint16_t* utf16_str, tca::allocator* allocator, byte_order in_order = system::native_byte_order() , int len = -1);
 
     /**
      * #########################################################
@@ -387,19 +387,19 @@ public:
 
     template<>
     template<>
-    tustring<uint16_t> tustring<char>::recode(byte_order out, tca::base_allocator* allocator) const;
+    tustring<uint16_t> tustring<char>::recode(byte_order out, tca::allocator* allocator) const;
 
     template<>
     template<>
-    tustring<utf32_t> tustring<char>::recode(byte_order out, tca::base_allocator* allocator) const;
+    tustring<utf32_t> tustring<char>::recode(byte_order out, tca::allocator* allocator) const;
 
     template<>
     template<>
-    tustring<char> tustring<uint16_t>::recode(byte_order out, tca::base_allocator* allocator) const;
+    tustring<char> tustring<uint16_t>::recode(byte_order out, tca::allocator* allocator) const;
 
     template<>
     template<>
-    tustring<utf32_t> tustring<uint16_t>::recode(byte_order out, tca::base_allocator* allocator) const;
+    tustring<utf32_t> tustring<uint16_t>::recode(byte_order out, tca::allocator* allocator) const;
 
 
 /**

@@ -2,7 +2,7 @@
 #define JSTD_INTERNAL_SMART_PTRS_SHARED_PTR_T_H
 
 #include <allocators/Helpers.hpp>
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/traits.hpp>
 #include <cstdint>
@@ -22,36 +22,117 @@ namespace sptr
 
     /**
      * @internal
+     * @private
      */
     struct shared_control_block {
         
-        tca::base_allocator*    m_allocator;
-        void*                   m_object;
-        uint32_t                m_blocksize;
-        uint32_t                m_strong_refs;
-        uint32_t                m_weak_refs;
+        /**
+         * @internal
+         * @private
+         */
+        tca::allocator* m_allocator;
+        
+        /**
+         * @internal
+         * @private
+         */
+        void*           m_object;
+        
+        /**
+         * @internal
+         * @private
+         */
+        uint32_t        m_blocksize;
+        
+        /**
+         * @internal
+         * @private
+         */
+        uint32_t        m_strong_refs;
+        
+        /**
+         * @internal
+         * @private
+         */
+        uint32_t        m_weak_refs;
 
+        /**
+         * @internal
+         * @private
+         */
         shared_control_block();
-        shared_control_block(tca::base_allocator* allocator, void* object, uint32_t blocksize);
+        
+        /**
+         * @internal
+         * @private
+         */
+        shared_control_block(tca::allocator* allocator, void* object, uint32_t blocksize);
+        
+        /**
+         * @internal
+         * @private
+         */
         ~shared_control_block();
 
+        /**
+         * @internal
+         * @private
+         */
         void inc_strong_ref();
+        
+        /**
+         * @internal
+         * @private
+         */
         void dec_strong_ref();
 
+        /**
+         * @internal
+         * @private
+         */
         void inc_weak_ref();
+        
+        /**
+         * @internal
+         * @private
+         */
         void dec_weak_ref();
 
+        /**
+         * @internal
+         * @private
+         */
         uint32_t strong_count() const;
+        
+        /**
+         * @internal
+         * @private
+         */
         uint32_t weak_count() const;
 
+        /**
+         * @internal
+         * @private
+         */
         static const int32_t TO_STRING_MIN_BUFFER_SIZE = 64;
+
+        /**
+         * @internal
+         * @private
+         */
         int32_t to_string(char buf[], int32_t bufsize) const;
     };
 
+    /**
+     * @internal
+     * @private
+     */
     uint32_t calc_ctr_block_total_size(uint32_t data_type_sizeof, uint32_t data_type_alignof, uint32_t* offset_to_object = nullptr);
 
     /**
      * @internal
+     * @private
+     *
      * 
      * Выделяет память под контролирующий блок и объект в одной области памяти.
      * 
@@ -73,13 +154,14 @@ namespace sptr
      * @return
      *      Указатель на контролирующий блок или nullptr, если выделение не удалось.
      */
-    shared_control_block* alloc_memory_to_control_block(tca::base_allocator* allocator, uint32_t object_size, uint32_t object_align, uint32_t n_objects = 1);
+    shared_control_block* alloc_memory_to_control_block(tca::allocator* allocator, uint32_t object_size, uint32_t object_align, uint32_t n_objects = 1);
 
     /**
-     * 
+     * @internal
+     * @private
      */
     template<typename T, typename _T>
-    shared_control_block* make_control_block(tca::base_allocator* allocator, _T&& obj) {
+    shared_control_block* make_control_block(tca::allocator* allocator, _T&& obj) {
         shared_control_block* ctrl_block = alloc_memory_to_control_block(allocator, sizeof(T), alignof(T));
         if (!ctrl_block)
             return nullptr;
@@ -96,16 +178,17 @@ namespace sptr
     }
 
     /**
-     * 
+     * @internal
+     * @private
      */
     template<typename T>
-    shared_control_block* make_control_block_array(tca::base_allocator* allocator, uint32_t length) {
+    shared_control_block* make_control_block_array(tca::allocator* allocator, uint32_t length) {
         shared_control_block* ctrl_block = alloc_memory_to_control_block(allocator, sizeof(T), alignof(T), length);
         if (!ctrl_block)
             return nullptr;
         try {
             assert((std::intptr_t) ctrl_block->m_object % alignof(T) == 0);
-            using non_const_T = typename remove_const<T>::type;
+            using non_const_T = typename remove_cv<T>::type;
             placement_new<non_const_T>(reinterpret_cast<non_const_T*>(ctrl_block->m_object), length);
         } catch (...) {
             using u32 = uint32_t;
@@ -217,10 +300,42 @@ public:
 
 template<typename T>
 class shared_ptr {
+    
+    /**
+     * 
+     */
     template<typename A>
     friend class shared_ptr;
+    
+    /**
+     * 
+     */
     friend class weak_ptr<T>;
     
+    /**
+     * 
+     */
+    template<typename A, typename B, typename>
+    friend shared_ptr<A> static_pointer_cast(const shared_ptr<B>&);
+
+    /**
+     * 
+     */
+    template<typename A, typename B, typename>
+    friend shared_ptr<A> const_pointer_cast(const shared_ptr<B>&);
+
+    /**
+     * 
+     */
+    template<typename A, typename B, typename>
+    friend shared_ptr<A> dynamic_pointer_cast(const shared_ptr<B>&);
+
+    /**
+     * 
+     */
+    template<typename A, typename B, typename>
+    friend shared_ptr<A> reinterpret_pointer_cast(const shared_ptr<B>&);
+
     /**
      * Указатель на управляющий блок.
      */
@@ -242,12 +357,6 @@ class shared_ptr {
      */
     void check_access() const;
 
-public:
-    /**
-     * Конструктор по умолчанию. Создаёт пустой shared_ptr.
-     */
-    shared_ptr();
-
     /**
      * !@internal
      * 
@@ -259,6 +368,12 @@ public:
      * Данный конструктор увеличивает счётчик strong-reference, если ctrl_block != nullptr
      */
     explicit shared_ptr(internal::sptr::shared_control_block* ctrl_block);
+
+public:
+    /**
+     * Конструктор по умолчанию. Создаёт пустой shared_ptr.
+     */
+    shared_ptr();
 
     /**
      * Конструктор с размещением объекта.
@@ -272,14 +387,28 @@ public:
      * @param obj 
      *      Объект, который будет скопирован или перемещён.
      */
-    template<typename _T>
-    shared_ptr(tca::base_allocator* allocator, _T&& obj);
+    template<typename T_, typename = typename enable_if<
+                                                is_same<
+                                                        typename remove_cv<T>::type, 
+                                                        typename remove_cv<T_>::type
+                                                >::value
+                                            >::type>
+    shared_ptr(T_&& obj, tca::allocator* allocator = tca::get_scoped_or_default());
+
+    // /**
+    //  * Конструктор копирования. 
+    //  * Увеличивает счётчик сильных ссылок.
+    //  */
+    // shared_ptr(const shared_ptr<T>& other);
 
     /**
      * Конструктор копирования. 
      * Увеличивает счётчик сильных ссылок.
      */
-    shared_ptr(const shared_ptr<T>& other);
+    template<typename E, typename = typename enable_if<
+                                                is_base_of<E, T>::value && is_cv_castable<E, T>::value
+                                            >::type>
+    shared_ptr(const shared_ptr<E>& other);
 
     /**
      * Конструктор перемещения. 
@@ -288,7 +417,10 @@ public:
      * @param 
      *      other Другой shared_ptr.
      */
-    shared_ptr(shared_ptr<T>&& other);
+    template<typename E, typename = typename enable_if<
+                                                is_base_of<E, T>::value && is_cv_castable<E, T>::value
+                                            >::type>
+    shared_ptr(shared_ptr<E>&& other);
 
     /**
      * Оператор присваивания (копирование). Увеличивает счётчик сильных ссылок.
@@ -299,10 +431,13 @@ public:
      * @return 
      *      *this.
      */
-    shared_ptr<T>& operator=(const shared_ptr<T>& other);
+    template<typename E, typename = typename enable_if<
+                                                is_base_of<E, T>::value && is_cv_castable<E, T>::value
+                                            >::type>
+    shared_ptr<T>& operator=(const shared_ptr<E>& other);
 
     /**
-     * Оператор присваивания (перемещение). Забирает владение у другого shared_ptr.
+     * Оператор перемещение. Забирает владение у другого shared_ptr.
      * 
      * @param other 
      *      Другой shared_ptr.
@@ -310,7 +445,10 @@ public:
      * @return 
      *      *this.
      */
-    shared_ptr<T>& operator=(shared_ptr<T>&& other);
+    template<typename E, typename = typename enable_if<
+                                                is_base_of<E, T>::value && is_cv_castable<E, T>::value
+                                            >::type>
+    shared_ptr<T>& operator=(shared_ptr<E>&& other);
 
     /**
      * Деструктор. 
@@ -389,62 +527,6 @@ public:
     weak_ptr<T> get_weak() const;
 
     /**
-     * Преобразует shared_ptr<T> в shared_ptr<E> с использованием static_cast.
-     * 
-     * @tparam E 
-     *      Целевой тип.
-     * 
-     * @return 
-     *      Новый shared_ptr с преобразованным типом.
-     */
-    template<typename E>
-    shared_ptr<E> static_pointer_cast() const;
-
-    /**
-     * Преобразует shared_ptr<T> в shared_ptr<E> с использованием reinterpret_cast.
-     * 
-     * @tparam E 
-     *      Целевой тип.
-     * 
-     * @return 
-     *      Новый shared_ptr с преобразованным типом.
-     */
-    template<typename E>
-    shared_ptr<E> reinterpret_pointer_cast() const;
-
-    /**
-     * Преобразует shared_ptr<T> в shared_ptr<E> с использованием dynamic_cast.
-     * 
-     * @tparam E 
-     *      Целевой тип.
-     * 
-     * @return 
-     *      Новый shared_ptr, или пустой, если преобразование не удалось.
-     */
-    template<typename E>
-    shared_ptr<E> dynamic_pointer_cast() const;
-
-    /**
-     * Преобразует shared_ptr<T> в shared_ptr<E> с использованием const_cast.
-     * 
-     * @tparam E 
-     *      Целевой тип.
-     * 
-     * @return 
-     *      Новый shared_ptr с преобразованным типом.
-     */
-    template<typename E>
-    shared_ptr<E> const_pointer_cast() const;
-
-    /**
-     * Преобразует shared_ptr<T> в shared_ptr<E> с использованием dynamic_cast.
-     */
-    template<typename E>
-    explicit operator shared_ptr<E>() const {
-        return dynamic_pointer_cast<E>();
-    }
-
-    /**
      * Сравнивает значения указателей.
      * 
      * @return
@@ -485,28 +567,36 @@ public:
     }
 
     template<typename T>
-    template<typename _T>
-    shared_ptr<T>::shared_ptr(tca::base_allocator* allocator, _T&& obj) {
-        m_block = internal::sptr::make_control_block<T>(allocator, std::forward<_T>(obj));
+    template<typename T_, typename>
+    shared_ptr<T>::shared_ptr(T_&& obj, tca::allocator* allocator) {
+        m_block = internal::sptr::make_control_block<T>(allocator, std::forward<T_>(obj));
         if (m_block == nullptr)
             throw_except<out_of_memory_error>("Out of memory");
         m_block->inc_strong_ref();
     }
 
+    // template<typename T>
+    // shared_ptr<T>::shared_ptr(const shared_ptr<T>& ptr) : m_block(ptr.m_block) {
+    //     if (m_block != nullptr)
+    //         m_block->inc_strong_ref();
+    // }
+
     template<typename T>
-    shared_ptr<T>::shared_ptr(const shared_ptr<T>& ptr) : m_block(ptr.m_block) {
+    template<typename E, typename>
+    shared_ptr<T>::shared_ptr(const shared_ptr<E>& other) : m_block(other.m_block) {
         if (m_block != nullptr)
             m_block->inc_strong_ref();
     }
 
     template<typename T>
-    shared_ptr<T>::shared_ptr(shared_ptr<T>&& ptr) : m_block(ptr.m_block) {
-        if (m_block != nullptr)
-            m_block->inc_strong_ref();
+    template<typename E, typename>
+    shared_ptr<T>::shared_ptr(shared_ptr<E>&& ptr) : m_block(ptr.m_block) {
+        ptr.m_block = nullptr;
     }
     
     template<typename T>
-    shared_ptr<T>& shared_ptr<T>::operator= (const shared_ptr<T>& ptr) {
+    template<typename E, typename>
+    shared_ptr<T>& shared_ptr<T>::operator= (const shared_ptr<E>& ptr) {
         if (&ptr != this) {
             cleanup();
             m_block = ptr.m_block;
@@ -517,7 +607,8 @@ public:
     }
 
     template<typename T>
-    shared_ptr<T>& shared_ptr<T>::operator= (shared_ptr<T>&& ptr) {
+    template<typename E, typename>
+    shared_ptr<T>& shared_ptr<T>::operator= (shared_ptr<E>&& ptr) {
         if (&ptr != this) {
             cleanup();
             m_block     = ptr.m_block;
@@ -535,7 +626,7 @@ public:
                 assert(obj != nullptr);
                 obj->~T();
                 if (m_block->weak_count() == 0) {
-                    tca::base_allocator* allocator = m_block->m_allocator;
+                    tca::allocator* allocator = m_block->m_allocator;
                     if (allocator != nullptr) //если распределитель равен null, значит за выделение контрол блока отвечает shared_ptr
                         allocator->deallocate(m_block, m_block->m_blocksize);
                 }
@@ -604,40 +695,6 @@ public:
     }
 
     template<typename T>
-    template<typename E>
-    shared_ptr<E> shared_ptr<T>::static_pointer_cast() const {
-        if (m_block == nullptr || m_block->m_object == nullptr)
-            return shared_ptr<E>();
-        return shared_ptr<E>(m_block);
-    }
-
-    template<typename T>
-    template<typename E>
-    shared_ptr<E> shared_ptr<T>::reinterpret_pointer_cast() const {
-        if (m_block == nullptr || m_block->m_object == nullptr)
-            return shared_ptr<E>();
-        return shared_ptr<E>(m_block);
-    }
-
-    template<typename T>
-    template<typename E>
-    shared_ptr<E> shared_ptr<T>::dynamic_pointer_cast() const {
-        if (m_block == nullptr || m_block->m_object == nullptr)
-            throw_except<null_pointer_exception>("pointer is null");
-        if (!dynamic_cast<E*>(reinterpret_cast<T*>(m_block->m_object)))
-            throw_except<class_cast_exception>("Type %s cannot cast to %s", typeid(T).name(), typeid(E).name());
-        return shared_ptr<E>(m_block);
-    }
-
-    template<typename T>
-    template<typename E>
-    shared_ptr<E> shared_ptr<T>::const_pointer_cast() const {
-        if (m_block == nullptr || m_block->m_object == nullptr)
-            return shared_ptr<E>();
-        return shared_ptr<E>(m_block, const_cast<E*>(reinterpret_cast<T*>(m_block->m_object)));
-    }
-
-    template<typename T>
     int32_t shared_ptr<T>::to_string(char buf[], int32_t bufsize) const {
         if (m_block != nullptr) {
             return m_block->to_string(buf, bufsize);
@@ -646,9 +703,43 @@ public:
         }
     }
 
-    template<typename T, typename _T>
-    shared_ptr<T> make_shared(_T&& obj = T(), tca::base_allocator* allocator = tca::get_scoped_or_default()) {
-        return shared_ptr<T>(allocator, std::forward<_T>(obj));
+    template<typename T, typename T_ = T, typename = typename enable_if<
+                                                                is_same<
+                                                                        typename remove_cv<T>::type,
+                                                                        typename remove_cv<T_>::type
+                                                                >::value
+                                                            >::type>
+    shared_ptr<T> make_shared(T_&& obj = T(), tca::allocator* allocator = tca::get_scoped_or_default()) {
+        return shared_ptr<T>(std::forward<T_>(obj), allocator);
+    }
+
+    template<typename A, typename B, typename = typename enable_if<is_related<B, A>::value && is_cv_castable<B, A>::value>::type>
+    shared_ptr<A> static_pointer_cast(const shared_ptr<B>& p) {
+        return shared_ptr<A>(p.m_block);
+    }
+
+    template<typename A, typename B, typename = typename enable_if<
+                                                            is_same<
+                                                                    typename remove_cv<A>::type, 
+                                                                    typename remove_cv<B>::type
+                                                            >::value
+                                                        >::type>
+    shared_ptr<A> const_pointer_cast(const shared_ptr<B>& p) {
+        return shared_ptr<A>(p.m_block);
+    }
+    
+    template<typename A, typename B, typename = typename enable_if<is_related<A, B>::value && is_cv_castable<B, A>::value>::type>
+    shared_ptr<A> dynamic_pointer_cast(const shared_ptr<B>& p) {
+        B* const object = p.get();
+        JSTD_DEBUG_CODE(check_non_null(object));
+        if (!dynamic_cast<A*>(object))
+            throw_except<class_cast_exception>("Where [To = %s, From = %s]", typeid(A).name(), typeid(*object).name());
+        return shared_ptr<A>(p.m_block);
+    }
+
+    template<typename A, typename B, typename = typename enable_if<is_cv_castable<B, A>::value>::type>
+    shared_ptr<A> reinterpret_pointer_cast(const shared_ptr<B>& p) {
+        return shared_ptr<A>(p.m_block);
     }
 
     /**
@@ -670,7 +761,7 @@ public:
         if (m_block != nullptr) {
             m_block->dec_weak_ref();
             if (m_block->strong_count() == 0 && m_block->weak_count() == 0) {
-                tca::base_allocator* allocator = m_block->m_allocator;
+                tca::allocator* allocator = m_block->m_allocator;
                 m_block->~shared_control_block();
                 if (allocator != nullptr)
                     allocator->deallocate(m_block, m_block->m_blocksize);

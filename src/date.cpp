@@ -4,7 +4,8 @@
 #include <cpp/lang/exceptions.hpp>
 #include <cerrno>
 
-namespace jstd {
+namespace jstd
+{
 
     date::date(int32_t day, int32_t month, int32_t year, int32_t second, int32_t minute, int32_t hour) {
         std::memset(&_localTime, 0, sizeof(_localTime));
@@ -141,4 +142,5 @@ namespace jstd {
     int32_t date::get_week() const {
         return _localTime.tm_wday;
     }
-}
+
+}// namespace jstd

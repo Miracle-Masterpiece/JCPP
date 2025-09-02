@@ -155,7 +155,7 @@ public:
      * @param length
      *      Длина массива объектов.
      */
-    shared_ptr(tca::base_allocator* allocator, std::size_t length);
+    shared_ptr(tca::allocator* allocator, std::size_t length);
 
     /**
      * !@internal
@@ -313,7 +313,7 @@ public:
     }
 
     template<typename T>
-    shared_ptr<T[]>::shared_ptr(tca::base_allocator* allocator, std::size_t length) : m_block(nullptr), m_len(length) {
+    shared_ptr<T[]>::shared_ptr(tca::allocator* allocator, std::size_t length) : m_block(nullptr), m_len(length) {
         m_block = internal::sptr::make_control_block_array<T>(allocator, length);
         if (m_block == nullptr)
             throw_except<out_of_memory_error>("Out of memory");
@@ -378,7 +378,7 @@ public:
             assert(obj != nullptr);
             placement_destroy(obj, m_len);
             if (m_block->weak_count() == 0) {
-                tca::base_allocator* allocator = m_block->m_allocator;
+                tca::allocator* allocator = m_block->m_allocator;
                 if (allocator != nullptr) //если распределитель равен null, значит за выделение контрол блока отвечает shared_ptr
                     allocator->deallocate(m_block, m_block->m_blocksize);
             }
@@ -420,7 +420,7 @@ public:
     template<typename T>
     template<typename E>
     shared_ptr<E> shared_ptr<T[]>::const_pointer_cast() const {
-        static_assert(is_same<typename remove_const<T[]>::type, typename remove_const<E>::type>::value, "=== Type cast error! ===");
+        static_assert(is_same<typename remove_cv<T[]>::type, typename remove_cv<E>::type>::value, "=== Type cast error! ===");
         if (!m_block || !m_block->m_object)
             return shared_ptr<E>();
         return shared_ptr<E>(m_block, m_len);
@@ -478,7 +478,7 @@ public:
         m_block->dec_weak_ref();
         if (m_block->strong_count() == 0 && m_block->weak_count() == 0) {
             m_block->~shared_control_block();
-            tca::base_allocator* allocator = m_block->m_allocator;
+            tca::allocator* allocator = m_block->m_allocator;
             if (allocator)
                 allocator->deallocate(m_block, m_block->m_blocksize);
         }
@@ -545,7 +545,7 @@ public:
     }
 
     // template<typename T>
-    // shared_ptr<T[]> make_shared_array(uint32_t length, tca::base_allocator* allocator) {
+    // shared_ptr<T[]> make_shared_array(uint32_t length, tca::allocator* allocator) {
     //     return shared_ptr<T[]>(allocator, length);
     // }
 }

@@ -112,7 +112,7 @@ namespace concurrency
             m_force_non_sleeping = true;
     }
 
-    fixed_thread_pool::fixed_thread_pool(int32_t count_threads, tca::base_allocator* allocator) : 
+    fixed_thread_pool::fixed_thread_pool(int32_t count_threads, tca::allocator* allocator) : 
     m_threads(count_threads, allocator),
     m_queue(allocator),
     m_queue_locker(),

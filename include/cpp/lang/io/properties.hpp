@@ -15,19 +15,39 @@ namespace jstd {
  * Использует хеш-таблицу (hash_map<u8string, u8string>) для хранения данных.
  */
 class properties {
-    //Аллокатор для управления памятью
-    tca::base_allocator*        _allocator; 
-    //Хеш-таблица для хранения свойств
-    hash_map<string, string>    _props;
-public:
+    /**
+     * Аллокатор для управления памятью
+     */
+    tca::allocator*        _allocator; 
     
+    /**
+     * Хеш-таблица для хранения свойств
+     */
+    hash_map<string, string>    _props;
+
+public:
+    /**
+     * 
+     */
+    using entry = hash_map<string, string>::entry;
+
+    /**
+     * 
+     */
+    using entry_iterator = typename hash_map<string, string>:: template iterator<entry>;
+    
+    /**
+     * 
+     */
+    using const_entry_iterator = typename hash_map<string, string>:: template iterator<const entry>;
+
     /**
      * Создает объект свойств с заданным аллокатором.
      * 
      * @param allocator 
      *      Указатель на пользовательский аллокатор.
      */
-    properties(tca::base_allocator* allocator = tca::get_scoped_or_default());
+    properties(tca::allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Устанавливает значение свойства по ключу.
@@ -60,7 +80,7 @@ public:
      * @return 
      *      Указатель на значение или nullptr, если ключ отсутствует.
      */
-    const string* get(const string& key) const;
+    const string& get(const string& key) const;
 
     /**
      * Получает значение свойства по ключу (перегрузка для const char*).
@@ -71,7 +91,7 @@ public:
      * @return 
      *      Указатель на значение или nullptr, если ключ отсутствует.
      */
-    const string* get(const char* key) const;
+    const string& get(const char* key) const;
 
     /**
      * Получает значение свойства или возвращает значение по умолчанию.
@@ -117,7 +137,7 @@ public:
      * @return 
      *      Константный итератор на первый элемент.
      */
-    hash_map<string, string>::const_iterator begin() const {
+    const_entry_iterator begin() const {
         return _props.begin();
     }
 
@@ -127,7 +147,7 @@ public:
      * @return 
      *      Константный итератор на элемент, следующий за последним.
      */
-    hash_map<string, string>::const_iterator end() const {
+    const_entry_iterator end() const {
         return _props.end();
     }
 };

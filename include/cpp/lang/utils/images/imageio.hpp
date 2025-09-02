@@ -27,7 +27,7 @@ namespace jstd {
          * @throws illegal_state_exception
          *      Если произошла ошибка во внутренней библитеки.
          */
-        image load_image(istream* in, tca::base_allocator* allocator);
+        image load_image(istream* in, tca::allocator* allocator);
 
         /**
          * Читает изображение из переданного файла.
@@ -41,9 +41,9 @@ namespace jstd {
          * @throws file_not_found_exception
          *      Если файла не существует.
          * 
-         * Остальные выбрасываемые исключения, такие-же, как и у функции {@code load_image(istream*, tca::base_allocator*)}.
+         * Остальные выбрасываемые исключения, такие-же, как и у функции {@code load_image(istream*, tca::allocator*)}.
          */
-        image load_image(const file& file , tca::base_allocator* allocator = tca::get_scoped_or_default());
+        image load_image(const file& file , tca::allocator* allocator = tca::get_scoped_or_default());
 
         /**
          * Сохраняет изображение в поток вывода.
@@ -69,7 +69,7 @@ namespace jstd {
         
         /**
          * Тот же самый, метод, что и {
-         * @code void save_image(ostream*, tca::base_allocator*)
+         * @code void save_image(ostream*, tca::allocator*)
          * }
          * 
          * Только вместо потока, файл в который сохранить изображение.

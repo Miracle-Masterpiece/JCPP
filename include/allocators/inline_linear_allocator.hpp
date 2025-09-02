@@ -6,28 +6,62 @@
 
 namespace tca {
 
-template<std::size_t SIZE>
+template<std::size_t SIZE, typename ALIGN_T = std::max_align_t>
 class inline_linear_allocator : public linear_allocator {
-    inline_linear_allocator(const inline_linear_allocator<SIZE>&)                   = delete;
-    inline_linear_allocator<SIZE>& operator=(const inline_linear_allocator<SIZE>&)  = delete;
-    inline_linear_allocator(inline_linear_allocator<SIZE>&&)                        = delete;
-    inline_linear_allocator<SIZE>& operator=(inline_linear_allocator<SIZE>&&)       = delete;
+    
+    /**
+     * 
+     */
+    inline_linear_allocator(const inline_linear_allocator<SIZE, ALIGN_T>&) = delete;
+    
+    /**
+     * 
+     */
+    inline_linear_allocator<SIZE, ALIGN_T>& operator=(const inline_linear_allocator<SIZE, ALIGN_T>&) = delete;
+    
+    /**
+     * 
+     */
+    inline_linear_allocator(inline_linear_allocator<SIZE, ALIGN_T>&&) = delete;
+    
+    /**
+     * 
+     */
+    inline_linear_allocator<SIZE, ALIGN_T>& operator=(inline_linear_allocator<SIZE, ALIGN_T>&&) = delete;
 public:
+    /**
+     * 
+     */    
     union {
-        char _buf[SIZE];
-        std::max_align_t _align;
-    } _data;
+        /**
+         * 
+         */
+        char m_buf[SIZE];
+        
+        /**
+         * 
+         */
+        ALIGN_T m_dummy;
+    } m_data;
+    
+    /**
+     * 
+     */
     inline_linear_allocator();
+    
+    /**
+     * 
+     */
     ~inline_linear_allocator();
 };
     
-    template<std::size_t SIZE>
-    inline_linear_allocator<SIZE>::inline_linear_allocator() : linear_allocator(_data._buf, SIZE) {
+    template<std::size_t SIZE, typename ALIGN_T>
+    inline_linear_allocator<SIZE, ALIGN_T>::inline_linear_allocator() : linear_allocator(m_data.m_buf, SIZE) {
 
     }
     
-    template<std::size_t SIZE>
-    inline_linear_allocator<SIZE>::~inline_linear_allocator() {
+    template<std::size_t SIZE, typename ALIGN_T>
+    inline_linear_allocator<SIZE, ALIGN_T>::~inline_linear_allocator() {
 
     }
 }

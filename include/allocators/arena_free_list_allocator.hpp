@@ -1,108 +1,147 @@
-#ifndef TCA_ALLOCATORS_BASE_ALLOCATOR_H
-#define TCA_ALLOCATORS_BASE_ALLOCATOR_H
+#ifndef D4616906_478F_4D6C_A433_B2CC4DC47873
+#define D4616906_478F_4D6C_A433_B2CC4DC47873
 
-#include <allocators/shared_allocator.hpp>
+#include <allocators/allocator.hpp>
+#include <cpp/lang/utils/raw_binary_tree.hpp>
+#include <cstddef>
+#include <cassert>
 
 namespace tca
 {
 
-/**
- * Реализация аллокатора на базе арены с использованием списка свободных блоков (free list).
- * Аллокатор резервирует непрерывный блок памяти фиксированного размера и управляет им вручную,
- * поддерживая список свободных блоков, которые могут быть повторно использованы.
- * Не поддерживает автоматическое расширение. При нехватке памяти возвращает nullptr.
- * Поддерживает выравнивание и может быть сброшен или компактирован вручную.
- */
-class arena_free_list_allocator : public tca::base_allocator {
-    arena_free_list_allocator(const arena_free_list_allocator&) = delete;
-    arena_free_list_allocator& operator= (const arena_free_list_allocator&) = delete;
-    internal::chunk m_arena;
-public:
-
+class arena_free_list_allocator : public allocator {
     /**
-     * Создаёт новый аллокатор с ареной заданного размера.
-     *
-     * @param arena_size 
-     *      Размер арены в байтах. Должен быть больше 0.
      * 
-     * @param allocator  
-     *      Базовый аллокатор, используемый для выделения самой арены. По умолчанию используется текущий scoped-аллокатор.
      */
-    arena_free_list_allocator(std::size_t arena_size, base_allocator* allocator = get_scoped_or_default());
+    struct memblock;
+    
+    /**
+     * 
+     */
+    std::size_t m_alignas;
 
     /**
-     * Перемещающий конструктор. Передаёт владение ареной и состоянием.
+     * 
+     */
+    std::size_t m_header_size;
+
+    /**
+     * 
+     */
+    std::size_t m_min_block_size;
+
+    /**
+     * 
+     */
+    void* m_data;
+
+    /**
+     * 
+     */
+    std::size_t m_length;
+
+    /**
+     * 
+     */
+    void* m_start;
+
+    /**
+     * 
+     */
+    std::size_t m_free_size;
+
+    /**
+     * 
+     */
+    jstd::raw_binary_tree<std::size_t, jstd::compare_to<std::size_t>, memblock> m_tree;
+
+    /**
+     * 
+     */
+    void link(memblock* block);
+    
+    /**
+     * 
+     */
+    void unlink(memblock* block);
+
+    /**
+     * 
+     */
+    void split(memblock*, std::size_t piece);
+
+    /**
+     * 
+     */
+    bool can_split(const memblock*, std::size_t piece) const;
+
+    /**
+     * 
+     */
+    void cleanup();
+
+    /**
+     * 
+     */
+    void init(void* data, std::size_t length, std::size_t align);
+
+public:
+    /**
+     * 
+     */
+    arena_free_list_allocator();
+
+    /**
+     * 
+     */
+    arena_free_list_allocator(void* data, std::size_t length, std::size_t align = alignof(std::max_align_t));
+    
+    /**
+     * 
+     */
+    arena_free_list_allocator(std::size_t length, std::size_t align = alignof(std::max_align_t), tca::base_allocator* allocator = tca::get_scoped_or_default());
+
+    /**
+     * 
      */
     arena_free_list_allocator(arena_free_list_allocator&&);
-
+    
     /**
-     * Перемещающее присваивание. Предыдущая арена будет освобождена.
+     * 
      */
     arena_free_list_allocator& operator= (arena_free_list_allocator&&);
 
     /**
-     * Освобождает арену и все связанные с ней ресурсы.
+     * 
      */
     ~arena_free_list_allocator();
 
     /**
-     * Выделяет память заданного размера из арены.
-     *
-     * @param sz 
-     *      Размер в байтах.
      * 
-     * @return 
-     *      Указатель на выделенную память или nullptr, если недостаточно места.
      */
-    void* allocate(std::size_t sz) override;
-
+    void* allocate(std::size_t) override;
+    
     /**
-     * Выделяет выровненную память из арены.
-     *
-     * @param sz    
-     *      Размер в байтах.
      * 
-     * @param align 
-     *      Требуемое выравнивание. Должно быть степенью двойки.
+     */
+    void* allocate_align(std::size_t, std::size_t) override;
+    
+    /**
      * 
-     * @return 
-     *      Указатель на выделенную память или nullptr, если недостаточно места.
      */
-    void* allocate_align(std::size_t sz, std::size_t align) override;
+    void deallocate(void*) override;
 
     /**
-     * Освобождает ранее выделенный блок памяти.
-     * Блок должен быть ранее выделен этим же аллокатором.
-     *
-     * @param p  
-     *      Указатель на блок.
      * 
-     * @param sz 
-     *      Размер блока в байтах.
      */
-    void deallocate(void* p, std::size_t sz) override;
+    void print_log() const;
 
     /**
-     * Сбрасывает арену, делая всю память доступной для повторного использования.
-     * Вся ранее выделенная память считается недействительной.
+     * 
      */
-    void reset();
-
-    /**
-     * Компактирует свободные блоки, объединяя смежные.
-     * Уменьшает фрагментацию и улучшает возможность будущих аллокаций.
-     * Не перемещает занятые блоки.
-     */
-    void compact();
-
-    /**
-     * Печатает отладочную информацию о текущем состоянии арены.
-     * Включает количество блоков, размеры и информацию о том, какие из них свободны.
-     */
-    void print() const;
+    void merge_all();
 };
 
+}// namespace tca
 
-}
-
-#endif//TCA_ALLOCATORS_BASE_ALLOCATOR_H
+#endif /* D4616906_478F_4D6C_A433_B2CC4DC47873 */

@@ -5,7 +5,7 @@
 
 namespace tca {
     
-    malloc_free_allocator::malloc_free_allocator() : base_allocator(nullptr) {
+    malloc_free_allocator::malloc_free_allocator() : allocator(nullptr) {
 
     }
 
@@ -17,11 +17,11 @@ namespace tca {
         return realloc(p, new_size);
     }
 
-    void* malloc_free_allocator::allocate_align(std::size_t sz, std::size_t align) {
+    void* malloc_free_allocator::allocate_align(std::size_t sz, std::size_t) {
         return malloc(sz);
     }
     
-    void malloc_free_allocator::deallocate(void* p, std::size_t sz) {
+    void malloc_free_allocator::deallocate(void* p) {
         free(p);
     }
 }

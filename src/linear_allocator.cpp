@@ -7,7 +7,7 @@
 namespace tca {
 
     linear_allocator::linear_allocator() : 
-    base_allocator(nullptr),
+    allocator(nullptr),
     _buffer(nullptr),
     _capacity(0),
     _offset(0) {
@@ -15,7 +15,7 @@ namespace tca {
     }
 
     linear_allocator::linear_allocator(void* baseBuffer, std::size_t capacity) : 
-    base_allocator(nullptr),
+    allocator(nullptr),
     _buffer(baseBuffer), 
     _capacity(capacity), 
     _offset(0) {
@@ -23,7 +23,7 @@ namespace tca {
     }
 
     linear_allocator::linear_allocator(std::size_t capacity, base_allocator* baseAllocator) : 
-    base_allocator(baseAllocator), 
+    allocator(baseAllocator), 
     _buffer(nullptr), 
     _capacity(capacity),
     _offset(0) {
@@ -31,7 +31,7 @@ namespace tca {
     }
 
     linear_allocator::linear_allocator(linear_allocator&& alloc) : 
-    base_allocator(std::move(alloc)), 
+    allocator(std::move(alloc)), 
     _buffer(alloc._buffer), 
     _capacity(alloc._capacity), 
     _offset(alloc._offset) {
@@ -82,7 +82,7 @@ namespace tca {
         return (void*) buf;
     }
     
-    void linear_allocator::deallocate(void* ptr, std::size_t sz) {
+    void linear_allocator::deallocate(void*) {
     
     }
 

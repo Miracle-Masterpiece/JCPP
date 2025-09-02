@@ -1,7 +1,7 @@
 #ifndef CPP_LANG_IO_INFLATER_INPUT_STREAM_H
 #define CPP_LANG_IO_INFLATER_INPUT_STREAM_H
 
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 #include <cpp/lang/io/istream.hpp>
 #include <cpp/lang/zip/inflater.hpp>
 #include <cpp/lang/array.hpp>
@@ -35,7 +35,7 @@ public:
     /**
      * 
      */
-    inflstream(istream* in, tca::base_allocator* allocator = tca::get_scoped_or_default(), int64_t buf_size = DEFAULT_BUFFER_SIZE);
+    inflstream(istream* in, tca::allocator* allocator = tca::get_scoped_or_default(), int64_t buf_size = DEFAULT_BUFFER_SIZE);
 
     /**
      * Читает несколько байт из потока.

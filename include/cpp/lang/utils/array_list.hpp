@@ -1,7 +1,7 @@
 #ifndef JSTD_CPP_LANG_UTILS_ARRAY_LIST_H
 #define JSTD_CPP_LANG_UTILS_ARRAY_LIST_H
 
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/hash.hpp>
 #include <cpp/lang/utils/comparator.hpp>
@@ -32,7 +32,7 @@ class array_list {
     /**
      * Указатель на пользовательский аллокатор памяти.
      */
-    tca::base_allocator* m_allocator;
+    tca::allocator* m_allocator;
 
     /**
      * Указатель на массив элементов.
@@ -72,7 +72,7 @@ public:
     /**
      * Создаёт пустой список без аллокатора.
      */
-    array_list(tca::base_allocator* allocator = tca::get_scoped_or_default());
+    array_list(tca::allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Создаёт список с заданным аллокатором и начальной вместимостью.
@@ -83,7 +83,7 @@ public:
      * @param init_capacity 
      *      Начальная вместимость (по умолчанию — 10).
      */
-    explicit array_list(int64_t init_capacity, tca::base_allocator* allocator = tca::get_scoped_or_default());
+    explicit array_list(int64_t init_capacity, tca::allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Создаёт список с заданным аллокатором и инициализирующим листом.
@@ -94,7 +94,7 @@ public:
      * @param init_list
      *      Инициилизирующий список из которого будут добавлены элементы в этот список.
      */
-    array_list(const std::initializer_list<E>& init_list, tca::base_allocator* allocator = tca::get_scoped_or_default());
+    array_list(const std::initializer_list<E>& init_list, tca::allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Создаёт новый список, копируя содержимое из переданного списка.
@@ -147,7 +147,7 @@ public:
      * @return 
      *      Новый список, являющийся клоном текущего.
      */
-    array_list<E> clone(tca::base_allocator* allocator = nullptr) const;
+    array_list<E> clone(tca::allocator* allocator = nullptr) const;
 
     
     /**
@@ -464,12 +464,12 @@ public:
 };
 
     template<typename E>
-    array_list<E>::array_list(tca::base_allocator* allocator) : m_allocator(allocator), m_data(nullptr), m_capacity(0), m_size(0) {
+    array_list<E>::array_list(tca::allocator* allocator) : m_allocator(allocator), m_data(nullptr), m_capacity(0), m_size(0) {
 
     }
 
     template<typename E>
-    array_list<E>::array_list(int64_t init_capacity, tca::base_allocator* allocator) : 
+    array_list<E>::array_list(int64_t init_capacity, tca::allocator* allocator) : 
     m_allocator(allocator), 
     m_data(nullptr), 
     m_capacity(0), 
@@ -479,7 +479,7 @@ public:
     }
 
     template<typename E>
-    array_list<E>::array_list(const std::initializer_list<E>& init_list, tca::base_allocator* allocator) : array_list<E>(0, allocator) {
+    array_list<E>::array_list(const std::initializer_list<E>& init_list, tca::allocator* allocator) : array_list<E>(0, allocator) {
         if (init_list.size() > 0)
             reserve(init_list.size());
         for (const E& e : init_list)
@@ -530,7 +530,7 @@ public:
     }
     
     template<typename E>
-    array_list<E> array_list<E>::clone(tca::base_allocator* allocator) const {
+    array_list<E> array_list<E>::clone(tca::allocator* allocator) const {
         if (allocator == nullptr) {
             if (m_allocator == nullptr)
                 return array_list<E>();

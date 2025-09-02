@@ -2,7 +2,7 @@
 #define _JSTD_CPP_LANG_IO_BUFFEREDINPUTSTREAM_H_
 
 #include <cpp/lang/io/istream.hpp>
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 
 namespace jstd {
 
@@ -15,12 +15,12 @@ namespace jstd {
  */
 class ibstream : public istream {
     static const int DEFAULT_BUFFER_SIZE = 4096;
-    tca::base_allocator*    _allocator;
-    char*                   _buffer;
-    int64_t                 _capacity;
-    int64_t                 _offset;
-    int64_t                 _limit;
-    istream*                _in;
+    tca::allocator* _allocator;
+    char*           _buffer;
+    int64_t         _capacity;
+    int64_t         _offset;
+    int64_t         _limit;
+    istream*        _in;
 
     //особождает память, выделенную под буфер.
     //если аллокатор != nullptr.
@@ -43,7 +43,7 @@ public:
      * @param buf_size
      *          Необязательный параметр, задающий размер внутреннего буфера.
      */
-    ibstream(istream* stream, tca::base_allocator* allocator, int64_t buf_size = DEFAULT_BUFFER_SIZE);
+    ibstream(istream* stream, tca::allocator* allocator, int64_t buf_size = DEFAULT_BUFFER_SIZE);
     
     /**
      * @param stream

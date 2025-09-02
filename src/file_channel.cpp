@@ -375,7 +375,7 @@ namespace jstd
                 #elif defined(_SC_PAGE_SIZE)
                     return sysconf(_SC_PAGE_SIZE);
                 #else
-                    throw_except<error>("Current platform not defined _SC_PAGESIZE or _SC_PAGE_SIZE");
+                    #error Current platform not defined _SC_PAGESIZE or _SC_PAGE_SIZE
                 #endif
             }
         #endif

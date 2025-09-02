@@ -5,8 +5,11 @@
 #include <cpp/lang/net/inetaddr.hpp>
 #include <cpp/lang/net/socket_option.hpp>
 
-namespace jstd {
-namespace bsd_socket {
+namespace jstd
+{
+
+namespace bsd_socket
+{
     
     /**
      * @throws socket_exception 
@@ -145,7 +148,7 @@ namespace bsd_socket {
      */
     void shutdown_out(int32_t sock);
 
-}//bsd_socket
-}//jstd
+}// namespace bsd_socket
+}// namespace jstd
 
 #endif//_JSTD_INTERNAL_BSD_SOCKET_FUNCS_H_

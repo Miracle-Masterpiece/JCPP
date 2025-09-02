@@ -52,7 +52,7 @@ namespace tca {
     m_ctrl_block_allocator(sizeof(jstd::internal::sptr::shared_control_block), pool_allocator::DEFAULT_COUNT_BUCKETS, allocator), 
     _capacity(capacity),
     _offset(0) {
-        _data           = allocator->allocate_align(capacity, ALLOC_LIB_MAX_ALIGN);
+        _data           = allocator->allocate_align(capacity, alignof(std::max_align_t));
         _tmp            = nullptr;
         _tmpCapacity    = 0;
     }
@@ -117,7 +117,7 @@ namespace tca {
 
     void compact_linear_allocator::grow(std::size_t newCapacity) {
         
-        char* newData = reinterpret_cast<char*>(_allocator->allocate_align(newCapacity, ALLOC_LIB_MAX_ALIGN));
+        char* newData = reinterpret_cast<char*>(_allocator->allocate_align(newCapacity, alignof(std::max_align_t)));
         if (newData == nullptr)
             return;
 
@@ -143,7 +143,7 @@ namespace tca {
             if (_tmpCapacity < sz) {
                 if (_tmp != nullptr)
                     _allocator->deallocate(_tmp, _tmpCapacity);
-                _tmp            = _allocator->allocate_align(sz, ALLOC_LIB_MAX_ALIGN);
+                _tmp            = _allocator->allocate_align(sz, alignof(std::max_align_t));
                 _tmpCapacity    = sz;
             }
         }
@@ -182,7 +182,7 @@ namespace tca {
     }
 
     jstd::internal::sptr::shared_control_block* compact_linear_allocator::allocate(std::size_t sz, std::size_t count, void (*move_func)(void*, void*, std::size_t)) {
-        std::size_t total = calcAlignSize(Header::byteSize() + sz * count, ALLOC_LIB_MAX_ALIGN);
+        std::size_t total = calcAlignSize(Header::byteSize() + sz * count, alignof(std::max_align_t));
         
         if (_offset + total > _capacity) {
             compact();

@@ -1,6 +1,6 @@
 #ifndef ALLOC_LIB_POOL_ALLOCATOR_H
 #define ALLOC_LIB_POOL_ALLOCATOR_H
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 #include <allocators/Helpers.hpp>
 #include <allocators/ArrayList.h> 
 #include <cstddef>

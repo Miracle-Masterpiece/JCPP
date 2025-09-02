@@ -18,8 +18,6 @@ namespace internal
  * 
  */
 class file_descriptor {
-    file_descriptor(const file_descriptor&)             = delete;
-    file_descriptor& operator=(const file_descriptor&)  = delete;
     
     /**
      * Внутренний дескриптор.
@@ -30,6 +28,16 @@ class file_descriptor {
      * @internal
      */
     file_descriptor(int fd);
+
+    /**
+     * 
+     */
+    file_descriptor(const file_descriptor&)             = delete;
+    
+    /**
+     * 
+     */
+    file_descriptor& operator=(const file_descriptor&)  = delete;
 
 public:
     /**
@@ -88,7 +96,7 @@ public:
      * @return 
      *      true, если внутренний идентификатор совпадает, иначе false.
      */
-    bool operator==(const file_descriptor&) const;
+    bool operator== (const file_descriptor&) const;
     
     /**
      * Проверяет, не равен ли этот дескриптор другому.
@@ -96,7 +104,7 @@ public:
     * @return 
      *      true, если внутренний идентификатор не совпадает, иначе false.
      */
-    bool operator!=(const file_descriptor&) const;
+    bool operator!= (const file_descriptor&) const;
 
     /**
      * Оператор приведения типа.
@@ -115,8 +123,7 @@ public:
     void close();
 };
 
-}
-
-}
+}// namespace internal
+}// namespace jstd
 
 #endif//JSTD_INTERNAL_IO_FILE_DESCRIPTOR_H

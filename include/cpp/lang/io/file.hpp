@@ -260,7 +260,7 @@ public:
      * @return
      *      Массив файлов, который находятся в этой директории описываемым этим файлом, и файлы, которые прошли фильтр.
      */
-    array<file> list_files(file_filter* filter = nullptr, tca::base_allocator* allocator = tca::get_scoped_or_default()) const;
+    array<file> list_files(file_filter* filter = nullptr, tca::allocator* allocator = tca::get_scoped_or_default()) const;
     
     /**
      * Возвращает объект файла, описывающий путь до папки с исполняемым файлом.

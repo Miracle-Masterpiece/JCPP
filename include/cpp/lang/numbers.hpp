@@ -2,7 +2,9 @@
 #define JSTD_CPP_NUMBERS_H
 
 #include <cstdint>
-#include <cstdint>
+#include <climits>
+#include <cpp/lang/math/math.hpp>
+#include <cpp/lang/utils/traits.hpp>
 
 namespace jstd 
 {
@@ -119,7 +121,29 @@ namespace num
      */
     bool is_digit(char c);
 
-    
+    /**
+     * @since 2.0
+     */
+    template<typename T, typename = typename enable_if<is_primitive<T>::value>::type>
+    int32_t to_binary_string(char buf[], int32_t bufsize, const T& v) {
+        const std::size_t bits = sizeof(T) * CHAR_BIT;
+        bool has_add = false;
+        int32_t offset = 0;
+        for (int32_t i = bits - 1; i >= 0; --i) {
+            unsigned char bit = ((v >> i) & 0x1);
+            if (bit)
+                has_add = true;
+            if (has_add) {
+                if (offset < bufsize)    
+                    buf[offset++] = '0' + bit;
+                else
+                    break;
+            }
+        }
+        buf[math::min(offset, bufsize - 1)] = '\0';
+        return 0;
+    }
+   
 }//namespace num
 
 }//namespace jstd

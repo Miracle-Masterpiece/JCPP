@@ -13,7 +13,7 @@ namespace jstd
 
     }
 
-    wav_data::wav_data(const file& path, tca::base_allocator* allocator) {
+    wav_data::wav_data(const file& path, tca::allocator* allocator) {
         JSTD_DEBUG_CODE(
             if (allocator == nullptr)
                 throw_except<illegal_argument_exception>("allocator must be != null");
@@ -35,7 +35,7 @@ namespace jstd
 
     }
 
-    wav_data::wav_data(istream* in, tca::base_allocator* allocator) : wav_data() {
+    wav_data::wav_data(istream* in, tca::allocator* allocator) : wav_data() {
         JSTD_DEBUG_CODE(
             if (in == nullptr)
                 throw_except<illegal_argument_exception>("in must be != null");

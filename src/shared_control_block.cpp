@@ -10,20 +10,17 @@ namespace internal
 namespace sptr
 {
 
-        /**
-         * tca::base_allocator*    m_allocator;
-         * void*                   m_object;
-         * uint32_t                m_strong_refs;
-         * uint32_t                m_weak_refs;
-         */
-
         shared_control_block::shared_control_block() : 
         m_allocator(nullptr), m_object(nullptr), m_strong_refs(0), m_weak_refs(0) {
 
         }
 
-        shared_control_block::shared_control_block(tca::base_allocator* allocator, void* object, uint32_t blocksize) :
-        m_allocator(allocator), m_object(object), m_blocksize(blocksize),  m_strong_refs(0), m_weak_refs(0) {
+        shared_control_block::shared_control_block(tca::allocator* allocator, void* object, uint32_t blocksize) :
+        m_allocator(allocator), 
+        m_object(object), 
+        m_blocksize(blocksize),  
+        m_strong_refs(0), 
+        m_weak_refs(0) {
 
         }
 

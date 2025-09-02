@@ -1,7 +1,7 @@
 #ifndef _JSTD_CPP_LANG_UTIL_LINKED_LIST_H
 #define _JSTD_CPP_LANG_UTIL_LINKED_LIST_H
 
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/hash.hpp>
 #include <utility>
@@ -12,35 +12,99 @@ namespace jstd {
 
 template<typename T>
 class list_node {
-    list_node(const list_node&) = delete;
-    list_node& operator= (const list_node&) = delete;
     
+    /**
+     * 
+     */
     list_node<T>* _prev;
+    
+    /**
+     * 
+     */
     list_node<T>* _next;
+    
+    /**
+     * 
+     */
     T _value;
 
+    /**
+     * deleted
+     */
+    list_node(const list_node&) = delete;
+    
+    /**
+     * deleted
+     */
+    list_node& operator= (const list_node&) = delete;
+
 public:
+    
+    /**
+     * 
+     */
     list_node();
     
+    /**
+     * 
+     */
     template<typename _T>
     list_node(_T&&);
 
+    /**
+     * 
+     */
     list_node(list_node<T>&&);
+    
+    /**
+     * 
+     */
     list_node<T>& operator= (list_node<T>&&);
     
+    /**
+     * 
+     */
     template<typename _T>
     void set_value(_T&& v);
 
+    /**
+     * 
+     */
     T& get_value();
+    
+    /**
+     * 
+     */
     const T& get_value() const;
 
+    /**
+     * 
+     */
     void set_next(list_node<T>* next);
+    
+    /**
+     * 
+     */
     void set_prev(list_node<T>* prev);
 
+    /**
+     * 
+     */
     list_node<T>* get_next();
+    
+    /**
+     * 
+     */
     list_node<T>* get_prev();
 
+    /**
+     * 
+     */
     const list_node<T>* get_next() const;
+    
+    /**
+     * 
+     */
     const list_node<T>* get_prev() const;
 };
 
@@ -140,16 +204,25 @@ public:
  */
 template<typename T>
 class linked_list {
-    //Указатель на аллокатор, используемый для выделения памяти под узлы.
+    
+    /**
+     * Указатель на аллокатор, используемый для выделения памяти под узлы.
+     */
     tca::base_allocator*    _allocator; 
     
-    //Указатель на первый элемент списка.
+    /**
+     * Указатель на первый элемент списка.
+     */
     list_node<T>*           _head;
     
-    //Указатель на последний элемент списка.
+    /**
+     * Указатель на последний элемент списка.
+     */
     list_node<T>*           _tail;
     
-    //Количество элементов в списке.
+    /**
+     * Количество элементов в списке.
+     */
     int64_t                 _size;
 
     /**
@@ -730,7 +803,8 @@ public:
         list_node<T>* prev = node->get_prev();
         list_node<T>* next = node->get_next();
         
-        if (prev == nullptr) {
+        if (prev == nullptr)
+        {
             _head = node->get_next();
             if (_head == nullptr) {
                 _head = _tail = nullptr;
@@ -740,19 +814,20 @@ public:
                 _head->set_prev(nullptr);
             }
         } 
-
-        else if (next == nullptr) {
+        else if (next == nullptr)
+        {
             _tail = node->get_prev();
-            if (_tail != nullptr) {
+            if (_tail != nullptr)
+            {
                 _tail->set_next(nullptr);
             }
-
-            else {
+            else
+            {
                 _head = _tail = nullptr;
             }
         }
-
-        else {
+        else
+        {
             prev->set_next(next);
             next->set_prev(prev);
         }

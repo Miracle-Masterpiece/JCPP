@@ -1,16 +1,18 @@
 #ifndef JSTD_CPP_LANG_UTILS_IMAGES_IMAGE_TREE_H
 #define JSTD_CPP_LANG_UTILS_IMAGES_IMAGE_TREE_H
 
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
+#include <cpp/lang/utils/unique_ptr.hpp>
 #include <cstdint>
 
-namespace jstd {
-
+namespace jstd
+{
 
 template<typename T>
 void throw_except(const char*, ...);
 
-namespace texturing {
+namespace texturing
+{
 
 struct rect {
     int32_t x, y, w, h;
@@ -30,9 +32,9 @@ public:
      */
     static const int32_t NULL_ID = -1;
 private:
-    tca::base_allocator* m_allocator; // Аллокатор, используемый для управления памятью узлов.
-    node* m_left;  // Левый дочерний узел.
-    node* m_right; // Правый дочерний узел.
+    tca::allocator* m_allocator; // Аллокатор, используемый для управления памятью узлов.
+    unique_ptr<node> m_left;  // Левый дочерний узел.
+    unique_ptr<node> m_right; // Правый дочерний узел.
     rect m_rect;   // Прямоугольник, занимаемый данным узлом.
     int32_t m_ID;  // Идентификатор изображения в этом узле или NULL_ID, если пуст.
 
@@ -45,11 +47,6 @@ private:
      * 
      */
     node& operator= (const node&) = delete;
-
-    /**
-     * Рекурсивно очищает потомков и освобождает память.
-     */
-    void cleanup();
 
     /**
      * Рекурсивная вспомогательная функция для обхода в глубину.
@@ -88,7 +85,7 @@ public:
      * @param allocator 
      *      Указатель на аллокатор памяти.
      */
-    node(int32_t w, int32_t h, tca::base_allocator* allocator);
+    node(int32_t w, int32_t h, tca::allocator* allocator);
 
     /**
      * Создаёт корневой узел с заданным прямоугольником.
@@ -99,7 +96,7 @@ public:
      * @param allocator 
      *      Указатель на аллокатор памяти.
      */
-    node(const rect& r, tca::base_allocator* allocator);
+    node(const rect& r, tca::allocator* allocator);
 
     /**
      * Перемещающий конструктор.

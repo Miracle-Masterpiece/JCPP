@@ -125,7 +125,7 @@ namespace tca {
         return native_protect;
     }
 
-    void* os_allocator::allocate_align(std::size_t sz, std::size_t align) {
+    void* os_allocator::allocate_align(std::size_t sz, std::size_t) {
         lastError = NO_ERRORS;
         DWORD prot = libProtectToWindowsProtect(protect);
         void* block = VirtualAlloc(nullptr, sz, MEM_COMMIT | MEM_RESERVE, prot);
@@ -134,7 +134,7 @@ namespace tca {
         return block;
     }
 
-    void os_allocator::deallocate(void* ptr, std::size_t sz) {
+    void os_allocator::deallocate(void* ptr, std::size_t) {
         lastError = NO_ERRORS;
         if (ptr == nullptr)
             return;

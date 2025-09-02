@@ -19,19 +19,19 @@ class string_const_pool {
     /**
      * Аллокатор для распределения памяти под строки и хеш-карты.
      */
-    tca::base_allocator* m_allocator;
+    tca::allocator* m_allocator;
     
     /**
      * Хеш-карта, хранящая константную строку ввиде ключа и объект string ввиде значения.
      */
     hash_map<cstr, shared_ptr<const string>> m_map;
+
 public:
-    
     /**
      * @param allocator
      *      Распределитель памяти для пула (Опционально).
      */
-    string_const_pool(tca::base_allocator* allocator = tca::get_scoped_or_default());
+    string_const_pool(tca::allocator* allocator = tca::get_scoped_or_default());
     
     /**
      * 
@@ -122,7 +122,7 @@ public:
      * @param allocator
      *      Распределитель памяти для пула (Опционально).
      */
-    concurrency_string_const_pool(tca::base_allocator* allocator = tca::get_scoped_or_default());
+    concurrency_string_const_pool(tca::allocator* allocator = tca::get_scoped_or_default());
 
     /**
      */

@@ -3,53 +3,43 @@
 
 #include <cctype>
 
-namespace tca {
-
-class base_allocator;
-namespace internal 
+namespace tca
 {
-    extern thread_local base_allocator* scoped_allocator;
-}
-
-    /**
-     * Возвращает аллокатор по-умолчанию.
-     */
-    base_allocator* get_default_allocator();
-
-    /**
-     * Возвращает значение scoped_allocator, или get_default_allocator(), если scoped_allocator == nullptr
-     */
-    base_allocator* get_scoped_or_default();
-
-    /**
-     * Возвращает аллокатор для выделения памяти под исключений.
-     */
-    base_allocator* get_exception_allocator();
 
 /**
  * Базовый тип полиморфного распределителя.
  */
 class base_allocator {
     /**
-     * !!!Операции копирования запрещены!!!
+     * deleted
      */
     base_allocator(const base_allocator& base)              = delete;
+    
+    /**
+     * deleted
+     */
     base_allocator& operator= (const base_allocator& base)  = delete;
-protected:
+
+protected:    
     /**
      * Указатель на родительский объект распределителя.
      */
     base_allocator* m_parent;
+
 public:    
     /**
+     * 
+     */
+    base_allocator();
+
+    /**
      * Создаёт распределитель памяти с использованием родительского распределителя.
-     * Если не указан явно, будет использоваться распределитель по-умолчанию.
      * 
      * @param parent
-     *          Указатель на родительский распределитель. (Опционально)
+     *          Указатель на родительский распределитель.
      *          
      */
-    base_allocator(base_allocator* parent = get_default_allocator());
+    base_allocator(base_allocator* parent);
     
     /**
      * Перемещает данные распределителя из передаваемого объекта в этот объект.
@@ -126,66 +116,7 @@ public:
     virtual void deallocate(void* ptr, std::size_t sz);
 };
 
-/**
- * Класс для установки некого аллокатора, как общего для текущей области видимости.
- * 
- * @code {
- *      #include <allocators/base_allocator.hpp>
- *      #include <allocators/inline_linear_allocator.hpp>
- *      int main() {
- *          int* ip = (int*) tca::get_scoped_or_default()->allocate(sizeof(int)); // вызывает распределитель установленный по-умолчанию
- *          tca::get_scoped_or_default()->deallocate(ip, sizeof(int));
- * 
- *          tca::inline_linear_allocator<1024> stack_linear_allocator;
- *          tca::scope_allocator scope = &stack_linear_allocator;
- *          ip = (int*) tca::get_scoped_or_default()->allocate(sizeof(int)); // вызывает allocate у stack_linear_allocator
- *      }
- * }
- * 
- * Установка для текущей области видимости является thread-local и разная у каждого потока.
- */
-class scope_allocator {
-    /**
-     * Указатель на предыдущий распределитель.
-     */
-    base_allocator* m_prev;
-    
-    /**
-     * 
-     */
-    scope_allocator(const scope_allocator&)             = delete;
-    
-    /**
-     * 
-     */
-    scope_allocator& operator= (const scope_allocator&) = delete;
-    
-    /**
-     * 
-     */
-    scope_allocator(scope_allocator&&)                  = delete;
-    
-    /**
-     * 
-     */
-    scope_allocator& operator= (scope_allocator&&)      = delete;
-public:
-    /**
-     * @param allocator
-     *      Указатель на распределитель, который будет установлен как аллокатор для текущей области видимости.
-     */
-    scope_allocator(base_allocator* allocator);
-    
-    /**
-     * 
-     */
-    ~scope_allocator();
-    
-    /**
-     * Возвращает указатель на распределитель, установленный в предыдущей области видимости.
-     */
-    base_allocator* get_prev() const;
-};
-
 }
+
+
 #endif//_ALLOCATORS_BASE_ALLOCATOR_H

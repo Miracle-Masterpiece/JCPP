@@ -3,8 +3,10 @@
 
 #include <cstdint>
 #include <cpp/lang/utils/hash.hpp>
+#include <cpp/lang/utils/cond_compile.hpp>
 
-namespace jstd {
+namespace jstd
+{
 
 class null_pointer_exception;
 class illegal_argument_exception;
@@ -18,9 +20,19 @@ class cstr_buf;
 template<typename T>
 cstr_buf<T::TO_STRING_MIN_BUFFER_SIZE> obj_to_cstr_buf(const T& object);
 
+/**
+     * 
+     */
 template<std::size_t BUF_SIZE>
 class cstr_buf {
+    /**
+     * 
+     */
     char m_strbuf[BUF_SIZE];
+    
+    /**
+     * 
+     */
     template<typename T>
     friend cstr_buf<T::TO_STRING_MIN_BUFFER_SIZE> obj_to_cstr_buf(const T& object);
 public:
@@ -94,7 +106,8 @@ public:
     }
 
 
-namespace objects {
+namespace objects
+{
 
     /**
      * Вычисляет хеш-код для массива элементов типа T.
@@ -127,10 +140,10 @@ namespace objects {
      */
     template<typename T, typename HASH_FOR = hash_for<T>>
     uint64_t hashcode(const T* array, int64_t len = -1) {
-#ifndef NDEBUG
-        if (array == nullptr)
-            throw_except<null_pointer_exception>("array must be != null");        
-#endif//NDEBUG
+        JSTD_DEBUG_CODE(
+            if (array == nullptr)
+                throw_except<null_pointer_exception>("array must be != null");        
+        );
         uint64_t hash = 0xcbf29ce484222325;
         const HASH_FOR hash_calculater;
         if (len == -1) {
@@ -194,10 +207,10 @@ namespace objects {
      */
     template<typename T, typename EQUAL_TO = equal_to<T>>
     bool equals(const T* a1, const T* a2, std::size_t len) {
-#ifndef NDEBUG
-    if (a1 == nullptr) throw_except<null_pointer_exception>("a1 must be != null");
-    if (a2 == nullptr) throw_except<null_pointer_exception>("a2 must be != null");
-#endif//NDEBUG
+        JSTD_DEBUG_CODE(
+            if (a1 == nullptr) throw_except<null_pointer_exception>("a1 must be != null");
+            if (a2 == nullptr) throw_except<null_pointer_exception>("a2 must be != null");
+        );
         const EQUAL_TO equals_to;
         for (std::size_t i = 0; i < len; ++i)
             if (!equals_to(a1[i], a2[i]))

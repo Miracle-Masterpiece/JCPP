@@ -38,48 +38,139 @@ typedef base_mat4<uint64_t> mat4u64;
 template<typename T>
 struct base_mat4 {
     
+    /**
+     * 
+     */
+    template<typename MT>
+    friend base_vec4<MT> mat_mul_vec(const base_mat4<MT>&, const base_vec4<MT>&);
+
+    /**
+     * 
+     */
+    template<typename MT>
+    friend base_vec4<MT> vec_mul_mat(const base_vec4<MT>&, const base_mat4<MT>&);
+
+    /**
+     * 
+     */
     T m_data[16];
 
+    /**
+     * 
+     */
     base_mat4(  T m00 = T(0), T m01 = T(0), T m02 = T(0), T m03 = T(0),
                 T m10 = T(0), T m11 = T(0), T m12 = T(0), T m13 = T(0),
                 T m20 = T(0), T m21 = T(0), T m22 = T(0), T m23 = T(0),
                 T m30 = T(0), T m31 = T(0), T m32 = T(0), T m33 = T(0));
+    
+    /**
+     * 
+     */
     base_mat4(const base_mat4<T>& m);
+    
+    /**
+     * 
+     */
     base_mat4(base_mat4<T>&& m);
+    
+    /**
+     * 
+     */
     base_mat4<T>& operator= (const base_mat4<T>& m);
+    
+    /**
+     * 
+     */
     base_mat4<T>& operator= (base_mat4<T>&& m);
+    
+    /**
+     * 
+     */
     ~base_mat4();
 
+    /**
+     * 
+     */
     base_mat4<T> transpose() const;
     
+    /**
+     * 
+     */
     bool equals(const base_mat4<T>&) const;
+    
+    /**
+     * 
+     */
     bool operator== (const base_mat4<T>&) const;
+    
+    /**
+     * 
+     */
     bool operator!= (const base_mat4<T>&) const;
+    
+    /**
+     * 
+     */
     uint64_t hashcode() const;
 
+    /**
+     * 
+     */
     static const int32_t TO_STRING_MIN_BUFFER_SIZE = 224;
+    
+    /**
+     * 
+     */
     int32_t to_string(char buf[], int32_t bufsize) const;
 
+    /**
+     * 
+     */
     base_mat4<T> add(const base_mat4<T>&) const;
+    
+    /**
+     * 
+     */
     base_mat4<T> operator+(const base_mat4<T>&) const;
 
+    /**
+     * 
+     */
     base_mat4<T> sub(const base_mat4<T>&) const;
+    
+    /**
+     * 
+     */
     base_mat4<T> operator-(const base_mat4<T>&) const;
 
+    /**
+     * 
+     */
     base_mat4<T> mul(const base_mat4<T>&) const;
-    
-    template<typename MT>
-    friend base_vec4<MT> mat_mul_vec(const base_mat4<MT>&, const base_vec4<MT>&);
 
-    template<typename MT>
-    friend base_vec4<MT> vec_mul_mat(const base_vec4<MT>&, const base_mat4<MT>&);
-
+    /**
+     * 
+     */
     const T& get(int32_t row, int32_t col) const;
+    
+    /**
+     * 
+     */
     T& get(int32_t row, int32_t col);
 
+    /**
+     * 
+     */
     const T* get_data() const;
+    
+    /**
+     * 
+     */
     T* get_data();
 
+    /**
+     * 
+     */
     base_mat4<T> operator*(const base_mat4<T>&) const;
 };
     

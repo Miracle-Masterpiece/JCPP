@@ -51,13 +51,13 @@ struct ip_token_storage {
 };
 
 class ip_parser {
-    tca::base_allocator*            _allocator;
+    tca::allocator*            _allocator;
     tca::array_list<ip_token_storage>  _ip_tokens;
     const char* _data;
     int         _offset;
     int         _length;
 public:
-    ip_parser(tca::base_allocator* _allocator, const char* ip_string, int str_len = -1);
+    ip_parser(tca::allocator* _allocator, const char* ip_string, int str_len = -1);
     char next();
     bool eof() const;
     const tca::array_list<ip_token_storage>& ip_token_list() const;
@@ -66,7 +66,7 @@ public:
     inet_address make_v6() const;
 };
     
-    ip_parser::ip_parser(tca::base_allocator* allocator, const char* ip_string, int str_len) : 
+    ip_parser::ip_parser(tca::allocator* allocator, const char* ip_string, int str_len) : 
     _allocator(allocator), 
     _ip_tokens(allocator, 32),
     _data(ip_string), 

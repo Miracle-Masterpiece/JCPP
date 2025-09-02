@@ -18,9 +18,7 @@ namespace jstd
         }
 
         logger::logger(ostream* out) : m_out(out) {
-            JSTD_DEBUG_CODE(
-                check_non_null(out);
-            );
+            JSTD_DEBUG_CODE(check_non_null(out));
         }
         
         logger::logger(logger&& l) : m_out(l.m_out) {
@@ -40,9 +38,7 @@ namespace jstd
         }
 
         void logger::message(level lvl, const char* msg) {
-            JSTD_DEBUG_CODE(
-                check_non_null(msg);
-            );
+            JSTD_DEBUG_CODE(check_non_null(msg));
 
             const int RESULT_BUFFER_SIZE = 129;
             char result[RESULT_BUFFER_SIZE];
@@ -69,10 +65,12 @@ namespace jstd
                 }
             }
 
-        if (m_out == nullptr) {
+        if (m_out == nullptr)
+        {
             system::tsprintf(result);
         }
-        else {
+        else
+        {
             try {
                 m_out->write(result, result_size);
             } catch (const io_exception& e) {

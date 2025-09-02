@@ -9,8 +9,6 @@ namespace jstd {
  */
 class file_filter {
 public:
-    file_filter() = default;
-    
     /**
      * Проверяет, подходит ли файл под фильтр.
      * 
@@ -25,7 +23,9 @@ public:
      */
     virtual bool apply(const char* path, int path_length) const = 0;
 
-    // Уничтожает фильтр.
+    /**
+     * 
+     */
     virtual ~file_filter() {};
 };
     
@@ -33,7 +33,7 @@ public:
 class accept_all_filter : public file_filter {
 public:
     // Всегда возвращает true.     
-    bool apply(const char* path, int path_length) const {return true;} 
+    bool apply(const char*, int) const {return true;} 
 };
 
 }

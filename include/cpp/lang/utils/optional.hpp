@@ -16,8 +16,16 @@ namespace jstd {
 template<typename T>
 class optional {
     union {
-        T _align; ///< Выравнивание для корректного хранения объекта.
-        char _object[sizeof(T)]; ///< Буфер для хранения объекта типа T.
+        
+        /**
+         * Выравнивание для корректного хранения объекта.
+         */
+        T _align;
+        
+        /**
+         * Буфер для хранения объекта типа T.
+         */
+        char _object[sizeof(T)];
     };
     
     bool _is_value; ///< Флаг, указывающий, содержит ли optional значение.

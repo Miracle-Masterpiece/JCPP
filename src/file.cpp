@@ -150,7 +150,7 @@ namespace jstd {
         return 0;
     }
 
-    array<file> file::list_files(file_filter* filter /*= nullptr*/, tca::base_allocator* allocator) const {
+    array<file> file::list_files(file_filter* filter /*= nullptr*/, tca::allocator* allocator) const {
         accept_all_filter accept_all;
         if (filter == nullptr)
             filter = &accept_all;

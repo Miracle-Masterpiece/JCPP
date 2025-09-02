@@ -17,7 +17,7 @@ namespace jstd {
 
     }
 
-    image_packer::image_packer(const image* img_array, int32_t count_images, int32_t w, int32_t h, tca::base_allocator* allocator, tca::base_allocator* node_allocator) :
+    image_packer::image_packer(const image* img_array, int32_t count_images, int32_t w, int32_t h, tca::allocator* allocator, tca::allocator* node_allocator) :
     m_allocator(allocator), 
     m_node_allocator(node_allocator), 
     m_root(), 
@@ -71,14 +71,14 @@ namespace jstd {
     }
 
     void image_packer::create_tree() {
-#ifndef NDEBUG
-        if (m_allocator == nullptr) 
-            throw_except<illegal_state_exception>("m_allocator must be != null");
-        if (m_node_allocator == nullptr) 
-            throw_except<illegal_state_exception>("m_node_allocator must be != null");
-#endif//NDEBUG
+        JSTD_DEBUG_CODE(
+            if (m_allocator == nullptr) 
+                throw_except<illegal_state_exception>("m_allocator must be != null");
+            if (m_node_allocator == nullptr) 
+                throw_except<illegal_state_exception>("m_node_allocator must be != null");
+        );
         if (!m_root) 
-            m_root = make_unique(node(m_width, m_height, m_node_allocator), m_node_allocator);
+            m_root = make_unique<node>(node(m_width, m_height, m_node_allocator), m_node_allocator);
         BEGIN: 
         for (int64_t i = 0; i < m_images.length; ++i) {
             const image& img = m_images[i];
@@ -97,19 +97,19 @@ namespace jstd {
     }
 
     image image_packer::pack(int32_t scale_factor, int32_t out_image_channels) {
-#ifndef NDEBUG
-        if (scale_factor <= 0)
-            throw_except<illegal_argument_exception>("scale_factor %li is illegal", (long int) scale_factor);
-        if (out_image_channels <= 0 || out_image_channels > 4)
-            throw_except<illegal_argument_exception>("out_image_channels %li is illegal", (long int) scale_factor);
-        if (m_allocator == nullptr) 
-            throw_except<illegal_state_exception>("m_allocator must be != null");
-        if (m_node_allocator == nullptr) 
-            throw_except<illegal_state_exception>("m_node_allocator must be != null");
-        if (!m_root)
-            create_tree();
-#endif//NDEBUG
-        
+        JSTD_DEBUG_CODE(
+            if (scale_factor <= 0)
+                throw_except<illegal_argument_exception>("scale_factor %li is illegal", (long int) scale_factor);
+            if (out_image_channels <= 0 || out_image_channels > 4)
+                throw_except<illegal_argument_exception>("out_image_channels %li is illegal", (long int) scale_factor);
+            if (m_allocator == nullptr) 
+                throw_except<illegal_state_exception>("m_allocator must be != null");
+            if (m_node_allocator == nullptr) 
+                throw_except<illegal_state_exception>("m_node_allocator must be != null");
+            if (!m_root)
+                create_tree();
+        );
+
         image result(m_root->get_rect().w / scale_factor, m_root->get_rect().h / scale_factor, out_image_channels, m_allocator);
 
         /**
@@ -131,19 +131,19 @@ namespace jstd {
             /**
              * Массив оригинальных изображений.
              */
-            array<const image>*     m_array_of_image;
+            array<const image>* m_array_of_image;
             
             /**
              * Указатель на результирующее изображение (атлас).
              * В который будет записано изображение.
              */
-            image*                  m_atlas;
+            image* m_atlas;
             
             /**
              * Делитель для уменьшения изображения.
              * Для корректных результатов должен быть кратен степени двойки. 2 4 8 16 32....1024
              */
-            int32_t                 m_rescale;
+            int32_t m_rescale;
             
             /**
              * Аллокатор для выделения памяти под уменьшенное изображение.

@@ -12,10 +12,6 @@
 #include <cstdio>
 #include <cstdint>
 
-#ifndef ALLOC_LIB_MAX_ALIGN
-#define ALLOC_LIB_MAX_ALIGN alignof(std::max_align_t)
-#endif
-
 #ifndef NDEBUG
     #include <cassert>
     #define ALLOC_LIB_CHECK_ALIGN(ptr, type) assert( ( ((std::intptr_t) ptr) % alignof(type) ) == 0 )
@@ -85,12 +81,9 @@ namespace tca {
          * Возвращает выровненный размер структуры так, 
          * чтобы размер был кратен максимальному выравниванию.
          * 
-         * @remark
-         *          Максимальное выравнивание устанавливается с помощью макроса ALLOC_LIB_MAX_ALIGN
-         *          И по-умолчанию равно alignof(std::max_align_t)
          */
         constexpr static std::size_t byteSize() {
-            return calcAlignSize(sizeof(Header), ALLOC_LIB_MAX_ALIGN);
+            return calcAlignSize(sizeof(Header), alignof(std::max_align_t));
         }
     
     private:
@@ -99,8 +92,6 @@ namespace tca {
          */
         Header(const Header&) = delete;
         Header& operator= (const Header&)  = delete;
-        
-        //Так же удалён, поскольку перемещение обязано быть всегда с помощью конструктора перемещения и рамещением объекта через placement-new
         Header& operator= (Header&&) = delete;
     };
     
@@ -273,7 +264,7 @@ namespace tca {
         if (std::is_trivially_copyable<T>::value) {
             memcpy(dst, src, sizeof(T) * count);
         } else {
-            using non_const_type = typename jstd::remove_const<T>::type;
+            using non_const_type = typename jstd::remove_cv<T>::type;
             non_const_type* d = const_cast<non_const_type*>(reinterpret_cast<T*>(dst));
             non_const_type* s = const_cast<non_const_type*>(reinterpret_cast<T*>(src));
             for (std::size_t i = 0; i < count; ++i) {
@@ -296,7 +287,7 @@ namespace tca {
         jstd::internal::sptr::shared_control_block* block = allocate(sizeof(T), length, mov<T>);
         if (!block) 
             return jstd::shared_ptr<T[]>();
-        using non_const_T = typename jstd::remove_const<T>::type;
+        using non_const_T = typename jstd::remove_cv<T>::type;
         jstd::placement_new(reinterpret_cast<non_const_T*>(block->m_object), length);
         return jstd::shared_ptr<T[]>(block, length);
     }

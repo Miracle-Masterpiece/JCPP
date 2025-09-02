@@ -1,7 +1,5 @@
 #include <cpp/lang/utils/random.hpp>
-#include <cmath>
-
-#define abs(x) (x < 0 ? -x : x)
+#include <cpp/lang/math/math.hpp>
 
 namespace jstd
 {
@@ -49,20 +47,25 @@ namespace jstd
 
     template<>
     float random::next() {
-        int64_t v = next0();
-        return (int32_t) abs(v) / (float) num_limits<int64_t>::max();
+        int32_t v = static_cast<int32_t>(next0());
+        return math::abs(v) / (float) num_limits<int64_t>::max();
     }
 
     template<>
     double random::next() {
-        int64_t v = next0();
+        int64_t v = static_cast<int64_t>(next0());
         return abs(v) / (double) num_limits<int64_t>::max();
     }
 
     template<>
     long double random::next() {
-        int64_t v = next0();
+        int64_t v = static_cast<int64_t>(next0());
         return abs(v) / (long double) num_limits<int64_t>::max();
+    }
+
+    template<>
+    bool random::next() {
+        return (((next0() >> 31) & 0xffffffff) & 1) != 0;
     }
 
 }

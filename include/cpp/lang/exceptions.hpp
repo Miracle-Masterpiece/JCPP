@@ -108,7 +108,11 @@ ___MAKE_EXCEPT_CLASS__(socket_timeout_exception,            socket_exception)
         va_start(args, format);
         std::vsnprintf(buf, sizeof(buf), format, args);
         va_end(args);
-        return T(buf);
+
+        T except;
+        except.set_calltrace(calltrace::current());
+
+        return T(std::move(except));
     }
 
     template<typename T>
@@ -125,7 +129,9 @@ ___MAKE_EXCEPT_CLASS__(socket_timeout_exception,            socket_exception)
 
     template<typename T>
     void throw_except() {
-        throw T();
+        T except;
+        except.set_calltrace(calltrace::current());
+        throw except;
     }
     
     inline void check_non_null(const void* p, const char* msg) {

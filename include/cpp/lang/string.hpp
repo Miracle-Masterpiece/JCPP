@@ -1,7 +1,7 @@
 #ifndef _ALLOCATORS_STRING_H
 #define _ALLOCATORS_STRING_H
 
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 #include <cpp/lang/system.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/utils.hpp>
@@ -30,18 +30,34 @@ class tstring;
 template<typename CHAR_TYPE>
 class tstring {
 protected:
-    
-    tca::base_allocator* _allocator; // Аллокатор памяти для хранения строки.
+    /**
+     * Аллокатор памяти для хранения строки.
+     */
+    tca::allocator* _allocator;
+    /**
+     * 
+     */
     union {
         CHAR_TYPE* _data;                // Указатель на данные строки.
         const CHAR_TYPE* _const_data;    // Указатель на константные данные строки.
     };
-    int32_t _capacity;                   // Вместимость выделенной памяти.
-    int32_t _size;                       // Текущий размер (длина) строки.
-    char _order;                     // Порядок байтов строки (младший порядок или старший порядок).
-    //TODO: даже не спрашивай какого чёрта функция просто не перенесена в секцию public
-public:
+    
+    /**
+     * Вместимость выделенной памяти.
+     */
+    int32_t _capacity;
+    
+    /**
+     * Текущий размер (длина) строки.
+     */
+    int32_t _size;
+    
+    /**
+     * Порядок байтов строки (младший порядок или старший порядок).
+     */
+    char _order;
 
+public:
     using CHAR_T = CHAR_TYPE;
 
      /**
@@ -137,7 +153,7 @@ protected:
      * @param out
      *      Порядок байтов для созданной строки.
      */
-    void construct_string(const CHAR_TYPE* str, tca::base_allocator* allocator, byte_order in, byte_order out) {
+    void construct_string(const CHAR_TYPE* str, tca::allocator* allocator, byte_order in, byte_order out) {
         int32_t len = tstring<CHAR_TYPE>::strlen(str);
         CHAR_TYPE* data = (CHAR_TYPE*) allocator->allocate_align(sizeof(CHAR_TYPE) * (len + 1), alignof(CHAR_TYPE));
         if (data == nullptr)
@@ -195,7 +211,7 @@ public:
      * Конструктор, инициализирующий строку с заданным аллокатором.
      * @param allocator Аллокатор для управления памятью.
      */
-    tstring(tca::base_allocator* allocator);
+    tstring(tca::allocator* allocator);
    
     /**
      * Конструктор, инициализирующий строку с заданным аллокатором и исходной строкой.
@@ -204,7 +220,7 @@ public:
      * @param in Порядок байтов исходной строки.
      * @param out Порядок байтов для созданной строки.
      */    
-    tstring(tca::base_allocator* allocator, const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order());
+    tstring(tca::allocator* allocator, const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order());
     
     /**
      * Конструктор копирования.
@@ -459,7 +475,7 @@ public:
      * @return
      *      Копия текущей строки.
      */
-    tstring<CHAR_TYPE> clone(tca::base_allocator* allocator = nullptr) const;
+    tstring<CHAR_TYPE> clone(tca::allocator* allocator = nullptr) const;
     
     /**
      * Возвращает содержимое подстроки текущей строки.
@@ -469,7 +485,7 @@ public:
      *                  Если nullptr, то будет взят аллокатор текущей строки.
      * @return Новая строка, содержащая подстроку.
      */
-    tstring<CHAR_TYPE> substr(int32_t start, int32_t end, tca::base_allocator* allocator = nullptr);
+    tstring<CHAR_TYPE> substr(int32_t start, int32_t end, tca::allocator* allocator = nullptr);
 
     /**
      * Получить символ по заданному индексу.
@@ -525,11 +541,11 @@ public:
     }
     
     template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>::tstring(tca::base_allocator* allocator) : _allocator(allocator), _data(nullptr), _capacity(0), _size(0), _order(-1) {
+    tstring<CHAR_TYPE>::tstring(tca::allocator* allocator) : _allocator(allocator), _data(nullptr), _capacity(0), _size(0), _order(-1) {
     }
     
     template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>::tstring(tca::base_allocator* allocator, const CHAR_TYPE* str, byte_order in, byte_order out) : tstring<CHAR_TYPE>() {
+    tstring<CHAR_TYPE>::tstring(tca::allocator* allocator, const CHAR_TYPE* str, byte_order in, byte_order out) : tstring<CHAR_TYPE>() {
         if (str != nullptr) {
             construct_string(str, allocator, in, out);
         } else {
@@ -882,7 +898,7 @@ public:
     }
 
     template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE> tstring<CHAR_TYPE>::clone(tca::base_allocator* allocator) const {
+    tstring<CHAR_TYPE> tstring<CHAR_TYPE>::clone(tca::allocator* allocator) const {
         if (is_constant_string()) {
             return tstring<CHAR_TYPE>(*this);
         } 
@@ -967,7 +983,7 @@ public:
     }
 
     template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE> tstring<CHAR_TYPE>::substr(int32_t start, int32_t end, tca::base_allocator* allocator) {
+    tstring<CHAR_TYPE> tstring<CHAR_TYPE>::substr(int32_t start, int32_t end, tca::allocator* allocator) {
         check_const_or_except();
         check_index(start,  _size + 1);
         check_index(end,    _size + 1);

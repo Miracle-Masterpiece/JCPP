@@ -19,29 +19,89 @@ namespace jstd {
  */
 template<typename SOCK_T>
 class tsocket {
+    /**
+     * 
+     */
     static const int32_t DEFAULT_BACKLOG = 16;
 
-    tsocket(const tsocket<SOCK_T>&) = delete;
-    tsocket<SOCK_T>& operator= (const tsocket<SOCK_T>&) = delete;
-
+    /**
+     * 
+     */
     static const int32_t IS_CREATED         = 1 << 0;
+    
+    /**
+     * 
+     */
     static const int32_t IS_BINDED          = 1 << 1;
+    
+    /**
+     * 
+     */
     static const int32_t IS_CONNECTED       = 1 << 2;
+    
+    /**
+     * 
+     */
     static const int32_t IS_NONBLOCKING     = 1 << 3;
+    
+    /**
+     * 
+     */
     static const int32_t IS_CLOSED          = 1 << 4;
+    
+    /**
+     * 
+     */
     static const int32_t IS_SHUTDOWN_IN     = 1 << 5;
+    
+    /**
+     * 
+     */
     static const int32_t IS_SHUTDOWN_OUT    = 1 << 6;
+    
+    /**
+     * 
+     */
     static const int32_t IS_LISTENING       = 1 << 7;
     
-    //сокет, реализующий функции
+    /**
+     * Cокет, реализующий функции
+     */
     SOCK_T _impl;
     
-    //конфигурация сокета
+    /**
+     * Конфигурация сокета
+     */
     int32_t _configure;
+
+    /**
+     * 
+     */
+    tsocket(const tsocket<SOCK_T>&) = delete;
     
+    /**
+     * 
+     */
+    tsocket<SOCK_T>& operator= (const tsocket<SOCK_T>&) = delete;
+
+    /**
+     * 
+     */
     void set_config(int32_t conf, bool value);
+    
+    /**
+     * 
+     */
     bool get_config(int32_t conf) const; 
+    
+    /**
+     * 
+     */
     void create(inet_family family);
+    
+    /**
+     * 
+     */
     bool is_created();
     
     inline void check_state_or_except() const {

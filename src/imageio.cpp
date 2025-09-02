@@ -30,19 +30,18 @@ static void jstd_free(void* ptr);
 #include <cpp/lang/utils/images/stb_image.h>
 #include <cpp/lang/utils/images/stb_image_write.h>
 
+static tca::malloc_free_allocator jstd_allocator_for_stb_image;
+
 static void* jstd_malloc(std::size_t sz) {
-    tca::malloc_free_allocator jstd_malloc_allocator;
-    return jstd_malloc_allocator.allocate(sz);
+    return jstd_allocator_for_stb_image.allocate(sz);
 }
 
 static void* jstd_realloc(void* p, std::size_t sz) {
-    tca::malloc_free_allocator jstd_malloc_allocator;
-    return jstd_malloc_allocator.reallocate(p, sz);
+    return jstd_allocator_for_stb_image.reallocate(p, sz);
 }
 
 static void jstd_free(void* ptr) {
-    tca::malloc_free_allocator jstd_malloc_allocator;
-    return jstd_malloc_allocator.deallocate(ptr, -1);
+    return jstd_allocator_for_stb_image.deallocate(ptr);
 }
 
 namespace jstd 
@@ -51,48 +50,28 @@ namespace jstd
 namespace imageio 
 {
 
-    image load_image(istream* in, tca::base_allocator* allocator) {        
+    image load_image(istream* in, tca::allocator* allocator) {        
         int64_t size = in->available();
-        unique_ptr<stbi_uc[]> raw_image(allocator, size);
+        unique_ptr<stbi_uc[]> raw_image = make_unique_array<stbi_uc>(size, allocator);
         
-        in->read((char*) raw_image.raw_ptr(), size);
+        in->read((char*) raw_image.get(), size);
     
         int width;
         int heigth;
         int channels;
         
-        /**
-         * Простая обёртка над malloc/free
-         */
-        tca::malloc_free_allocator jstd_malloc_allocator;
-
-        stbi_uc* pixels = stbi_load_from_memory(raw_image.raw_ptr(), size, &width, &heigth, &channels, 0);
+        stbi_uc* pixels = stbi_load_from_memory(raw_image.get(), size, &width, &heigth, &channels, 0);
         if (pixels == nullptr)
             throw_except<illegal_state_exception>("%s", stbi_failure_reason());
-
-        image img;
-        try {
-            img = image(width, heigth, channels, allocator);
-        } catch (...) {
-            stbi_image_free(pixels);
-            throw;
-        }
-        
-        image::byte* img_raw_data = img.pixels();
-        int32_t len = width * heigth * channels;
-        
-        for (int32_t i = 0; i < len; ++i)
-            img_raw_data[i] = (image::byte) pixels[i];
-
-        stbi_image_free(pixels);
-        return img;
+            
+        return image::lock(pixels, &jstd_allocator_for_stb_image, width, heigth, channels);
     }
 
-    image load_image(const file& file, tca::base_allocator* allocator) {
+    image load_image(const file& file, tca::allocator* allocator) {
         ifstream in(file);
         image img;
         try {
-            img = std::move(load_image(&in, allocator));
+            img = load_image(&in, allocator);
         } catch (...) {
             close_stream_and_suppress_except(&in);    
             throw;
@@ -118,9 +97,9 @@ namespace imageio
     }
 
     void write_image(ostream* out, const image* img, const char* ext) {
-        int width       = img->get_width();
-        int height      = img->get_height();
-        int channels    = img->get_channels();
+        int32_t width       = img->get_width();
+        int32_t height      = img->get_height();
+        int8_t channels     = img->get_channels();
         
         int error = 0;
 

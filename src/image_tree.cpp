@@ -12,21 +12,21 @@ namespace texturing {
 
     node::node() : 
     m_allocator(nullptr), 
-    m_left(nullptr), 
-    m_right(nullptr), 
+    m_left(), 
+    m_right(), 
     m_rect(), 
     m_ID(NULL_ID) {
 
     }
 
-    node::node(int32_t w, int32_t h, tca::base_allocator* allocator) : node({0,0,w,h}, allocator) {
+    node::node(int32_t w, int32_t h, tca::allocator* allocator) : node({0,0,w,h}, allocator) {
 
     }
 
-    node::node(const rect& r, tca::base_allocator* allocator) : 
+    node::node(const rect& r, tca::allocator* allocator) : 
     m_allocator(allocator), 
-    m_left(nullptr), 
-    m_right(nullptr), 
+    m_left(), 
+    m_right(), 
     m_rect(r), 
     m_ID(NULL_ID) {
 
@@ -34,50 +34,30 @@ namespace texturing {
 
     node::node(node&& n) :
     m_allocator(n.m_allocator),
-    m_left(n.m_left),
-    m_right(n.m_right),
+    m_left(std::move(n.m_left)),
+    m_right(std::move(n.m_right)),
     m_rect(n.m_rect),
     m_ID(n.m_ID) {
         n.m_allocator   = nullptr;
-        n.m_left        = nullptr;
-        n.m_right       = nullptr;
         n.m_ID          = NULL_ID;
     }
     
     node& node::operator= (node&& n) {
         if (&n != this) {
-            cleanup();
             m_allocator = n.m_allocator;
-            m_left      = n.m_left;
-            m_right     = n.m_right;
+            m_left      = std::move(n.m_left);
+            m_right     = std::move(n.m_right);
             m_rect      = n.m_rect;
             m_ID        = n.m_ID;
-
+            
             n.m_allocator   = nullptr;
-            n.m_left        = nullptr;
-            n.m_right       = nullptr;
             n.m_ID          = NULL_ID;
         }
         return *this;
     }
     
-    void node::cleanup() {
-        if (m_allocator != nullptr) {
-            node* chields[2] {m_right, m_left};
-            for (int i = 0; i < 2; ++i) {
-                if (chields[i] != nullptr) {
-                    chields[i]->~node();
-                    m_allocator->deallocate(chields[i], sizeof(node));
-                }
-            }
-            m_right     = nullptr;
-            m_left      = nullptr;
-            m_allocator = nullptr;
-        }
-    }
-
     node::~node() {
-        cleanup();
+        
     }
 
     bool node::is_leaf() const {
@@ -107,22 +87,21 @@ namespace texturing {
 			m_ID = imageID;
 			return this;
 		}
+		
+        unique_ptr<node> left, right;
         
-        unique_ptr<node> left(m_allocator);
-        unique_ptr<node> right(m_allocator);
-
-		if (m_rect.w - w > m_rect.h - h){	//Если высота больше ширины, то разбиваем по x
-            *left   = node({m_rect.x, 		m_rect.y, 		w, 				m_rect.h},      m_allocator);
-            *right  = node({m_rect.x + w, 	m_rect.y, 		m_rect.w - w, 	m_rect.h},      m_allocator);   
+        if (m_rect.w - w > m_rect.h - h){	//Если высота больше ширины, то разбиваем по x
+            left  = make_unique<node>(node({m_rect.x, 		m_rect.y, 		w, 				m_rect.h},      m_allocator));
+            right = make_unique<node>(node({m_rect.x + w, 	m_rect.y, 		m_rect.w - w, 	m_rect.h},      m_allocator));
 		}
         
         else {								//Иначе по y
-			*left   = node({m_rect.x, 		m_rect.y, 		m_rect.w, 		h},             m_allocator);
-			*right  = node({m_rect.x, 		m_rect.y + h,	m_rect.w, 		m_rect.h - h},  m_allocator);
+            left = make_unique<node>(node({m_rect.x, 		m_rect.y, 		m_rect.w, 		h},             m_allocator));
+            left = make_unique<node>(node({m_rect.x, 		m_rect.y + h,	m_rect.w, 		m_rect.h - h},  m_allocator));
 		}
         
-        m_left  = left.release();
-        m_right = right.release();
+        m_left  = std::move(left);
+        m_right = std::move(right);
 
 		return m_left->put_image(w, h, imageID);
     }

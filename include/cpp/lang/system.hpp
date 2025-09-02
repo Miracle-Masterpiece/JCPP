@@ -107,4 +107,6 @@ namespace internal
 
 }//namespace jstd
 
+namespace tc = jstd;
+
 #endif//_ALLOCATORS_SYSTEM_H

@@ -44,7 +44,6 @@ namespace bsd_socket
 {
 
     void ms_to_timeval(struct timeval* tv, int64_t millisec) {
-        std::cout << "in ms: " << millisec << std::endl;
         tv->tv_sec   =  millisec / 1000;             
         tv->tv_usec  = (millisec % 1000) * 1000;
     }   

@@ -1,4 +1,5 @@
 #include <cpp/lang/utils/shared_ptr.hpp>
+#include <cpp/lang/math/math.hpp>
 #include <allocators/Helpers.hpp>
 
 namespace jstd
@@ -16,19 +17,16 @@ namespace sptr
         return ctrl_block_total_size;
     }
 
-    shared_control_block* alloc_memory_to_control_block(tca::base_allocator* allocator, uint32_t object_size, uint32_t object_align, uint32_t n_objects) {        
+    shared_control_block* alloc_memory_to_control_block(tca::allocator* allocator, uint32_t object_size, uint32_t object_align, uint32_t n_objects) {        
         using u32 = uint32_t;
         u32 ctrl_block_size     = sizeof(shared_control_block);
         u32 padding             = (uint32_t) tca::calcAlignAddedSize(ctrl_block_size, object_align);
         u32 offset_to_object    = ctrl_block_size + padding;
         u32 objects_size        = object_size * n_objects;
         u32 total_size          = ctrl_block_size + padding + objects_size;
-        void* p                 = allocator->allocate_align(total_size, 
-                                                object_align > alignof(shared_control_block) ? 
-                                                object_align : alignof(shared_control_block));         
+        void* p                 = allocator->allocate_align(total_size, math::max<uint32_t>(alignof(shared_control_block), object_align));         
         if (!p)
             return nullptr;
-
         using byte_t = unsigned char;
         byte_t* block = reinterpret_cast<byte_t*>(p);
         shared_control_block* ctrl_block = reinterpret_cast<shared_control_block*>(block); {
@@ -38,6 +36,9 @@ namespace sptr
             ctrl_block->m_strong_refs   = 0;
             ctrl_block->m_weak_refs     = 0;
         }
+        JSTD_DEBUG_CODE(
+            assert(((intptr_t) ctrl_block->m_object) % object_align == 0);
+        );
         return ctrl_block;
     }
 

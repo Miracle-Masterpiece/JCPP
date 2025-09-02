@@ -1,7 +1,7 @@
 #ifndef _ALLOCATORS_LINEAR_ALLOCATOR_H
 #define _ALLOCATORS_LINEAR_ALLOCATOR_H
 
-#include "./base_allocator.hpp"
+#include <allocators/allocator.hpp>
 
 namespace tca {
 
@@ -11,11 +11,11 @@ namespace tca {
  * 
  * @since 1.0
  */
-class linear_allocator : public base_allocator {
+class linear_allocator : public allocator {
     /**
      * Указатель на блок памяти аллокатора.
      */
-    void*       _buffer;
+    void* _buffer;
     
     /**
      * Общий объём доступной памяти.
@@ -79,18 +79,6 @@ public:
     ~linear_allocator();
     
     /**
-     * Выделяет сырой блок памяти для типа T не вызывая конструкторы.
-     * 
-     * @param count
-     *      Количество подряд идущих объектов.
-     * 
-     * @return
-     *      Указатель объект или nullptr, если выделение не удалось.
-     */
-    template<typename T>
-    T* allocate(std::size_t count);
-    
-    /**
      * Выделяет блок памяти размером sz с выравниванием alignof(char)
      * 
      * @param sz
@@ -118,7 +106,7 @@ public:
     /**
      * 
      */
-    void deallocate(void* ptr, std::size_t sz) override;
+    void deallocate(void* ptr) override;
     
     /**
      * Возвращает строковое представление объекта.
@@ -156,10 +144,7 @@ public:
      */
     void print() const;
 };
-    template<typename T>
-    T* linear_allocator::allocate(std::size_t count) {
-        return reinterpret_cast<T*>(allocate_align(sizeof(T) * count, alignof(T)));
-    }
+
 }
 
 

@@ -3,8 +3,10 @@
 #include <cpp/lang/numbers.hpp>
 #include <cpp/lang/utils/comparator.hpp>
 
-namespace jstd {
-namespace objects {
+namespace jstd 
+{
+namespace objects 
+{
 
     template<>
     uint64_t hashcode<float>(const float* array, int64_t len) {
@@ -43,5 +45,6 @@ namespace objects {
 
         return hash;
     }
-}
-}
+
+}// namespace objects
+}// namespace jstd 

@@ -23,12 +23,36 @@ class image;
  * Поддерживает кастомные аллокаторы для оптимального управления памятью.
  */
 class image_packer {
-    tca::base_allocator*        m_allocator;       // Основной аллокатор для внутренних нужд.
-    tca::base_allocator*        m_node_allocator;  // Аллокатор для узлов дерева размещения (node).
-    unique_ptr<texturing::node> m_root;            // Корневой узел дерева размещения изображений.
-    array<const image>          m_images;          // Входной массив изображений.
-    int32_t                     m_width;           // Ширина выходного изображения (атласа).
-    int32_t                     m_height;          // Высота выходного изображения (атласа).
+    
+    /**
+     * Основной аллокатор для внутренних нужд.
+     */
+    tca::allocator*        m_allocator;
+    
+    /**
+     * Аллокатор для узлов дерева размещения (node).
+     */
+    tca::allocator*        m_node_allocator;
+    
+    /**
+     * Корневой узел дерева размещения изображений.
+     */
+    unique_ptr<texturing::node> m_root;
+    
+    /**
+     * Входной массив изображений.
+     */
+    array<const image>          m_images;
+    
+    /**
+     * Ширина выходного изображения (атласа).
+     */
+    int32_t                     m_width;
+    
+    /**
+     * Высота выходного изображения (атласа).
+     */
+    int32_t                     m_height;
 
     /**
      * Внутренний метод для построения дерева размещения.
@@ -78,7 +102,7 @@ public:
      *      Лучше использовать какой-то пул аллокатор на размер sizeof(texturing::node), поскольку этот аллокатор выделяет только этот размер!
      */
     image_packer(const image* img_array, int32_t count_images, int32_t w, int32_t h,
-                 tca::base_allocator* allocator = tca::get_scoped_or_default(), tca::base_allocator* node_allocator = tca::get_scoped_or_default());
+                 tca::allocator* allocator = tca::get_scoped_or_default(), tca::allocator* node_allocator = tca::get_scoped_or_default());
 
     /**
      * Конструктор перемещения.

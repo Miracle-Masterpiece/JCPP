@@ -46,7 +46,7 @@ class fixed_thread_pool : public thread_pool {
     mutex                   m_tp_mutex;
     bool                    m_terminated;
 public:
-    fixed_thread_pool(int32_t count_threads, tca::base_allocator* allocator = tca::get_scoped_or_default());
+    fixed_thread_pool(int32_t count_threads, tca::allocator* allocator = tca::get_scoped_or_default());
     void submit(task*) override;
     void submit(task* tasks[], int32_t bufsize) override;
     task* get_task() override;

@@ -7,7 +7,7 @@ namespace jstd {
 
     }
 
-    deflstream::deflstream(ostream* out, tca::base_allocator* allocator, int64_t buf_size) :
+    deflstream::deflstream(ostream* out, tca::allocator* allocator, int64_t buf_size) :
     m_buffer(buf_size, allocator), m_out(out), m_def() {
         
     }

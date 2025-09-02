@@ -1,77 +1,111 @@
 #ifndef JSTD_CPP_LANG_UTILS_UNIQUE_PTR_H
 #define JSTD_CPP_LANG_UTILS_UNIQUE_PTR_H
 
-#include <allocators/base_allocator.hpp>
 #include <cpp/lang/exceptions.hpp>
+#include <cpp/lang/utils/traits.hpp>
 #include <cpp/lang/utils/arrays.hpp>
-#include <utility>
-#include <cstdint>
+#include <typeinfo>
 
-namespace jstd {
+namespace jstd
+{
 
-/**
- * 
- */
-template<typename E>
+template<typename T>
 class unique_ptr {
-    
-    /**
-     * 
-     */
-    tca::base_allocator* m_allocator;
-    
-    /**
-     * 
-     */
-    E* m_element;
-    
-    /**
-     * 
-     */
-    unique_ptr(const unique_ptr<E>&) = delete;
-    
-    /**
-     * 
-     */
-    unique_ptr& operator= (const unique_ptr<E>&) = delete;
 
     /**
      * 
      */
-    inline void check_access() const;
+    template<typename U>
+    friend class unique_ptr;
+   
+     /**
+     * 
+     */
+    template<typename A, typename B, typename>
+    friend unique_ptr<A> static_pointer_cast(unique_ptr<B>&&);
     
+    /**
+     * 
+     */
+    template<typename A, typename B, typename>
+    friend unique_ptr<A> const_pointer_cast(unique_ptr<B>&&);
+    
+    /**
+     * 
+     */
+    template<typename A, typename B, typename>
+    friend unique_ptr<A> dynamic_pointer_cast(unique_ptr<B>&&);
+
+    /**
+     * 
+     */
+    template<typename A, typename B, typename>
+    friend unique_ptr<A> reinterpret_pointer_cast(unique_ptr<B>&&);
+
+    /**
+     * 
+     */
+    tca::allocator* m_allocator;
+    
+    /**
+     * 
+     */
+    T* m_object;
+
+    /**
+     * 
+     */
+    unique_ptr(T* p, tca::allocator* allocator);
+
+    /**
+     * deleted
+     */
+    unique_ptr(const unique_ptr<T>&) = delete;
+    
+    /**
+     * deleted
+     */
+    unique_ptr<T>& operator= (const unique_ptr<T>&) = delete;
+
     /**
      * 
      */
     void cleanup();
 
-public:    
+    /**
+     * 
+     */
+    void non_null_or_except() const;
+
+public:
     /**
      * 
      */
     unique_ptr();
-    
+
+    /**
+     * @deprecated
+     */
+    template<typename T_, typename = typename enable_if<
+                                                is_same<
+                                                        typename remove_cv<T>::type, 
+                                                        typename remove_cv<T_>::type
+                                                >::value
+                                            >::type>
+    unique_ptr(T_&& obj, tca::allocator* allocator = tca::get_scoped_or_default());
+
     /**
      * 
      */
-    unique_ptr(tca::base_allocator* allocator);
-    
-    /**
-     * 
-     */
-    template<typename _E>
-    unique_ptr(tca::base_allocator* allocator, _E&&);
-    
-    /**
-     * 
-     */
+    template<typename E, typename = typename enable_if<is_base_of<E, T>::value && is_cv_castable<E, T>::value>::type>
     unique_ptr(unique_ptr<E>&&);
     
     /**
      * 
      */
-    unique_ptr<E>& operator= (unique_ptr<E>&&);
-    
+    template<typename E, typename = typename enable_if<is_base_of<E, T>::value>::type>
+    unique_ptr<T>& operator= (unique_ptr<E>&&);
+
     /**
      * 
      */
@@ -80,176 +114,229 @@ public:
     /**
      * 
      */
-    E* release();
-    
-    /**
-     * 
-     */
-    E& operator*() const;
-    
-    /**
-     * 
-     */
-    E* operator->() const;
-    
-    /**
-     * 
-     */
-    E* operator() () const;
-    
-    /**
-     * 
-     */
-    E* raw_ptr() const;
-    
-    /**
-     * 
-     */
-    E& operator[] (std::size_t idx) const;
-    
+    T* get() const;
+
     /**
      * 
      */
     operator bool() const;
+
+    /**
+     * 
+     */
+    T* operator->() const;
+
+    /**
+     * 
+     */
+    T& operator*() const;
+
+    /**
+     * 
+     */
+    tca::allocator* get_allocator() const;
+
+    /**
+     * 
+     */
+    operator T*() const;
+
+    /**
+     * 
+     */
+    bool operator== (const unique_ptr<T>&) const;
+
+    /**
+     * 
+     */
+    bool operator!= (const unique_ptr<T>&) const;
 };
-    
-    template<typename E>
-    unique_ptr<E>::unique_ptr() : 
-    m_allocator(nullptr), 
-    m_element(nullptr) {
+
+    template<typename T>
+    unique_ptr<T>::unique_ptr() : m_allocator(nullptr), m_object(nullptr) {
 
     }
 
-    template<typename E>
-    unique_ptr<E>::unique_ptr(tca::base_allocator* allocator) : unique_ptr<E>(allocator, E()) {
-        
+    template<typename T>
+    unique_ptr<T>::unique_ptr(T* p, tca::allocator* allocator) :
+    m_allocator(allocator),
+    m_object(p) {
+
+    }
+
+    template<typename T>
+    template<typename T_, typename>
+    unique_ptr<T>::unique_ptr(T_&& obj, tca::allocator* allocator) : m_allocator(allocator) {
+        void* mem = m_allocator->allocate_align(sizeof(T), alignof(T));
+        if (!mem)
+            throw_except<out_of_memory_error>("Out of memory!");
+        try {
+            m_object = new(mem) T(std::forward<T_>(obj));
+        } catch (...) {
+            m_allocator->deallocate(mem);
+            throw;
+        }
+    }
+
+    template<typename T>
+    void unique_ptr<T>::cleanup() {
+        if (m_allocator != nullptr && m_object != nullptr) {
+            m_object->~T();
+            m_allocator->deallocate((void*) m_object);
+        }
+    }
+
+    template<typename T>
+    unique_ptr<T>::~unique_ptr() {
+        cleanup();
+    }
+
+    template<typename T>
+    T* unique_ptr<T>::get() const {
+        return m_object;
+    }
+
+    template<typename T>
+    unique_ptr<T>::operator bool() const {
+        return m_object != nullptr;
     }
     
     template<typename T>
-    unique_ptr<T> make_unique(T&& object, tca::base_allocator* allocator = tca::get_scoped_or_default()) {
-        return unique_ptr<T>(allocator, std::forward<T>(object));
+    unique_ptr<T>::operator T*() const {
+        return m_object;
     }
 
-    template<typename E>
-    template<typename _E>
-    unique_ptr<E>::unique_ptr(tca::base_allocator* allocator, _E&& e) {
-        void* raw_data = allocator->allocate_align(sizeof(E), alignof(E));
-        if (raw_data == nullptr)
-            throw_except<out_of_memory_error>("Out of memory!");
-        try {
-            m_element = new(raw_data) E(std::forward<_E>(e));
-        } catch (...) {
-            allocator->deallocate(raw_data, sizeof(E));
-            throw;
-        }
-        m_allocator     = allocator;
-    }
-    
-    template<typename E>
-    unique_ptr<E>::unique_ptr(unique_ptr<E>&& p) : 
+    template<typename T>
+    template<typename E, typename>
+    unique_ptr<T>::unique_ptr(unique_ptr<E>&& p) : 
     m_allocator(p.m_allocator), 
-    m_element(p.m_element) {
+    m_object(static_cast<T*>(p.m_object)) {
         p.m_allocator   = nullptr;
-        p.m_element     = nullptr;
+        p.m_object      = nullptr;
     }
     
-    template<typename E>
-    unique_ptr<E>& unique_ptr<E>::operator= (unique_ptr<E>&& p) {
+    template<typename T>
+    template<typename E, typename>
+    unique_ptr<T>& unique_ptr<T>::operator= (unique_ptr<E>&& p) {
         if (&p != this) {
             cleanup();
-            m_allocator     = p.m_allocator;
-            m_element       = p.m_element;
-            
+            m_allocator = p.m_allocator;
+            m_object    = static_cast<T*>(p.m_object);
             p.m_allocator   = nullptr;
-            p.m_element     = nullptr;
+            p.m_object      = nullptr;
         }
         return *this;
     }
 
-    template<typename E>
-    void unique_ptr<E>::cleanup() {
-        if (m_allocator != nullptr && m_element != nullptr) {
-            {//delete
-                m_element->~E();
-                m_allocator->deallocate(m_element, sizeof(E));
-            }
-            m_element       = nullptr;
-            m_allocator     = nullptr;
-        }
+    template<typename T>
+    void unique_ptr<T>::non_null_or_except() const {
+        JSTD_DEBUG_CODE(
+            if (!m_object)
+                throw_except<null_pointer_exception>("m_object == null");
+        );
     }
 
-    template<typename E>
-    unique_ptr<E>::~unique_ptr() {
-        cleanup();
+    template<typename T>
+    T* unique_ptr<T>::operator->() const {
+        JSTD_DEBUG_CODE(non_null_or_except());
+        return m_object;
     }
 
-    template<typename E>
-    void unique_ptr<E>::check_access() const {
-        #ifndef NDEBUG
-        if (m_element == nullptr)
-            throw_except<null_pointer_exception>();
-        #endif//NDEBUG
-    }
-    
-    template<typename E>
-    E& unique_ptr<E>::operator*() const {
-        check_access();
-        return *m_element;
+    template<typename T>
+    T& unique_ptr<T>::operator*() const {
+        JSTD_DEBUG_CODE(non_null_or_except());
+        return *m_object;
     }
 
-    template<typename E>
-    E* unique_ptr<E>::operator->() const {
-        check_access();
-        return m_element;
+    template<typename T>
+    tca::allocator* unique_ptr<T>::get_allocator() const {
+        return m_allocator;
     }
 
-    template<typename E>
-    E* unique_ptr<E>::release() {
-        check_access();
-        E* data = m_element;
-        m_allocator     = nullptr;
-        m_element       = nullptr;
-        return data;
+    template<typename T, typename T_ = T, typename = typename enable_if<
+                                                                is_same<
+                                                                        typename remove_cv<T>::type,
+                                                                        typename remove_cv<T_>::type
+                                                                >::value
+                                                            >::type>
+    unique_ptr<T> make_unique(T_&& obj = T(), tca::allocator* allocator = tca::get_scoped_or_default()) {
+        return unique_ptr<T>(std::forward<T_>(obj), allocator);
     }
 
-    template<typename E>
-    E* unique_ptr<E>::operator() ()  const {
-        check_access();
-        return m_element;
+    template<typename T>
+    bool unique_ptr<T>::operator== (const unique_ptr<T>& p) const {
+        return m_object == p.m_object;
     }
 
-    template<typename E>
-    E* unique_ptr<E>::raw_ptr() const {
-        return reinterpret_cast<E*>(m_element);
+    template<typename T>
+    bool unique_ptr<T>::operator!= (const unique_ptr<T>& p) const {
+        return m_object != p.m_object;
     }
 
-    template<typename E>
-    E& unique_ptr<E>::operator[] (std::size_t idx) const {
-        check_access();        
-        return m_element[idx];
-    }
-    
-    template<typename E>
-    unique_ptr<E>::operator bool() const {
-        return m_element != nullptr;
+    template<typename A, typename B, typename = typename enable_if<is_related<B, A>::value && is_cv_castable<A, B>::value>::type>
+    unique_ptr<A> static_pointer_cast(unique_ptr<B>&& a) {
+        unique_ptr<A> result(static_cast<A*>(a.m_object), a.m_allocator);
+        a.m_allocator   = nullptr;
+        a.m_object      = nullptr;
+        return result;
     }
 
-/**
- * 
- */
-template<typename E>
-class unique_ptr<E[]> {
-   
+    template<typename A, typename B, typename = typename enable_if<
+                                                                    is_same<
+                                                                            typename remove_cv<A>::type, 
+                                                                            typename remove_cv<B>::type
+                                                                        >::value
+                                                                    >::type>
+    unique_ptr<A> const_pointer_cast(unique_ptr<B>&& a) {
+        unique_ptr<A> result(const_cast<A*>(a.m_object), a.m_allocator);
+        a.m_allocator   = nullptr;
+        a.m_object      = nullptr;
+        return result;
+    }
+
+    template<typename A, typename B, typename = typename enable_if<is_cv_castable<B, A>::value>::type>
+    unique_ptr<A> reinterpret_pointer_cast(unique_ptr<B>&& a) {
+        unique_ptr<A> result(reinterpret_cast<A*>(a.m_object), a.m_allocator);
+        a.m_allocator   = nullptr;
+        a.m_object      = nullptr;
+        return result;
+    }
+
+    /**
+     * @throws null_pointer_exception
+     *      Если передаваемый указатель является нулевым.
+     * 
+     * @throws class_cast_exception
+     *     Если код попытался привести объект к подклассу, экземпляром которого он не является.
+     */
+    template<typename A, typename B, typename = typename enable_if<is_related<B, A>::value && is_cv_castable<B, A>::value>::type>
+    unique_ptr<A> dynamic_pointer_cast(unique_ptr<B>&& a) {
+        JSTD_DEBUG_CODE(check_non_null(a.m_object));
+        A* instance = dynamic_cast<A*>(a.m_object);
+        if (!instance)
+            throw_except<class_cast_exception>("Where [From = %s, To = %s]", typeid(A).name(), typeid(*a.m_object).name());
+        unique_ptr<A> result(instance, a.m_allocator);
+        a.m_allocator   = nullptr;
+        a.m_object      = nullptr;
+        return result;
+    }
+}
+
+namespace jstd
+{
+
+template<typename T>
+class unique_ptr<T[]> {
     /**
      * 
      */
-    tca::base_allocator* m_allocator;
+    tca::allocator* m_allocator;
     
     /**
      * 
      */
-    E* m_element;
-    
+    T* m_array;
+
     /**
      * 
      */
@@ -258,108 +345,174 @@ class unique_ptr<E[]> {
     /**
      * 
      */
-    inline void check_access() const;
+    unique_ptr(const unique_ptr<T[]>&) = delete;
+    
+    /**
+     * 
+     */
+    unique_ptr<T[]>& operator= (const unique_ptr<T[]>&) = delete;
+
+    /**
+     * 
+     */
+    void cleanup() const;
+
+    /**
+     * 
+     */
+    void non_null_or_except() const;
 
 public:
-    
     /**
      * 
      */
     unique_ptr();
+
+    /**
+     * 
+     */
+    unique_ptr(std::size_t len, tca::allocator* allocator = tca::get_scoped_or_default());
+
+    /**
+     * 
+     */
+    unique_ptr(unique_ptr<T[]>&&);
     
     /**
      * 
      */
-    unique_ptr(tca::base_allocator* allocator, int64_t length);
-    
+    unique_ptr<T[]>& operator= (unique_ptr<T[]>&&);
+
     /**
      * 
      */
     ~unique_ptr();
-    
+
     /**
      * 
      */
-    E& operator*() const;
-    
-    /**
-     * 
-     */
-    E* operator->() const;
-    
-    /**
-     * 
-     */
-    E& operator[] (std::size_t idx) const;
-    
-    /**
-     * 
-     */
-    E* raw_ptr() const;
+    T* get() const;
 
     /**
      * 
      */
     operator bool() const;
+
+    /**
+     * 
+     */
+    T& operator[] (std::size_t idx) const;
+
+    /**
+     * 
+     */
+    tca::allocator* get_allocator() const;
+
+    /**
+     * 
+     */
+    operator T*() const;
 };
 
-    template<typename E>
-    unique_ptr<E[]>::unique_ptr() : m_allocator(nullptr), m_element(nullptr), m_length(0) {
-        
+    template<typename T>
+    unique_ptr<T[]>::unique_ptr() : m_allocator(nullptr), m_array(nullptr), m_length(0) {
+
     }
 
-    template<typename E>
-    unique_ptr<E[]>::unique_ptr(tca::base_allocator* allocator, int64_t length) : unique_ptr<E[]>() {
-        E* data = (E*) allocator->allocate_align(sizeof(E) * length, alignof(E));
-        if (data == nullptr)
-            throw_except<out_of_memory_error>("Out of memory!");        
+    template<typename T>
+    unique_ptr<T[]>::unique_ptr(std::size_t len, tca::allocator* allocator) :
+    m_allocator(allocator), 
+    m_array(nullptr), 
+    m_length(len) {
+        void* mem = allocator->allocate_align(sizeof(T) * len, alignof(T));
+        if (!mem)
+            throw_except<out_of_memory_error>("Out of memory!");
         try {
-            placement_new(data, length);
+            using NON_CONST_T = typename remove_cv<T>::type;
+            placement_new<NON_CONST_T>(const_cast<NON_CONST_T*>(static_cast<T*>(mem)), len);
+            m_array = static_cast<T*>(mem);
         } catch (...) {
-            allocator->deallocate(data, sizeof(E) * length);
+            allocator->deallocate(mem, sizeof(T) * len);
             throw;
         }
-        m_element   = data;
-        m_allocator = allocator;
-        m_length    = length;
     }
 
-    template<typename E>
-    unique_ptr<E[]>::~unique_ptr() {
-        if (m_allocator != nullptr && m_element != nullptr) {
-            placement_destroy(m_element, m_length);
-            m_allocator->deallocate(m_element, sizeof(E) * m_length);
-            m_element   = nullptr;
-            m_allocator = nullptr;
+    template<typename T>
+    unique_ptr<T[]>::unique_ptr(unique_ptr<T[]>&& p) :
+    m_allocator(p.m_allocator),
+    m_array(p.m_array),
+    m_length(p.m_length) {
+        p.m_allocator   = nullptr;
+        p.m_array       = nullptr;
+        p.m_length      = 0;
+    }
+    
+    template<typename T>
+    unique_ptr<T[]>& unique_ptr<T[]>::operator= (unique_ptr<T[]>&& p) {
+        if (&p != this) {
+            cleanup();
+            m_allocator = p.m_allocator;
+            m_array     = p.m_array;
+            m_length    = p.m_length;            
+            p.m_allocator   = nullptr;
+            p.m_array       = nullptr;
+            p.m_length      = 0;
+        }
+        return *this;
+    }
+
+    template<typename T>
+    void unique_ptr<T[]>::cleanup() const {
+        if (m_allocator != nullptr && m_array != nullptr) {
+            placement_destroy(m_array, m_length);
+            m_allocator->deallocate(m_array);
         }
     }
 
-    template<typename E>
-    void unique_ptr<E[]>::check_access() const {
-        #ifndef NDEBUG
-        if (m_element == nullptr)
-            throw_except<null_pointer_exception>();
-        #endif//NDEBUG
+    template<typename T>
+    unique_ptr<T[]>::~unique_ptr() {
+        cleanup();
     }
 
-    template<typename E>
-    E& unique_ptr<E[]>::operator[] (std::size_t idx) const {
-        check_access();
-        if (idx > m_length)
-            throw_except<index_out_of_bound_exception>("Index %zu out of bound for length %zu", idx, (std::size_t) m_length);
-        return m_element[idx];
+    template<typename T>
+    void unique_ptr<T[]>::non_null_or_except() const {
+        if (!m_array)
+            throw_except<null_pointer_exception>("m_array == null!");
     }
 
-    template<typename E>
-    E* unique_ptr<E[]>::raw_ptr() const {
-        check_access();
-        return m_element;
+    template<typename T>
+    T* unique_ptr<T[]>::get() const {
+        return m_array;
     }
 
-    template<typename E>
-    unique_ptr<E[]>::operator bool() const {
-        return m_element != nullptr;
+    template<typename T>
+    unique_ptr<T[]>::operator bool() const {
+        return m_array != nullptr;
     }
-};
+
+    template<typename T>
+    tca::allocator* unique_ptr<T[]>::get_allocator() const {
+        return m_allocator;
+    }
+
+    template<typename T>
+    T& unique_ptr<T[]>::operator[] (std::size_t idx) const {
+        JSTD_DEBUG_CODE(
+            non_null_or_except(); 
+            check_index(idx, m_length);
+        );
+        return m_array[idx];
+    }
+
+    template<typename T>
+    unique_ptr<T[]>::operator T*() const {
+        return m_array;
+    }
+
+    template<typename T>
+    unique_ptr<T[]> make_unique_array(std::size_t len, tca::allocator* allocator = tca::get_scoped_or_default()) {
+        return unique_ptr<T[]>(len, allocator);
+    }
+}
 
 #endif//JSTD_CPP_LANG_UTILS_UNIQUE_PTR_H

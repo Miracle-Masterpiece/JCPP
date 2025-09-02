@@ -1,7 +1,7 @@
 #ifndef ALLOCATORS_LANG_IO_BYTEBUFFER_H_
 #define ALLOCATORS_LANG_IO_BYTEBUFFER_H_
 
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 #include <cpp/lang/system.hpp>
 #include <cpp/lang/utils/utils.hpp>
 #include <cpp/lang/utils/cond_compile.hpp>
@@ -18,15 +18,66 @@ JSTD_DEBUG_CODE(
 
 class byte_buffer {
 protected:
-    tca::base_allocator*    _allocator;
+    
+    /**
+     * 
+     */
+    tca::allocator*    _allocator;
+    
+    /**
+     * 
+     */
     char*                   _data;
+    
+    /**
+     * 
+     */
     int64_t                 _cap;
+    
+    /**
+     * 
+     */
     int64_t                 _pos;
+    
+    /**
+     * 
+     */
     int64_t                 _limit;
+    
+    /**
+     * 
+     */
     int64_t                 _mark;
+    
+    /**
+     * 
+     */
     byte_order              _order;
+    
+    /**
+     * 
+     */
     bool                    m_readonly;
+
+
+    /**
+     * deleted
+     */
+    byte_buffer(const byte_buffer&) = delete;
+
+    /**
+     * deleted
+     */
+    byte_buffer& operator= (const byte_buffer&) = delete;
+
+    /**
+     * 
+     */
     void dispose();
+    
+    /**
+     * 
+     */
     void checkIndex(int64_t idx, int64_t sz) const {
         JSTD_DEBUG_CODE(
             if (idx > _limit) {
@@ -37,70 +88,179 @@ protected:
             }
         );
     }
+    
+    /**
+     * 
+     */
     void check_write_or_except() const {
         JSTD_DEBUG_CODE(
             if (m_readonly)
                 throw_except<readonly_exception>("Buffer is read only");
         );
     }
+
 public:
+    /**
+     * 
+     */
     byte_buffer();
-    byte_buffer(char* buf, int64_t bufsize, bool readonly = false);
-    explicit byte_buffer(int64_t capacity, tca::base_allocator* allocator = tca::get_scoped_or_default());
-    byte_buffer(const byte_buffer&);
-    byte_buffer(byte_buffer&&);
-    byte_buffer& operator= (const byte_buffer&);
-    byte_buffer& operator= (byte_buffer&&);
-    ~byte_buffer();
-    static byte_buffer allocate(int64_t capacity, tca::base_allocator* allocator = tca::get_scoped_or_default());
     
+    /**
+     * 
+     */
+    byte_buffer(char* buf, int64_t bufsize, bool readonly = false);
+    
+    /**
+     * 
+     */
+    explicit byte_buffer(int64_t capacity, tca::allocator* allocator = tca::get_scoped_or_default());
+    
+    /**
+     * 
+     */
+    byte_buffer(byte_buffer&&);
+    
+    /**
+     * 
+     */
+    byte_buffer& operator= (byte_buffer&&);
+    
+    /**
+     * 
+     */
+    ~byte_buffer();
+    
+    /**
+     * 
+     */
+    static byte_buffer allocate(int64_t capacity, tca::allocator* allocator = tca::get_scoped_or_default());
+    
+    /**
+     * 
+     */
     int64_t position() const;
+    
+    /**
+     * 
+     */
     byte_buffer& position(int64_t newpos);
 
+    /**
+     * 
+     */
     int64_t limit() const;
+    
+    /**
+     * 
+     */
     byte_buffer& limit(int64_t newlimit);
 
+    /**
+     * 
+     */
     int64_t remaining() const;
 
+    /**
+     * 
+     */
     int64_t capacity() const;
 
+    /**
+     * 
+     */
     byte_buffer& clear();
+    
+    /**
+     * 
+     */
     byte_buffer& compact();
+        
+    /**
+     * 
+     */
     byte_buffer& flip();
+        
+    /**
+     * 
+     */
     byte_buffer& mark();
-
+    
+    /**
+     * 
+     */
     byte_order order() const;
+        
+    /**
+     * 
+     */
     byte_buffer& order(byte_order order);
-
+    
+    /**
+     * 
+     */
     char* data();
+        
+    /**
+     * 
+     */
     const char* data() const;
-
+    
+    /**
+     * 
+     */
     template<typename T>
     byte_buffer& put(T v);
-    
+        
+    /**
+     * 
+     */
     template<typename T>
     byte_buffer& put(int64_t idx, T v);
-
+    
+    /**
+     * 
+     */
     template<typename T>
     byte_buffer& puts(const T* arr, int64_t sz);
-
+    
+    /**
+     * 
+     */
     template<typename T>
     byte_buffer& puts(int64_t idx, const T* arr, int64_t sz);
-    
+        
+    /**
+     * 
+     */
     template<typename T>
     T get();
-
+    
+    /**
+     * 
+     */
     template<typename T>
     T get(int64_t idx) const;
-
+    
+    /**
+     * 
+     */
     template<typename T>
     byte_buffer& gets(T* arr, int64_t sz);
-
+    
+    /**
+     * 
+     */
     template<typename T>
     byte_buffer& gets(int64_t idx, T* arr, int64_t sz);
-
+    
+    /**
+     * 
+     */
     void print() const;
-
+    
+    /**
+     * 
+     */
     int to_string(char buf[], int bufsize) const;
 };
 

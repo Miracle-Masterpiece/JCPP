@@ -249,7 +249,7 @@ namespace internal {
         return allocate_align(sz, alignof(std::max_align_t));
     }
 
-    void* pool_allocator::allocate_align(std::size_t sz, std::size_t align /*ingnored*/) {
+    void* pool_allocator::allocate_align(std::size_t sz, std::size_t/*ingnored*/) {
         assert(sz <= m_pool_size);
         void* p = nullptr;
         for (uint64_t i = 0; i < m_pool.size(); ++i) {
@@ -269,7 +269,7 @@ namespace internal {
         return p;
     }
     
-    void pool_allocator::deallocate(void* p, std::size_t sz) {
+    void pool_allocator::deallocate(void* p, std::size_t) {
         if (p == nullptr)
             return;
         internal::pool::memblock* memblock = internal::pool::void_to_memblock(p);

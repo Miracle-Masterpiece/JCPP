@@ -3,7 +3,7 @@
 
 namespace jstd {
 
-    properties::properties(tca::base_allocator* allocator) : 
+    properties::properties(tca::allocator* allocator) : 
     _allocator(allocator), 
     _props(allocator) {
 
@@ -22,7 +22,7 @@ namespace jstd {
         _props.put(string(_allocator, key), string(_allocator, value));
     }
 
-    const string* properties::get(const string& key) const {
+    const string& properties::get(const string& key) const {
         return _props.get(key);
     }
 
@@ -30,8 +30,8 @@ namespace jstd {
         return _props.get_or_default(key, _default);
     }
 
-    const string* properties::get(const char* key) const {
-        return _props.get(string(_allocator, key));
+    const string& properties::get(const char* key) const {
+        return get(string::make_view(key));
     }
 
     void properties::save(ostream& out) const {
@@ -46,9 +46,9 @@ namespace jstd {
             out.write(&new_line, 1);
         }
 
-        for (const map_node<string, string>& entry : _props) {
-            const string& key     = entry.get_key();
-            const string& value   = entry.get_value();
+        for (const entry& e : _props) {
+            const string& key     = e.get_key();
+            const string& value   = e.get_value();
             out.write(reinterpret_cast<const char*>(key.c_string()), key.length());
             out.write(&assign, 1);      //add "="
             out.write(reinterpret_cast<const char*>(value.c_string()), value.length());

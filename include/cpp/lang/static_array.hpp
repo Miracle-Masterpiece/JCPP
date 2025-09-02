@@ -111,7 +111,7 @@ public:
     
     template<typename T, int64_t LENGTH>
     static_array<T, LENGTH>::static_array(const static_array<T, LENGTH>& array) {
-        using NON_CONST_T = typename jstd::remove_const<T>::type;
+        using NON_CONST_T = typename jstd::remove_cv<T>::type;
         placement_copy(const_cast<NON_CONST_T*>(m_data), array.m_data, LENGTH);
     }
     
@@ -136,7 +136,7 @@ public:
     template<typename T, int64_t LENGTH>
     static_array<T, LENGTH>& static_array<T, LENGTH>::operator= (const static_array<T, LENGTH>& array) {
         if (&array != this) {
-            using NON_CONST_T = typename jstd::remove_const<T>::type;
+            using NON_CONST_T = typename jstd::remove_cv<T>::type;
             placement_copy(const_cast<NON_CONST_T*>(m_data), array.m_data, LENGTH);
         }
         return *this;

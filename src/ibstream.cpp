@@ -8,7 +8,7 @@ namespace jstd {
 
     }
 
-    ibstream::ibstream(istream* stream, tca::base_allocator* allocator, int64_t buf_size) : ibstream() {
+    ibstream::ibstream(istream* stream, tca::allocator* allocator, int64_t buf_size) : ibstream() {
         char* data = (char*) allocator->allocate(buf_size);
         _allocator  = allocator;
         _buffer     = data;

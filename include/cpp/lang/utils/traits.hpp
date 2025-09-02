@@ -70,7 +70,7 @@ struct is_primitive {
 };
 
 /**
- * Макрос для создания специализаций `is_primitive<T>` для встроенных типов.
+ * Макрос для создания специализаций is_primitive<T> для встроенных типов.
  * 
  * Макрос создаёт две специализации для каждого типа:
  * 1. is_primitive<type> — для обычной версии типа.
@@ -167,43 +167,56 @@ struct is_same<T, T> {
 /**
  * Метаструктура для удаления квалификатора const на верхнем уровне типа.
  *
- * Структура remove_const предоставляет тип type, в котором удалён квалификатор
+ * Структура remove_cv предоставляет тип type, в котором удалён квалификатор
  * const только на верхнем уровне типа T. 
  * 
  * Вложенные const, такие как в указателях (const int*) или ссылках (const int&), остаются неизменными.
  *
- * Эта реализация эквивалентна std::remove_const из стандартной библиотеки C++.
+ * Эта реализация эквивалентна std::remove_cv из стандартной библиотеки C++.
  *
  * @tparam T 
  *      Тип, из которого требуется удалить верхнеуровневый const.
  *
  * @note 
- *      Указатели и ссылки не модифицируются, только сам тип `T`.
+ *      Указатели и ссылки не модифицируются, только сам тип T.
  *
  * Примеры использования:
  * @code
- *      remove_const<const int>::type          // int
- *      remove_const<int>::type                // int
- *      remove_const<const int*>::type         // const int*
- *      remove_const<int* const>::type         // int*
- *      remove_const<const int&>::type         // const int& (не изменяется)
+ *      remove_cv<const int>::type          // int
+ *      remove_cv<int>::type                // int
+ *      remove_cv<const int*>::type         // const int*
+ *      remove_cv<int* const>::type         // int*
+ *      remove_cv<const int&>::type         // const int& (не изменяется)
  * @endcode
  */
 template<typename T>
-struct remove_const {
+struct remove_cv {
     typedef T type;
 };
 
 /**
- * Частичная специализация remove_const для типов с const.
+ * Частичная специализация remove_cv для типов с const.
  *
- * Удаляет квалификатор `const` на верхнем уровне, оставляя вложенные const без изменений.
+ * Удаляет квалификатор const на верхнем уровне, оставляя вложенные const без изменений.
  *
  * @tparam T 
  *      Базовый тип, обёрнутый в const.
  */
 template<typename T>
-struct remove_const<const T> {
+struct remove_cv<const T> {
+    typedef T type;
+};
+
+/**
+ * Частичная специализация remove_cv для типов с volatile.
+ *
+ * Удаляет квалификатор volatile на верхнем уровне, оставляя вложенные volatile без изменений.
+ *
+ * @tparam T 
+ *      Базовый тип, обёрнутый в volatile.
+ */
+template<typename T>
+struct remove_cv<volatile T> {
     typedef T type;
 };
 
@@ -257,10 +270,78 @@ struct base_pure_type {
 template<typename DERIVED_T, typename BASE_T>
 struct is_base_of {
 private:
-    static char test(const BASE_T* v);
-    static long test(const void* v);
+    struct dummy{
+        char ignored[sizeof(void*) + 1];
+    };
+    static dummy test(const BASE_T* v);
+    static char test(const void* v);
 public:
-    static const bool value = sizeof(test((const DERIVED_T*) 1)) == sizeof(char);
+    static const bool value = sizeof(test((DERIVED_T*) 1)) == sizeof(dummy);
+};
+
+template<typename T>
+struct is_const {
+    static const bool value = false;
+};
+
+template<typename T>
+struct is_const<const T> {
+    static const bool value = true;
+};
+
+template<typename T>
+struct is_volatile {
+    static const bool value = false;
+};
+
+template<typename T>
+struct is_volatile<volatile T> {
+    static const bool value = true;
+};
+
+/**
+ * Проверяет, находятся ли два класса в одной иерархии наследования.
+ *
+ * Этот trait возвращает true, если один из типов является базовым
+ * классом для другого, и false в противном случае.
+ * 
+ * Примеры использования:
+ *      is_related<Cat, Animal>::value  == true
+ *      is_related<Animal, Cat>::value  == true
+ *      is_related<Dog, Cat>::value     == false
+ *
+ * @param DERIVED_T
+ *      Первый тип для проверки
+ * 
+ * @param BASE_T
+ *      Второй тип для проверки
+ * 
+ * @return {@code true}, если классы связаны наследованием в любом направлении;
+ *         {@code false} иначе
+ */
+template<typename DERIVED_T, typename BASE_T>
+struct is_related {
+    static const bool value = (is_base_of<DERIVED_T, BASE_T>::value) || is_base_of<BASE_T, DERIVED_T>::value;
+};
+
+template<typename FROM_T, typename TO_T>
+struct is_cv_castable {
+    static const bool value =   (!is_const<FROM_T>::value || is_const<TO_T>::value) &&      //const check
+                                (!is_volatile<FROM_T>::value || is_volatile<TO_T>::value);  //volatile check
+};
+
+/**
+ * 
+ */
+template<bool expr, typename T = void>
+struct enable_if {};
+
+/**
+ * 
+ */
+template<typename T>
+struct enable_if<true, T> {
+    typedef T type;
 };
 
 /**

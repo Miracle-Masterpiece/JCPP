@@ -59,7 +59,7 @@ namespace jstd {
 
     }
 
-    thread::thread(runnable* task, const char* thread_name, int32_t stack_size) : m_thread(), m_runnable(nullptr), m_thread_id(0) {
+    thread::thread(runnable* task, const char* thread_name, int32_t) : m_thread(), m_runnable(nullptr), m_thread_id(0) {
         global_lock.lock(); {
             m_thread_id = total_threads++;
         } global_lock.unlock();
@@ -67,8 +67,6 @@ namespace jstd {
         m_runnable  = task;    
         m_state     = thread::state::NEW;
 
-        //stack_size в std-c++ нельзя указать... збц!
-        
         if (thread_name != nullptr) {
             set_name(thread_name);
         } else {

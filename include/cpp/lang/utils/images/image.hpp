@@ -2,7 +2,7 @@
 #define JSTD_CPP_LANG_UTILS_IMAGES_IMAGE_H
 
 #include <cstdint>
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 
 namespace jstd {
 
@@ -26,7 +26,7 @@ public:
     };
     struct rgb {
         byte r, g, b;
-        rgb(byte r = 0, byte g = 0, byte b = 0, byte a = 0) : r(r), g(g), b(b) {}
+        rgb(byte r = 0, byte g = 0, byte b = 0) : r(r), g(g), b(b) {}
         rgb(const rgb&)             = default;
         rgb(rgb&&)                  = default;
         rgb& operator=(const rgb&)  = default;
@@ -45,8 +45,11 @@ public:
         int to_string(char buf[], int bufsize) const;
     };
 private:
-    tca::base_allocator* m_allocator;    // Аллокатор, используемый для управления памятью.
-    
+    /**
+     * Аллокатор, используемый для управления памятью.
+     */
+    tca::base_allocator* m_allocator;
+
     union {
         byte*   m_pixels;                    // Указатель на массив пикселей изображения.
         rgba*   m_rgba;
@@ -54,15 +57,35 @@ private:
         gray*   m_gray;
     };
     
-
-    int32_t m_width;                     // Ширина изображения в пикселях.
-    int32_t m_height;                    // Высота изображения в пикселях.
-    int8_t  m_channels;                  // Количество цветовых каналов (например, 3 = RGB, 4 = RGBA).
+    /**
+     * Ширина изображения в пикселях.
+     */
+    int32_t m_width;
+    
+    /**
+     * Высота изображения в пикселях.
+     */
+    int32_t m_height;
+    
+    /**
+     * Количество цветовых каналов (например, 3 = RGB, 4 = RGBA).
+     */
+    int8_t  m_channels;
 
     /**
      * Освобождает ресурсы, связанные с изображением.
      */
     void cleanup();
+
+    /**
+     * Для создания view на массив байтов.
+     */
+    image(image::byte* data, int32_t w, int32_t h, int8_t channels);
+    
+    /**
+     * Для захвата владения над массивом байтов.
+     */
+    image(image::byte* data, tca::base_allocator* allocator, int32_t w, int32_t h, int8_t channels);
 
 public:
     /**
@@ -175,6 +198,9 @@ public:
     /**
      * Возвращает новое изображение, масштабированное до заданных размеров.
      *
+     * @note
+     *      Если передаваемый аллокатор равен nullptr и текущее изображение является view, то функция вернёт пустое изображение.
+     * 
      * @param neww 
      *      Новая ширина.
      * 
@@ -189,13 +215,34 @@ public:
      */
     image resize(int32_t neww, int32_t newh, tca::base_allocator* allocator = nullptr) const;
 
+    /**
+     * 
+     */
     rgb& get_rgb(int32_t x, int32_t y);
+
+    /**
+     * 
+     */
+    const rgb& get_rgb(int32_t x, int32_t y) const;
+
+    /**
+     * 
+     */
     rgba& get_rgba(int32_t x, int32_t y);
 
-    const rgb& get_rgb(int32_t x, int32_t y) const;
+    /**
+     * 
+     */
     const rgba& get_rgba(int32_t x, int32_t y) const;
 
+    /**
+     * 
+     */
     gray& get_gray(int32_t x, int32_t y);
+    
+    /**
+     * 
+     */
     const gray& get_gray(int32_t x, int32_t y) const;
 
     /**
@@ -215,7 +262,10 @@ public:
 
     /**
      * Создаёт копию изображения.
-     *
+     * 
+     * @note
+     *      Если передаваемый аллокатор равен nullptr и текущее изображение является view, то функция вернёт пустое изображение.
+     * 
      * @param allocator 
      *      Необязательный аллокатор. 
      *      Eсли не указан, используется текущий.
@@ -224,6 +274,58 @@ public:
      *      Новое изображение, содержащее копию пикселей.
      */
     image clone(tca::base_allocator* allocator = nullptr) const;
+
+    /**
+     * Создаёт view изображения на передаваемую память.
+     * 
+     * @note
+     *      Данная функция создаёт только view на массив, при этом объект не становится владельцем памяти!
+     * 
+     * @param data
+     *      Указатель на массив байтов изображения.
+     * 
+     * @param width
+     *      Ширина изображения.
+     * 
+     * @param height
+     *      Высота изображения.
+     * 
+     * 
+     * @param channles
+     *      Количество каналов изображения.
+     * 
+     * @throw null_pointer_exception
+     *      Если data равна nullptr.
+     */
+    static image make_view(image::byte* data, int32_t width, int32_t height, int8_t channels);
+
+    /**
+     * Захватывает указатель на массив изображения в своё владение. 
+     * 
+     * @note
+     *      После вызова этой функции, изображение становится владельцем указателя.
+     *      Указатель будет освобождён в момент вызова декструктора изображения.
+     * 
+     * @param data
+     *      Указатель на массив байтов изображения.
+     * 
+     * @param allocator
+     *      Указатель на аллокатор, которым был выделен блок памяти {@param data}
+     * 
+     * @param width
+     *      Ширина изображения.
+     * 
+     * @param height
+     *      Высота изображения.
+     * 
+     * @param channles
+     *      Количество каналов изображения.
+     * 
+     * @throw null_pointer_exception
+     *      Если data равна nullptr.
+     *      Если allocator равен nullptr.
+     */
+    static image lock(image::byte* data, tca::base_allocator* allocator, int32_t width, int32_t height, int8_t channels);
 };
     
 

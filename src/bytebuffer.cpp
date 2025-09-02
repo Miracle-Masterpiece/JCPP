@@ -32,7 +32,7 @@ namespace jstd {
 
     }
     
-    byte_buffer::byte_buffer(int64_t capacity, tca::base_allocator* allocator) : 
+    byte_buffer::byte_buffer(int64_t capacity, tca::allocator* allocator) : 
     _allocator(allocator), 
     _data(nullptr), 
     _cap(0), 
@@ -52,10 +52,6 @@ namespace jstd {
         }
     }
     
-    byte_buffer::byte_buffer(const byte_buffer& buf) : byte_buffer(0) {
-        assert(true);
-    }
-    
     byte_buffer::byte_buffer(byte_buffer&& buf) : 
     _allocator(buf._allocator), 
     _data(buf._data), 
@@ -72,11 +68,6 @@ namespace jstd {
         buf._limit      = 0;
         buf._mark       =-1;
         buf.m_readonly  = false;
-    }
-    
-    byte_buffer& byte_buffer::operator= (const byte_buffer& buf) {
-        assert(true);
-        return *this;
     }
     
     byte_buffer& byte_buffer::operator= (byte_buffer&& buf) {
@@ -112,7 +103,7 @@ namespace jstd {
         dispose();
     }
 
-    /*static*/ byte_buffer byte_buffer::allocate(int64_t capacity, tca::base_allocator* allocator) {
+    /*static*/ byte_buffer byte_buffer::allocate(int64_t capacity, tca::allocator* allocator) {
         return byte_buffer(capacity, allocator);
     }
 

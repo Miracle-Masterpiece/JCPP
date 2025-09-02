@@ -233,7 +233,7 @@ namespace jstd {
 
     template<>
     template<>
-    tustring<uint16_t> tustring<char>::recode(byte_order out_order, tca::base_allocator* allocator) const {
+    tustring<uint16_t> tustring<char>::recode(byte_order out_order, tca::allocator* allocator) const {
         if (allocator == nullptr)
             allocator = _allocator;
 
@@ -264,7 +264,7 @@ namespace jstd {
 
     template<>
     template<>
-    tustring<char> tustring<uint16_t>::recode(byte_order out, tca::base_allocator* allocator) const {
+    tustring<char> tustring<uint16_t>::recode(byte_order, tca::allocator* allocator) const {
         if (allocator == nullptr)
             allocator = _allocator;
         if (_size == 0 || allocator == nullptr)
@@ -310,8 +310,8 @@ namespace jstd {
 
     template<>
     template<>
-    tustring<utf32_t> tustring<char>::recode(byte_order out, tca::base_allocator* allocator) const {
-        tca::base_allocator* alloc = allocator;
+    tustring<utf32_t> tustring<char>::recode(byte_order out, tca::allocator* allocator) const {
+        tca::allocator* alloc = allocator;
         if (alloc == nullptr)
             alloc = _allocator;
         if (_size == 0 || alloc == nullptr)
@@ -329,8 +329,8 @@ namespace jstd {
 
     template<>
     template<>
-    tustring<utf32_t> tustring<uint16_t>::recode(byte_order out, tca::base_allocator* allocator) const {
-        tca::base_allocator* alloc = allocator;
+    tustring<utf32_t> tustring<uint16_t>::recode(byte_order out, tca::allocator* allocator) const {
+        tca::allocator* alloc = allocator;
         if (alloc == nullptr)
             alloc = _allocator;
         if (_size == 0 || alloc == nullptr)
@@ -401,7 +401,7 @@ namespace jstd {
         return get_char(idx, system::native_byte_order());
     }
 
-    u16string make_utf16(const char* utf8_str, tca::base_allocator* allocator, byte_order out_order, int32_t len) {
+    u16string make_utf16(const char* utf8_str, tca::allocator* allocator, byte_order out_order, int32_t len) {
         len = len < 0 ? (int32_t) std::strlen(utf8_str) : len;
         
         int u16_length = 0;
@@ -432,7 +432,7 @@ namespace jstd {
     }
 
 
-    u8string make_utf8(const uint16_t* utf16_str, tca::base_allocator* allocator, byte_order in_order, int len) {
+    u8string make_utf8(const uint16_t* utf16_str, tca::allocator* allocator, byte_order in_order, int len) {
         len = len < 0 ? u16string::strlen(utf16_str) : len;
         
         int utf8_length = 0;

@@ -1,7 +1,7 @@
 #ifndef JSTD_LANG_UTILS_AUDIO_WAV_DATA_H
 #define JSTD_LANG_UTILS_AUDIO_WAV_DATA_H
 
-#include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 #include <cpp/lang/io/istream.hpp>
 #include <cstdint>
 
@@ -21,7 +21,7 @@ class file;
  * Все выделения памяти производятся через пользовательский аллокатор.
  */
 class wav_data {
-    tca::base_allocator* m_allocator;
+    tca::allocator* m_allocator;
     int32_t     chunkId;
     uint32_t    chunkSize;
     int32_t     format;
@@ -90,7 +90,7 @@ public:
      * @throws out_of_memory_error
      *      Если памяти не хватило
      */
-    explicit wav_data(const file& file, tca::base_allocator* allocator = tca::get_scoped_or_default());
+    explicit wav_data(const file& file, tca::allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Загружает WAV-данные из указанного входного потока.
@@ -114,7 +114,7 @@ public:
      * @throws out_of_memory_error
      *      Если памяти не хватило
      */
-    wav_data(istream* in, tca::base_allocator* allocator = tca::get_scoped_or_default());
+    wav_data(istream* in, tca::allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * Освобождает все ресурсы, связанные с WAV-данными.

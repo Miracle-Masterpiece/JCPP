@@ -2,7 +2,8 @@
 #include <utility>
 #include <cassert>
 
-namespace tca {
+namespace tca
+{
     null_allocator::null_allocator() : base_allocator() {
 
     }

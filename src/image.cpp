@@ -17,7 +17,25 @@ namespace jstd {
 
     }
     
-    image::image(int32_t width, int32_t height, int8_t channels, tca::base_allocator* allocator) : image() {
+    image::image(image::byte* data, int32_t w, int32_t h, int8_t channels) : 
+    m_allocator(nullptr),
+    m_pixels(data),
+    m_width(w),
+    m_height(h),
+    m_channels(channels) {
+
+    }
+
+    image::image(image::byte* data, tca::base_allocator* allocator, int32_t w, int32_t h, int8_t channels) :
+    m_allocator(allocator),
+    m_pixels(data), 
+    m_width(w), 
+    m_height(h),
+    m_channels(channels) {
+
+    }
+
+    image::image(int32_t width, int32_t height, int8_t channels, tca::base_allocator* allocator) {
         byte* pixels = reinterpret_cast<byte*>(allocator->allocate_align(sizeof(byte) * (width * height * channels), alignof(byte)));
         if (pixels == nullptr)
             throw_except<out_of_memory_error>("Out of memory!");
@@ -214,6 +232,21 @@ namespace jstd {
 
     int image::to_string(char buf[], int bufsize) const {
         return snprintf(buf, bufsize, "[w: %i, h: %i, channels: %i]", (int) m_width, (int) m_height, (int) m_channels);
+    }
+
+    /*static*/ image image::make_view(image::byte* data, int32_t width, int32_t height, int8_t channels) {
+        JSTD_DEBUG_CODE(
+            check_non_null(data);
+        );
+        return image(data, width, height, channels);
+    }
+
+    /**static */ image image::lock(image::byte* data, tca::base_allocator* allocator, int32_t width, int32_t height, int8_t channels) {
+        JSTD_DEBUG_CODE(
+            check_non_null(data);
+            check_non_null(allocator);
+        );
+        return image(data, allocator, width, height, channels);
     }
 
 }

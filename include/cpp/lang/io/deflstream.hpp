@@ -50,7 +50,7 @@ public:
      * @param buf_size
      *      Размер буфера для сжимаемых данных.
      */
-    deflstream(ostream* out, tca::base_allocator* allocator = tca::get_scoped_or_default(), int64_t buf_size = DEFAULT_BUFFER_SIZE);
+    deflstream(ostream* out, tca::allocator* allocator = tca::get_scoped_or_default(), int64_t buf_size = DEFAULT_BUFFER_SIZE);
     
     /**
      *  Констуктор для инициализации потока сжатия с внешним буфером.
