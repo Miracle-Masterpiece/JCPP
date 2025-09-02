@@ -35,12 +35,20 @@ class file_channel;
  * @version 1.1
  */
 class mapped_byte_buffer : public byte_buffer {
+    
+    /**
+     * 
+     */
     friend file_channel;
     
-JSTD_WIN_CODE(
-    typedef void* win_handle_t;
-    win_handle_t m_mapped_hanle;
-);
+    /**
+     * 
+     */
+    JSTD_WIN_CODE(
+        typedef void* win_handle_t;
+        win_handle_t m_mapped_hanle;
+    )
+    
     /**
      * @internal
      *      Internal Only!

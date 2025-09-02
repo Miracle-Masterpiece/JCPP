@@ -2,8 +2,10 @@
 #define ALLOCATORS_HELPERS_H
 
 #include <cctype>
+#include <cstdint>
 
-namespace tca {
+namespace tca
+{
     
     constexpr inline std::size_t calc_padding_for(void* p, std::size_t align) {
         //std::size_t mod = size % align;
