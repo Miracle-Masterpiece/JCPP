@@ -78,7 +78,10 @@ namespace jstd {
                 throw_except<illegal_state_exception>("m_node_allocator must be != null");
         );
         if (!m_root) 
-            m_root = make_unique<node>(node(m_width, m_height, m_node_allocator), m_node_allocator);
+            m_root = make_unique<node>(
+                                        node(m_width, m_height, m_node_allocator), 
+                                        m_node_allocator
+                                    );
         BEGIN: 
         for (int64_t i = 0; i < m_images.length; ++i) {
             const image& img = m_images[i];

@@ -91,13 +91,13 @@ namespace texturing {
         unique_ptr<node> left, right;
         
         if (m_rect.w - w > m_rect.h - h){	//Если высота больше ширины, то разбиваем по x
-            left  = make_unique<node>(node({m_rect.x, 		m_rect.y, 		w, 				m_rect.h},      m_allocator));
-            right = make_unique<node>(node({m_rect.x + w, 	m_rect.y, 		m_rect.w - w, 	m_rect.h},      m_allocator));
+            left  = make_unique<node>(node({m_rect.x, 		m_rect.y, 		w, 				m_rect.h},      m_allocator), m_allocator);
+            right = make_unique<node>(node({m_rect.x + w, 	m_rect.y, 		m_rect.w - w, 	m_rect.h},      m_allocator), m_allocator);
 		}
         
         else {								//Иначе по y
-            left = make_unique<node>(node({m_rect.x, 		m_rect.y, 		m_rect.w, 		h},             m_allocator));
-            left = make_unique<node>(node({m_rect.x, 		m_rect.y + h,	m_rect.w, 		m_rect.h - h},  m_allocator));
+            left  = make_unique<node>(node({m_rect.x, 		m_rect.y, 		m_rect.w, 		h},             m_allocator), m_allocator);
+            right = make_unique<node>(node({m_rect.x, 		m_rect.y + h,	m_rect.w, 		m_rect.h - h},  m_allocator), m_allocator);
 		}
         
         m_left  = std::move(left);

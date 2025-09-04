@@ -395,11 +395,11 @@ public:
                                             >::type>
     shared_ptr(T_&& obj, tca::allocator* allocator = tca::get_scoped_or_default());
 
-    // /**
-    //  * Конструктор копирования. 
-    //  * Увеличивает счётчик сильных ссылок.
-    //  */
-    // shared_ptr(const shared_ptr<T>& other);
+    /**
+     * Конструктор копирования. 
+     * Увеличивает счётчик сильных ссылок.
+     */
+    shared_ptr(const shared_ptr<T>& other);
 
     /**
      * Конструктор копирования. 
@@ -421,6 +421,29 @@ public:
                                                 is_base_of<E, T>::value && is_cv_castable<E, T>::value
                                             >::type>
     shared_ptr(shared_ptr<E>&& other);
+
+    /**
+     * Оператор присваивания (копирование). 
+     * Увеличивает счётчик сильных ссылок.
+     * 
+     * @param other 
+     *      Другой shared_ptr.
+     * 
+     * @return 
+     *      *this.
+     */
+    shared_ptr<T>& operator=(const shared_ptr<T>& other);
+
+    /**
+     * Оператор перемещение. Забирает владение у другого shared_ptr.
+     * 
+     * @param other 
+     *      Другой shared_ptr.
+     * 
+     * @return 
+     *      *this.
+     */
+    shared_ptr<T>& operator=(shared_ptr<T>&& other);
 
     /**
      * Оператор присваивания (копирование). Увеличивает счётчик сильных ссылок.
@@ -575,11 +598,11 @@ public:
         m_block->inc_strong_ref();
     }
 
-    // template<typename T>
-    // shared_ptr<T>::shared_ptr(const shared_ptr<T>& ptr) : m_block(ptr.m_block) {
-    //     if (m_block != nullptr)
-    //         m_block->inc_strong_ref();
-    // }
+    template<typename T>
+    shared_ptr<T>::shared_ptr(const shared_ptr<T>& ptr) : m_block(ptr.m_block) {
+        if (m_block != nullptr)
+            m_block->inc_strong_ref();
+    }
 
     template<typename T>
     template<typename E, typename>
@@ -602,6 +625,27 @@ public:
             m_block = ptr.m_block;
             if (m_block != nullptr)
                 m_block->inc_strong_ref();
+        }
+        return *this;
+    }
+
+    template<typename T>
+    shared_ptr<T>& shared_ptr<T>::operator=(const shared_ptr<T>& other) {
+        if (&other != this) {
+            cleanup();
+            m_block = other.m_block;
+            if (m_block != nullptr)
+                m_block->inc_strong_ref();
+        }
+        return *this;
+    }
+    
+    template<typename T>
+    shared_ptr<T>& shared_ptr<T>::operator=(shared_ptr<T>&& other) {
+        if (&other != this) {
+            cleanup();
+            m_block = other.m_block;
+            other.m_block = nullptr;
         }
         return *this;
     }
