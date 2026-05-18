@@ -271,8 +271,8 @@ namespace bsd_socket
                 throw_except<socket_exception>("Socket close error: %s", __sock_error_str__);
         );
         _____UNIX_CODE____(
-            ::close(sock);
-        );
+        if (::close(sock) != 0)
+            throw_except<socket_exception>("Socket close error: %s", __sock_error_str__);
     }
 
     void bind(int32_t sock, const inet_address& address, int32_t port) {
