@@ -51,8 +51,14 @@ namespace imageio
 {
 
     image load_image(istream* in, tca::allocator* allocator) {        
-        int64_t size = in->available();
-        unique_ptr<stbi_uc[]> raw_image = make_unique_array<stbi_uc>(size, allocator);
+        std::uintmax_t size = (std::size_t) in->available();
+
+        if (size > INT_MAX)
+        {
+            throw_except<illegal_state_exception>("Image size to large");
+        }
+
+        unique_ptr<stbi_uc[]> raw_image = make_unique_array<stbi_uc>((std::size_t) size, allocator);
         
         in->read((char*) raw_image.get(), size);
     
@@ -60,9 +66,11 @@ namespace imageio
         int heigth;
         int channels;
         
-        stbi_uc* pixels = stbi_load_from_memory(raw_image.get(), size, &width, &heigth, &channels, 0);
+        stbi_uc* pixels = stbi_load_from_memory(raw_image.get(), (int) size, &width, &heigth, &channels, 0);
         if (pixels == nullptr)
+        {
             throw_except<illegal_state_exception>("%s", stbi_failure_reason());
+        }
             
         return image::lock(pixels, &jstd_allocator_for_stb_image, width, heigth, channels);
     }
@@ -81,8 +89,9 @@ namespace imageio
     }
     
     static void save_contex(void* context, void* data, int size){
-		ostream* out = reinterpret_cast<ostream*>(context);
-        out->write(reinterpret_cast<const char*>(data), size);
+		assert(size >= 0);
+        ostream* out = reinterpret_cast<ostream*>(context);
+        out->write(reinterpret_cast<const char*>(data), (std::size_t) size);
 	}
 
     void write_image(const file& file, const image* img, const char* ext) {
@@ -97,30 +106,33 @@ namespace imageio
     }
 
     void write_image(ostream* out, const image* img, const char* ext) {
-        int32_t width       = img->get_width();
-        int32_t height      = img->get_height();
-        int8_t channels     = img->get_channels();
+        int width    = img->get_width();
+        int height   = img->get_height();
+        int channels = img->get_channels();
         
         int error = 0;
 
-        if (std::strcmp(ext, "png") == 0) {
+        if (std::strcmp(ext, "png") == 0)
+        {
             error = stbi_write_png_to_func(save_contex, out, width, height, channels, img->pixels(), 0);
         } 
-        
-        else if (std::strcmp(ext, "jpeg") == 0|| std::strcmp(ext, "jpg")) {
+        else if (std::strcmp(ext, "jpeg") == 0 || std::strcmp(ext, "jpg") == 0)
+        {
             error = stbi_write_jpg_to_func(save_contex, out, width, height, channels, img->pixels(), 100);
         } 
-
-        else if (std::strcmp(ext, "tga") == 0) {
+        else if (std::strcmp(ext, "tga") == 0)
+        {
             error = stbi_write_tga_to_func(save_contex, out, width, height, channels, img->pixels());
         }
-     
-        else if (std::strcmp(ext, "bmp") == 0) {
+        else if (std::strcmp(ext, "bmp") == 0)
+        {
             error = stbi_write_bmp_to_func(save_contex, out, width, height, channels, img->pixels());
         } 
 
         if (error == 0)
+        {
             throw_except<illegal_state_exception>("stbi_write error: %i", error);
+        }
     }
 
 }

@@ -18,7 +18,8 @@ namespace tca{
     }
 
     base_allocator& base_allocator::operator= (base_allocator&& base) {
-        if (&base != this) {
+        if (&base != this)
+        {
             m_parent      = base.m_parent;
             base.m_parent = nullptr;
         }

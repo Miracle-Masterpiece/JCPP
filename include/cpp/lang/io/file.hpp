@@ -1,9 +1,13 @@
-#ifndef _JSTD_CPP_LANG_IO_FILE_H_
-#define _JSTD_CPP_LANG_IO_FILE_H_
+#ifndef JSTD_CPP_LANG_IO_FILE_H
+#define JSTD_CPP_LANG_IO_FILE_H
 #include <cpp/lang/array.hpp>
+#include <cpp/lang/types.hpp>
+#include <cpp/lang/io/utility.hpp>
+#include <cpp/lang/string.hpp>
 #include <cstdint>
 
-namespace tca{
+namespace tca
+{
     class base_allocator;
 }
 
@@ -16,7 +20,14 @@ class file{
     /**
      * UTF-8 path
      */
-    char _path[128 + 1];
+    char _path[io::constants::MAX_LENGTH_PATH];
+
+    /**
+     * 
+     */
+    static std::size_t npos() {
+        return (~(std::size_t) 0);
+    }
 
 public:
     /**
@@ -27,7 +38,7 @@ public:
     /**
      * 
      */
-    file(const char* path, int path_length = -1);
+    file(const char* path, std::size_t path_length = npos());
     
     /**
      * 
@@ -88,7 +99,7 @@ public:
      * @throw sequrity_exception 
      *      Eсли доступ к файлу запрещён.
      */
-    uint64_t length() const;
+    std::uintmax_t length() const;
 
     /**
      * Возвращает значение последнего изменения файла (В миллисекундах).
@@ -99,7 +110,7 @@ public:
      * @throw sequrity_exception 
      *      Eсли доступ к файлу запрещён.
      */
-    uint64_t last_modified() const;
+    timepoint last_modified() const;
     
     /**
      * Устанавливает значение последнего изменения файла (В миллисекундах).
@@ -176,8 +187,7 @@ public:
      *      UTF-8 строка с новым именем.
      * 
      * @param new_name_length
-     *      необязательный параметр, обозначающий длину строки.
-     *      -1 означает, что длина будет вычислена автоматически.
+     *      Необязательный параметр, обозначающий длину строки.
      * 
      * @return 
      *      true - если файл успешно был переименован, иначе false.
@@ -185,7 +195,7 @@ public:
      * @throw sequrity_exception 
      *      Eсли доступ к файлу запрещён.
      */
-    bool rename_to(const char* new_name, int new_name_length = -1);
+    bool rename_to(const char* new_name, std::size_t new_name_length = npos());
 
     /**
      * Может ли файл выполняться.
@@ -266,23 +276,13 @@ public:
      * @return 
      *      Указатель на строку, содержащее значение пути.
      */
-    const char* str_path() const;
-
-    /**
-     * Копирует имя файла в передаваемый буфер. 
-     * А так же заканчивает строку нуль-терминатором.
-     * 
-     * @param buf
-     *      Буфер в который будет скопировано название файла.
-     * 
-     * @param bufsize
-     *      Размер передаваемого буфера.
-     * 
-     * @return
-     *      Сколько было скопировано символов. (Не включает нулевой).
-     */
-    int get_name(char buf[], int bufsize) const;
+    const char* cstr() const;
     
+    /**
+     * Возвращает строку названия файла.
+     */
+    tc::string get_name(tca::allocator* = tca::get_default_allocator()) const;
+
     /**
      * Возвращает массив объектов файлов которые находятся в директории, описываемом этим файлом.
      * 
@@ -295,7 +295,7 @@ public:
      * @return
      *      Массив файлов, который находятся в этой директории описываемым этим файлом, и файлы, которые прошли фильтр.
      */
-    array<file> list_files(file_filter* filter = nullptr, tca::allocator* allocator = tca::get_scoped_or_default()) const;
+    array<file> list_files(const file_filter& filter = accept_all_filter(), tca::allocator* allocator = tca::get_scoped_or_default()) const;
     
     /**
      * Возвращает объект файла, описывающий путь до папки с исполняемым файлом.
@@ -336,7 +336,7 @@ public:
     /**
      * Возвращает хеш-код для этого файла.
      */
-    int64_t hashcode() const;
+    std::size_t hashcode() const;
     
     /**
      * Проверяет, эквивалентен ли передаваймый файл этому файлу.
@@ -370,4 +370,4 @@ public:
 
 
 };
-#endif//_JSTD_CPP_LANG_IO_FILE_H_
+#endif //JSTD_CPP_LANG_IO_FILE_H

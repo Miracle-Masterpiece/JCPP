@@ -17,13 +17,22 @@ class obstream : public ostream {
     /**
      * 
      */
-    static const int DEFAULT_BUFFER_SIZE = 0x1000;
+    static const std::size_t DEFAULT_BUFFER_SIZE = 0x1000;
     
-    tca::base_allocator* _allocator;    /**/
-    char*       _buffer;                /**/
-    int64_t     _capacity;              /**/
-    int64_t     _offset;                /**/
-    ostream*    _out;                   /**/
+    // 
+    tca::base_allocator* _allocator;
+    
+    // 
+    char* _buffer;
+    
+    // 
+    std::size_t _capacity;
+    
+    // 
+    std::size_t _offset;
+    
+    // 
+    ostream* _out;
 
     /**
      * @internal
@@ -51,7 +60,7 @@ public:
      *      Если stream == nullptr
      *      Если allocator == nullptr
      */
-    obstream(ostream* stream, tca::base_allocator* allocator, int64_t buf_size = DEFAULT_BUFFER_SIZE);
+    obstream(ostream* stream, tca::base_allocator* allocator, std::size_t buf_size = DEFAULT_BUFFER_SIZE);
 
     /**
      * @param stream
@@ -67,7 +76,7 @@ public:
      *      Если stream == nullptr
      *      Если buffer == nullptr
      */
-    obstream(ostream* stream, char* buffer, int64_t buf_size);
+    obstream(ostream* stream, char* buffer, std::size_t buf_size);
 
     /**
      * Перемещение.
@@ -97,7 +106,7 @@ public:
      * @throws io_exception
      *      Если произошла ошибка ввода/вывода
      */
-    void write(char c);
+    void write(char c) override;
 
     /**
      * Записывает массив байтов в поток.
@@ -111,7 +120,7 @@ public:
      * @throws io_exception
      *      Если произошла ошибка ввода/вывода
      */
-    void write(const char* data, int64_t sz);
+    void write(const char* data, std::size_t sz) override;
 
     /**
      * Сбрасывает буферизированные данные.
@@ -119,7 +128,7 @@ public:
      * @throws io_exception
      *      Если произошла ошибка ввода/вывода
      */
-    void flush();
+    void flush() override;
 
     /**
      * Закрывает поток.
@@ -127,7 +136,7 @@ public:
      * @throws io_exception
      *      Если произошла ошибка ввода/вывода
      */
-    void close();
+    void close() override;
 };
 
 }

@@ -13,41 +13,43 @@ namespace jstd
  * Генератор псевдослучайных чисел с возможностью задания начального зерна.
  * 
  * Основан на линейном конгруэнтном методе (LCG) с переменным приращением.
- * Используется два внутренних генератора {@code next0()} и {@code next1()},
- * обеспечивающих варьируемое поведение. Один и тот же seed гарантирует
+ * Один и тот же seed гарантирует
  * детерминированную последовательность чисел.
- * 
- * Не является потокобезопасным. Для использования в многопоточной среде необходимо
- * синхронизировать доступ к объекту извне.
  */
 class random {
-    int64_t m_seed;
+
+    /**
+     * 
+     */
+    unsigned long long m_seed;
 
     /**
      * Внутренний генератор псевдослучайных чисел.
      * @return 
      *      Следующее псевдослучайное 64-битное значение.
      */
-    uint64_t next0();
+    unsigned long long next();
 
     /**
-     * Вспомогательный генератор, используемый в {@code next0()}.
-     * Выполняет вычисление: {@code m_seed * 25214903917 + 17}.
      * 
-     * @return 
-     *      Промежуточное значение генерации.
      */
-    uint64_t next1();
+    static unsigned long long random_seed();
+
+    /**
+     * 
+     */
+    unsigned long long get_seed() const {
+        return m_seed;
+    }
 
 public:
     /**
      * Создаёт новый генератор случайных чисел с заданным или автоматически определённым зерном.
-     * Если зерно не указано, используется текущее системное время в наносекундах.
      * 
      * @param seed 
      *      Начальное значение генератора.
      */
-    random(int64_t seed = system::nano_time());
+    random(unsigned long long seed = random_seed());
 
     /**
      * Конструктор копирования.
@@ -141,10 +143,9 @@ public:
      * 
      * @throws illegal_argument_exception 
      *      Eсли buf == nullptr
-     *      Если bufsize < 0.
      */
     template<typename T>
-    void values(T buf[], int32_t bufsize);
+    void values(T buf[], std::size_t bufsize);
 
     /**
      * Заполняет указанный массив случайными значениями типа T в диапазоне [0, max).
@@ -164,10 +165,9 @@ public:
      * 
      * @throws illegal_argument_exception 
      *      Eсли buf == nullptr
-     *      Если bufsize < 0.
      */
     template<typename T>
-    void values(T buf[], int32_t bufsize, T max);
+    void values(T buf[], std::size_t bufsize, T max);
 };
 
     template<>
@@ -184,38 +184,26 @@ public:
 
     template<typename T>
     T random::next() {
-        return (T) next0();
+        return (T) next();
     }
 
     template<typename T>
     T random::next(const T max) {
-        JSTD_DEBUG_CODE(
-            if (max < 0)
-                throw_except<illegal_argument_exception>("invalid max value: %lli", (long long) max);
-        );
         T v = (T) (next<T>() % max);
         return v < 0 ? -v : v;
     }
 
     template<typename T>
-    void random::values(T buf[], int32_t bufsize) {
-        JSTD_DEBUG_CODE(
-            check_non_null(buf);
-            if (bufsize < 0)
-                throw_except<illegal_argument_exception>("invalid size: %lli", (long long) bufsize);
-        );
-        for (int32_t i = 0; i < bufsize; ++i)
+    void random::values(T buf[], std::size_t bufsize) {
+        JSTD_DEBUG_CODE(check_non_null(buf));
+        for (std::size_t i = 0; i < bufsize; ++i)
             buf[i] = next<T>();
     }
 
     template<typename T>
-    void random::values(T buf[], int32_t bufsize, T max) {
-        JSTD_DEBUG_CODE(
-            check_non_null(buf);
-            if (bufsize < 0)
-                throw_except<illegal_argument_exception>("invalid size: %lli", (long long) bufsize);
-        );
-        for (int32_t i = 0; i < bufsize; ++i)
+    void random::values(T buf[], std::size_t bufsize, T max) {
+        JSTD_DEBUG_CODE(check_non_null(buf));
+        for (std::size_t i = 0; i < bufsize; ++i)
             buf[i] = next<T>(max);
     }
 }

@@ -22,14 +22,49 @@ class calltrace {
         std::stacktrace m_stacktrace;
     )
 public:
+    // 
+    // 
+    // 
     calltrace();
+    
+    // 
+    // 
+    // 
     calltrace(const calltrace&);
+    
+    // 
+    // 
+    // 
     calltrace(calltrace&&);
+    
+    // 
+    // 
+    // 
     calltrace& operator=(const calltrace&);
+    
+    // 
+    // 
+    // 
     calltrace& operator=(calltrace&&);
+    
+    // 
+    // 
+    // 
     ~calltrace();
+    
+    // 
+    // 
+    // 
     void print() const;
+    
+    // 
+    // 
+    // 
     void write_log(class ostream* out) const;
+    
+    // 
+    // 
+    // 
     static calltrace current();
 };
 

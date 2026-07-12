@@ -36,25 +36,25 @@ namespace sptr
          * @internal
          * @private
          */
-        void*           m_object;
+        void* m_object;
         
         /**
          * @internal
          * @private
          */
-        uint32_t        m_blocksize;
+        std::size_t m_blocksize;
         
         /**
          * @internal
          * @private
          */
-        uint32_t        m_strong_refs;
+        std::size_t m_strong_refs;
         
         /**
          * @internal
          * @private
          */
-        uint32_t        m_weak_refs;
+        std::size_t m_weak_refs;
 
         /**
          * @internal
@@ -66,7 +66,7 @@ namespace sptr
          * @internal
          * @private
          */
-        shared_control_block(tca::allocator* allocator, void* object, uint32_t blocksize);
+        shared_control_block(tca::allocator* allocator, void* object, std::size_t blocksize);
         
         /**
          * @internal
@@ -102,32 +102,20 @@ namespace sptr
          * @internal
          * @private
          */
-        uint32_t strong_count() const;
+        std::size_t strong_count() const;
         
         /**
          * @internal
          * @private
          */
-        uint32_t weak_count() const;
-
-        /**
-         * @internal
-         * @private
-         */
-        static const int32_t TO_STRING_MIN_BUFFER_SIZE = 64;
-
-        /**
-         * @internal
-         * @private
-         */
-        int32_t to_string(char buf[], int32_t bufsize) const;
+        std::size_t weak_count() const;
     };
 
     /**
      * @internal
      * @private
      */
-    uint32_t calc_ctr_block_total_size(uint32_t data_type_sizeof, uint32_t data_type_alignof, uint32_t* offset_to_object = nullptr);
+    std::size_t calc_ctr_block_total_size(std::size_t data_type_sizeof, std::size_t data_type_alignof, std::size_t* offset_to_object = nullptr);
 
     /**
      * @internal
@@ -154,7 +142,7 @@ namespace sptr
      * @return
      *      Указатель на контролирующий блок или nullptr, если выделение не удалось.
      */
-    shared_control_block* alloc_memory_to_control_block(tca::allocator* allocator, uint32_t object_size, uint32_t object_align, uint32_t n_objects = 1);
+    shared_control_block* alloc_memory_to_control_block(tca::allocator* allocator, std::size_t object_size, std::size_t object_align, std::size_t n_objects = 1);
 
     /**
      * @internal
@@ -166,12 +154,10 @@ namespace sptr
         if (!ctrl_block)
             return nullptr;
         try {
-            assert((std::intptr_t) ctrl_block->m_object % alignof(T) == 0);
+            assert((std::uintptr_t) ctrl_block->m_object % alignof(T) == 0);
             new (ctrl_block->m_object) T(std::forward<_T>(obj));
         } catch (...) {
-            using u32 = uint32_t;
-            const u32 size = ctrl_block->m_blocksize;
-            allocator->deallocate(ctrl_block, size);
+            allocator->deallocate(ctrl_block);
             throw;
         }
         return ctrl_block;
@@ -182,7 +168,7 @@ namespace sptr
      * @private
      */
     template<typename T>
-    shared_control_block* make_control_block_array(tca::allocator* allocator, uint32_t length) {
+    shared_control_block* make_control_block_array(tca::allocator* allocator, std::size_t length) {
         shared_control_block* ctrl_block = alloc_memory_to_control_block(allocator, sizeof(T), alignof(T), length);
         if (!ctrl_block)
             return nullptr;
@@ -191,9 +177,7 @@ namespace sptr
             using non_const_T = typename remove_cv<T>::type;
             placement_new<non_const_T>(reinterpret_cast<non_const_T*>(ctrl_block->m_object), length);
         } catch (...) {
-            using u32 = uint32_t;
-            const u32 size = ctrl_block->m_blocksize;
-            allocator->deallocate(ctrl_block, size);
+            allocator->deallocate(ctrl_block);
             throw;
         }
         return ctrl_block;
@@ -286,7 +270,7 @@ public:
      * @return 
      *      Счётчик сильных ссылок.
      */
-    uint32_t use_count() const;
+    std::size_t use_count() const;
 
     /**
      * Создаёт shared_ptr из weak_ptr, если объект всё ещё существует.
@@ -393,7 +377,7 @@ public:
                                                         typename remove_cv<T_>::type
                                                 >::value
                                             >::type>
-    shared_ptr(T_&& obj, tca::allocator* allocator = tca::get_scoped_or_default());
+    shared_ptr(T_&& obj, tca::allocator* allocator);
 
     /**
      * Конструктор копирования. 
@@ -539,7 +523,7 @@ public:
      * @return 
      *      Счётчик сильных ссылок.
      */
-    uint32_t use_count() const;
+    std::size_t use_count() const;
 
     /**
      * Создаёт weak_ptr, наблюдающий за тем же объектом.
@@ -560,21 +544,6 @@ public:
     bool operator== (const shared_ptr<E>& ptr) const {
         return ptr.get() == get();
     }
-
-    const static int32_t TO_STRING_MIN_BUFFER_SIZE = 48;
-    /**
-     * Возвращает отладочную строку о состоянии shared_ptr.
-     * 
-     * @param buf 
-     *      Буфер для записи.
-     * 
-     * @param bufsize 
-     *      Размер буфера.
-     * 
-     * @return 
-     *      Количество записанных символов.
-     */
-    int32_t to_string(char buf[], int32_t bufsize) const;
 };
 
 
@@ -710,7 +679,7 @@ public:
     }
 
     template<typename T>
-    uint32_t shared_ptr<T>::use_count() const {
+    std::size_t shared_ptr<T>::use_count() const {
         if (m_block != nullptr)
             return m_block->strong_count();
         return 0;
@@ -738,22 +707,13 @@ public:
         return weak_ptr<T>(m_block);
     }
 
-    template<typename T>
-    int32_t shared_ptr<T>::to_string(char buf[], int32_t bufsize) const {
-        if (m_block != nullptr) {
-            return m_block->to_string(buf, bufsize);
-        } else {
-            return snprintf(buf, bufsize, "null");
-        }
-    }
-
     template<typename T, typename T_ = T, typename = typename enable_if<
                                                                 is_same<
                                                                         typename remove_cv<T>::type,
                                                                         typename remove_cv<T_>::type
                                                                 >::value
                                                             >::type>
-    shared_ptr<T> make_shared(T_&& obj = T(), tca::allocator* allocator = tca::get_scoped_or_default()) {
+    shared_ptr<T> make_shared(T_&& obj = T(), tca::allocator* allocator = tca::get_default_allocator()) {
         return shared_ptr<T>(std::forward<T_>(obj), allocator);
     }
 
@@ -856,7 +816,7 @@ public:
     }
 
     template<typename T>
-    uint32_t weak_ptr<T>::use_count() const {
+    std::size_t weak_ptr<T>::use_count() const {
         if (m_block == nullptr)
             return 0;
         return m_block->strong_count();

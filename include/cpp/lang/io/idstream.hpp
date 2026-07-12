@@ -62,12 +62,12 @@ public:
      *      Максимальное количество байт для чтения.
      * 
      * @return
-     *      Количество реально прочитанных байт или -1, если достигнут конец потока.
+     *      Количество реально прочитанных байт или istream::eof_value(), если достигнут конец потока.
      * 
      * @throws io_exception
      *      Если произошла ошибка ввода/вывода
      */
-    int64_t read(char buf[], int64_t sz);
+    std::size_t read(char buf[], std::size_t sz) override;
 
     /**
      * Возвращает количество доступных для чтения байт.
@@ -80,7 +80,7 @@ public:
      * @throws io_exception
      *      Если произошла ошибка ввода/вывода
      */
-    int64_t available() const;
+    std::uintmax_t available() const override;
 
     /**
      * Закрывает поток файла.
@@ -88,10 +88,10 @@ public:
      * @throws io_exception
      *      Если произошла ошибка ввода/вывода
      */
-    void close();
+    void close() override;
 
     /**
-     * @see this->read<T>(T buf[], int64_t sz);
+     * @see this->read<T>(T buf[], std::size_t sz);
      */
     template<typename T>
     T read() {
@@ -121,16 +121,16 @@ public:
      *          Если попытка прочитать больше данных, чем есть в потоке.
      */
     template<typename T>
-    int64_t read(T buf[], int64_t sz);
+    std::size_t read(T buf[], std::size_t sz);
 };
 
     template<typename T>
-    int64_t idstream::read(T buf[], int64_t sz) {
-        int64_t readed = read(reinterpret_cast<char*>(buf), sizeof(T) * sz);
-        if (readed != (int64_t) sizeof(T) * sz)
+    std::size_t idstream::read(T buf[], std::size_t sz) {
+        std::size_t readed = read(reinterpret_cast<char*>(buf), sizeof(T) * sz);
+        if (readed != sizeof(T) * sz)
             throw_except<eof_exception>("Cannot read type");   
         if (system::native_byte_order() != byte_order::LE) {
-            for (int64_t i = 0; i < sz; ++i)
+            for (std::size_t i = 0; i < sz; ++i)
                 buf[i] = utils::bswap<T>(buf[i]);
         }
         return sz;

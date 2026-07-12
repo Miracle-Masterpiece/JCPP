@@ -45,7 +45,7 @@ public:
      * @throws io_exception 
      *      Если произошла ошибка ввода/вывода
      */
-    virtual void write(const char* data, int64_t sz) = 0;
+    virtual void write(const char* data, std::size_t sz) = 0;
 
     /**
      * Сбрасывает буферизированные данные.

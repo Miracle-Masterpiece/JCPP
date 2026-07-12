@@ -73,7 +73,7 @@ namespace tca {
     }
 
     void* linear_allocator::allocate_align(std::size_t sz, std::size_t align) {
-        std::size_t off = calcAlignAddedSize(_offset, align);
+        std::size_t off = align_up(_offset, align);
         if ((_offset + off + sz > _capacity) || _buffer == nullptr)
             return nullptr;
         _offset += off;
@@ -86,9 +86,8 @@ namespace tca {
     
     }
 
-    std::size_t linear_allocator::to_string(char buf[], std::size_t buf_size) const {
-        std::size_t s = snprintf(buf, buf_size, "[size %zu, offset %zu, free %zu]", _capacity, _offset, _capacity - _offset);
-        return s;
+    int linear_allocator::to_string(char buf[], std::size_t buf_size) const {
+        return snprintf(buf, buf_size, "[size %zu, offset %zu, free %zu]", _capacity, _offset, _capacity - _offset);
     }
 
     void linear_allocator::print() const {

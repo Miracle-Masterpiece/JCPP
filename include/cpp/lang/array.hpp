@@ -45,7 +45,7 @@ public:
     /**
      * Количество элементов в массиве.
      */
-    int64_t length;
+    std::size_t length;
     
     /**
      * Создаёт пустой массив.
@@ -59,7 +59,7 @@ public:
      * Новая память не выделяется, просто обёртка над уже существующим блоком памяти.
      * При уничтожении объектов деструкторы вызваны не будут.
      */
-    array(T* buf, int64_t bufsize);
+    array(T* buf, std::size_t bufsize);
 
     /**
      * Создаёт массив заданного размера, используя переданный аллокатор.
@@ -70,7 +70,7 @@ public:
      * @param sz 
      *      Количество элементов в массиве.
      */
-    array(int64_t sz, tca::allocator* allocator = tca::get_scoped_or_default());
+    array(std::size_t sz, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Создаёт массив размером инициализирующего листа. 
@@ -82,7 +82,7 @@ public:
      * @param init_list
      *      Список для инициализации массива.
      */
-    array(const std::initializer_list<T>& init_list, tca::allocator* allocator = tca::get_scoped_or_default());
+    array(const std::initializer_list<T>& init_list, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Конструктор копирования.
@@ -171,7 +171,7 @@ public:
      * @throws index_out_of_bound_exception
      *      Если индекс выходит за границы массива.
      */
-    T& operator[](int64_t idx);
+    T& operator[](std::size_t idx);
 
     /**
      * Оператор доступа по индексу (константный).
@@ -187,7 +187,7 @@ public:
      * @throws index_out_of_bound_exception
      *      Если индекс выходит за границы массива.
      */
-    const T& operator[](int64_t idx) const;
+    const T& operator[](std::size_t idx) const;
 
     /**
      * Возвращает указатель на начало массива.
@@ -224,13 +224,13 @@ public:
      * //Специализация
      * template<>
      * struct hash_for<T>{
-     *  uint64_t operator()(const T& t) const;
+     *  std::size_t operator()(const T& t) const;
      * };
      * 
      * @return 
      *      Хеш-код массива.
      */
-    uint64_t hashcode() const;
+    std::size_t hashcode() const;
 
     /**
      * Проверяет, является ли переданный массив равен этому массиву.
@@ -254,7 +254,7 @@ public:
     /**
      * Минимальный размер буфера для строкового представления объекта.
      */
-    static const int32_t TO_STRING_MIN_BUFFER_SIZE = 64;
+    static const std::size_t TO_STRING_MIN_BUFFER_SIZE = 64;
     
     /**
      * Сохраняет строковое представление объекта.
@@ -268,7 +268,8 @@ public:
      * @return
      *      Количество записанных символов. (Не включая нуль-терминатор)
      */
-    int32_t to_string(char buf[], int32_t bufsize) const;
+    int to_string(char buf[], std::size_t bufsize) const;
+    
 
     /**
      * Возвращает итератор на первый элемент.
@@ -296,12 +297,12 @@ public:
     array<T>::array() : _allocator(nullptr), _data(nullptr), length(0) {}
 
     template<typename T>
-    array<T>::array(T* buf, int64_t bufsize) : _allocator(nullptr), _data(buf), length(bufsize) {
+    array<T>::array(T* buf, std::size_t bufsize) : _allocator(nullptr), _data(buf), length(bufsize) {
 
     }
 
     template<typename T>
-    array<T>::array(int64_t sz, tca::allocator* allocator) : array<T>() {
+    array<T>::array(std::size_t sz, tca::allocator* allocator) : array<T>() {
         JSTD_DEBUG_CODE(
             check_non_null(allocator);  
         );
@@ -389,13 +390,13 @@ public:
     }
 
     template<typename T>
-    T& array<T>::operator[] (int64_t idx) {
+    T& array<T>::operator[] (std::size_t idx) {
         check_index(idx, length);
         return _data[idx];
     }
     
     template<typename T>
-    const T& array<T>::operator[] (int64_t idx) const {
+    const T& array<T>::operator[] (std::size_t idx) const {
         check_index(idx, length);
         return _data[idx];
     }
@@ -407,13 +408,12 @@ public:
 
     template<typename T>
     void array<T>::set(const T& value) {
-        for (int64_t i = 0, len = length; i < len; ++i)
+        for (std::size_t i = 0, len = length; i < len; ++i)
             _data[i] = value;
     }
 
-
     template<typename T>
-    uint64_t array<T>::hashcode() const {
+    std::size_t array<T>::hashcode() const {
         return (_data == nullptr || length == 0) ? 
                                                     0 : objects::hashcode(_data, length);
     }
@@ -424,7 +424,7 @@ public:
     }
 
     template<typename T>
-    int32_t array<T>::to_string(char buf[], int32_t bufsize) const {
+    int array<T>::to_string(char buf[], std::size_t bufsize) const {
         return std::snprintf(buf, bufsize, "[data=0x%llx, length=%lli]", (long long) _data, (long long) length);
     }
 

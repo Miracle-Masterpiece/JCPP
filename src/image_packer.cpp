@@ -9,7 +9,6 @@ namespace jstd {
 
     image_packer::image_packer() : 
     m_allocator(nullptr), 
-    m_node_allocator(nullptr), 
     m_root(), 
     m_images(),
     m_width(0),
@@ -17,10 +16,9 @@ namespace jstd {
 
     }
 
-    image_packer::image_packer(const image* img_array, int32_t count_images, int32_t w, int32_t h, tca::allocator* allocator, tca::allocator* node_allocator) :
-    m_allocator(allocator), 
-    m_node_allocator(node_allocator), 
-    m_root(), 
+    image_packer::image_packer(const image* img_array, std::size_t count_images, int w, int h, tca::allocator* allocator) :
+    m_allocator(allocator),
+    m_root(),
     m_images(img_array, count_images),
     m_width(w),
     m_height(h) {
@@ -29,13 +27,11 @@ namespace jstd {
 
     image_packer::image_packer(image_packer&& packer) : 
     m_allocator(packer.m_allocator),
-    m_node_allocator(packer.m_node_allocator),
     m_root(std::move(packer.m_root)),
     m_images(std::move(packer.m_images)),
     m_width(packer.m_width),
     m_height(packer.m_height) {
         packer.m_allocator      = nullptr;
-        packer.m_node_allocator = nullptr;
         packer.m_width          = 0;
         packer.m_height         = 0;
     }
@@ -43,14 +39,12 @@ namespace jstd {
     image_packer& image_packer::operator=(image_packer&& packer) {
         if (&packer != this) {
             m_allocator         = packer.m_allocator;
-            m_node_allocator    = packer.m_node_allocator;
             m_root              = std::move(packer.m_root);
             m_images            = std::move(packer.m_images);
             m_width             = packer.m_width;
             m_height            = packer.m_height;
 
             packer.m_allocator      = nullptr;
-            packer.m_node_allocator = nullptr;
             packer.m_width          = 0;
             packer.m_height         = 0;
         }
@@ -61,65 +55,57 @@ namespace jstd {
 
     }
 
-    int64_t get_max_mem_size_for_max_image(array<const image>& images) {
-        int64_t mem_size    = 0;
-        for (int64_t i = 0; i < images.length; ++i) {
+    std::size_t get_max_mem_size_for_max_image(array<const image>& images) {
+        std::size_t mem_size    = 0;
+        for (std::size_t i = 0; i < images.length; ++i)
+        {
             const image& img = images[i];
-            mem_size = std::max<int64_t>(mem_size, img.get_width() * img.get_height() * img.get_channels());
+            mem_size = std::max<std::size_t>(mem_size, (std::size_t) (img.get_width() * img.get_height() * img.get_channels()));
         }
         return mem_size;
     }
 
     void image_packer::create_tree() {
-        JSTD_DEBUG_CODE(
-            if (m_allocator == nullptr) 
-                throw_except<illegal_state_exception>("m_allocator must be != null");
-            if (m_node_allocator == nullptr) 
-                throw_except<illegal_state_exception>("m_node_allocator must be != null");
-        );
         if (!m_root) 
             m_root = make_unique<node>(
-                                        node(m_width, m_height, m_node_allocator), 
-                                        m_node_allocator
+                                        node(m_width, m_height, m_allocator), 
+                                        m_allocator
                                     );
         BEGIN: 
-        for (int64_t i = 0; i < m_images.length; ++i) {
+        for (std::size_t i = 0; i < m_images.length; ++i)
+        {
             const image& img = m_images[i];
             node* n = m_root->put_image(img.get_width(), img.get_height(), i);
-            if (n == nullptr) {
+            if (n == nullptr)
+            {
                 /**
                  * Если не получилось вставить изображение, начинаем заного, 
                  * но увеличиваем конечное изображение в два раза.
                  */
                 m_width  <<= 1;
                 m_height <<= 1;
-                *m_root = node(m_width, m_height, m_node_allocator);
+                *m_root = node(m_width, m_height, m_allocator);
                 goto BEGIN;
             }
         }
     }
 
-    image image_packer::pack(int32_t scale_factor, int32_t out_image_channels) {
-        JSTD_DEBUG_CODE(
-            if (scale_factor <= 0)
-                throw_except<illegal_argument_exception>("scale_factor %li is illegal", (long int) scale_factor);
+    image image_packer::pack(int scale_factor, int out_image_channels) {
+        JSTD_DEBUG_CODE (
+            if (scale_factor <= 0)           throw_except<illegal_argument_exception>("scale_factor %li is illegal", (long int) scale_factor);
+            if (m_allocator == nullptr)      throw_except<illegal_state_exception>("m_allocator must be != null");
             if (out_image_channels <= 0 || out_image_channels > 4)
                 throw_except<illegal_argument_exception>("out_image_channels %li is illegal", (long int) scale_factor);
-            if (m_allocator == nullptr) 
-                throw_except<illegal_state_exception>("m_allocator must be != null");
-            if (m_node_allocator == nullptr) 
-                throw_except<illegal_state_exception>("m_node_allocator must be != null");
-            if (!m_root)
-                create_tree();
         );
-
+            
+        if (!m_root) create_tree();
         image result(m_root->get_rect().w / scale_factor, m_root->get_rect().h / scale_factor, out_image_channels, m_allocator);
 
         /**
          * Размер временного буфера, куда будет сохранено масштабированное изображение.
          * Буфер делится на rescale, так как если изначальное изображение весит килобайт, то масштабированный на 2, размер будет в два раза меньше и так далее.
          */
-        int64_t buffer_size_for_resized_image = get_max_mem_size_for_max_image(m_images) / scale_factor;
+        std::size_t buffer_size_for_resized_image = get_max_mem_size_for_max_image(m_images) / scale_factor;
 
         /**
          * Линейный аллокатор, который нужен, чтобы выделять память под хранения временного масштабированного изображения
@@ -146,7 +132,7 @@ namespace jstd {
              * Делитель для уменьшения изображения.
              * Для корректных результатов должен быть кратен степени двойки. 2 4 8 16 32....1024
              */
-            int32_t m_rescale;
+            int m_rescale;
             
             /**
              * Аллокатор для выделения памяти под уменьшенное изображение.
@@ -157,11 +143,11 @@ namespace jstd {
 
             //Я даже описывать не хочу, какого чёрта тут происходит. Stupid Fuck.
             void operator()(const node* n) {
-                int32_t image_index = n->get_id();
+                std::size_t image_index = n->get_id();
 
                 const image& img_original = (*m_array_of_image)[image_index];
-                int32_t w_image = img_original.get_width();
-                int32_t h_image = img_original.get_height();
+                int w_image = img_original.get_width();
+                int h_image = img_original.get_height();
 
                 image rescaled_image; 
                 if (m_rescale > 1 && m_allocator_for_tmp_resized_image != nullptr)
@@ -173,96 +159,103 @@ namespace jstd {
                  * Нода имеет координату, ширину и величину изображения.
                  * Причём ширина и высота всегда идентична изображению!
                  */
-                const int32_t x = n->get_rect().x     / m_rescale;
-                const int32_t y = n->get_rect().y     / m_rescale;
-                const int32_t w = n->get_rect().w     / m_rescale;
-                const int32_t h = n->get_rect().h     / m_rescale;
+                const int x = n->get_rect().x     / m_rescale;
+                const int y = n->get_rect().y     / m_rescale;
+                const int w = n->get_rect().w     / m_rescale;
+                const int h = n->get_rect().h     / m_rescale;
                 
                 if (m_atlas->get_channels() == 4) {
-                    for (int32_t yo = 0; yo < h; ++yo) {
-                        for (int32_t xo = 0; xo < w; ++xo) {
+                    for (int yo = 0; yo < h; ++yo) {
+                        for (int xo = 0; xo < w; ++xo) {
                             
-                            const int32_t xx = xo + x;
-                            const int32_t yy = yo + y;
+                            const int xx = xo + x;
+                            const int yy = yo + y;
                             
-                            if (img.get_channels() == 4) {
+                            if (img.get_channels() == 4)
+                            {
                                 m_atlas->get_rgba(xx, yy) = img.get_rgba(xo, yo);   
                             } 
-
-                            else if (img.get_channels() == 3) {
+                            else if (img.get_channels() == 3)
+                            {
                                 const image::rgb& col = img.get_rgb(xo, yo);
                                 m_atlas->get_rgba(xx, yy) = image::rgba(col.r, col.g, col.b, 0xff);
                             }
-                            
-                            else if (img.get_channels() == 1) {
+                            else if (img.get_channels() == 1)
+                            {
                                 image::byte col = img.get_gray(xo, yo).brightness;
                                 m_atlas->get_rgba(xx, yy) = image::rgba(col, col, col, 0xff);
                             }
-
-                            else {
+                            else 
+                            {
                                 throw_except<illegal_state_exception>("");
                             }  
                         }
                     }
                 } 
 
-                else if (m_atlas->get_channels() == 3) {
-                    for (int32_t yo = 0; yo < h; ++yo) {
-                        for (int32_t xo = 0; xo < w; ++xo) {
+                else if (m_atlas->get_channels() == 3)
+                {
+                    for (int yo = 0; yo < h; ++yo) {
+                        for (int xo = 0; xo < w; ++xo) {
                             
-                            const int32_t xx = xo + x;
-                            const int32_t yy = yo + y;
+                            const int xx = xo + x;
+                            const int yy = yo + y;
                             
-                            if (img.get_channels() == 4) {
+                            if (img.get_channels() == 4)
+                            {
                                 const image::rgba& col = img.get_rgba(xo, yo);
                                 m_atlas->get_rgb(xx, yy) = image::rgb(col.r, col.g, col.b);   
                             } 
-
-                            else if (img.get_channels() == 3) {
+                            else if (img.get_channels() == 3)
+                            {
                                 m_atlas->get_rgb(xx, yy) = img.get_rgb(xo, yo);
                             }
-                            
-                            else if (img.get_channels() == 1) {
+                            else if (img.get_channels() == 1)
+                            {
                                 image::byte col     = img.get_gray(xo, yo).brightness;
                                 m_atlas->get_rgb(xx, yy) = image::rgb(col, col, col);
                             }
-
-                            else {
+                            else
+                            {
                                 throw_except<illegal_state_exception>("");
                             }  
                         }
                     }
                 } 
                 
-                else if (m_atlas->get_channels() == 1) {
+                else if (m_atlas->get_channels() == 1)
+                {
                     
                     const float r_gamma = 0.30f;
                     const float g_gamma = 0.59f;
                     const float b_gamma = 0.11f;
                     image::byte gray    = 0;                            
 
-                    for (int32_t yo = 0; yo < h; ++yo) {
-                        for (int32_t xo = 0; xo < w; ++xo) {
+                    for (int yo = 0; yo < h; ++yo)
+                    {
+                        for (int xo = 0; xo < w; ++xo)
+                        {
                             
-                            const int32_t xx = xo + x;
-                            const int32_t yy = yo + y;
+                            const int xx = xo + x;
+                            const int yy = yo + y;
                             
                             
-                            if (img.get_channels() == 4) {
+                            if (img.get_channels() == 4)
+                            {
                                 const image::rgba& rgba = img.get_rgba(xo, yo);
-                                gray = (image::byte) (rgba.r * r_gamma + rgba.g * g_gamma + rgba.b * b_gamma) / 3;
+                                gray = (image::byte) ( (rgba.r * r_gamma + rgba.g * g_gamma + rgba.b * b_gamma) / 3.0f );
                             } 
-                            
-                            else if (img.get_channels() == 3) {
+                            else if (img.get_channels() == 3)
+                            {
                                 const image::rgb& rgb = img.get_rgb(xo, yo);
-                                gray = (image::byte) (rgb.r * r_gamma + rgb.g * g_gamma + rgb.b * b_gamma) / 3;
+                                gray = (image::byte) ( (rgb.r * r_gamma + rgb.g * g_gamma + rgb.b * b_gamma) / 3.0f );
                             }
-                            
-                            else if (img.get_channels() == 1) {
+                            else if (img.get_channels() == 1)
+                            {
                                 gray = img.get_gray(xo, yo).brightness;
                             }
-                            
-                            else {
+                            else
+                            {
                                 throw_except<illegal_state_exception>("");
                             }  
                             m_atlas->get_gray(xx, yy).brightness = gray;   
@@ -270,7 +263,8 @@ namespace jstd {
                     }
                 }
 
-                else {
+                else
+                {
                     throw_except<illegal_state_exception>();
                 }
 
@@ -297,10 +291,10 @@ namespace jstd {
             array<image_packer::uv>* m_array;
             void operator() (const node* n) {
                 const rect& pos = n->get_rect();
-                const int32_t u0 = pos.x;
-                const int32_t v0 = pos.y;
-                const int32_t u1 = pos.x + pos.w;
-                const int32_t v1 = pos.y + pos.h;
+                int u0 = pos.x;
+                int v0 = pos.y;
+                int u1 = pos.x + pos.w;
+                int v1 = pos.y + pos.h;
                 image_packer::uv texcoord;
                 texcoord.u0 = u0;
                 texcoord.v0 = v0;
@@ -318,3 +312,68 @@ namespace jstd {
         return array<image_packer::uv>(std::move(uvs));
     }
 }
+
+#if 0
+
+#include <cpp/lang/io/ifstream.hpp>
+#include <cpp/lang/io/file.hpp>
+#include <cpp/lang/string.hpp>
+#include <cpp/lang/io/utility.hpp>
+#include <cpp/lang/utils/images/imageio.hpp>
+#include <cpp/lang/utils/arrays.hpp>
+#include <cpp/lang/utils/utils.hpp>
+
+class png_filter : public tc::file_filter {
+public:
+    bool apply(const char* path, std::size_t path_length) const override {
+        return tc::string(path).ends_with(".png");   
+    }
+};
+
+
+tc::array<tc::image> read_all_images(const tc::file& path) {
+    tc::array<tc::file> files;
+    {
+        png_filter filter;
+        files = path.list_files(filter);
+    }
+
+    tc::array<tc::image> imgs(files.length);
+    for (std::size_t i = 0; i < imgs.length; ++i)
+    {
+        imgs[i] = tc::imageio::load_image(files[i]);
+    }
+
+    return imgs;
+}
+
+namespace jstd
+{
+    template<>
+    struct compare_to<image> {
+        int operator() (const image& a, const image& b) const {
+            return (b.get_width() * b.get_height()) - (a.get_width() * a.get_height());
+        }
+    };
+}
+
+int main(int argc, const char** args) {
+    try {
+        tc::file root = "./images/";    
+        tc::array<tc::image> images = read_all_images(root);
+        printf("len: %zu\n", images.length);
+        {
+            tc::utils::quick_sort(images.data(), images.length);
+        }
+        {
+            tc::image_packer packer(images.data(), images.length, 1024, 1024);
+            tc::image atlas = packer.pack(argc > 1 ? (*args[1]) - '0' : 1);
+            tc::imageio::write_image(tc::file("./img.png"), &atlas, "png");
+        }
+    } catch( const tc::throwable& t) {
+        std::printf("except: %s\n", t.cause());
+    }
+    
+}
+
+#endif

@@ -4,77 +4,77 @@
 namespace jstd {
 
     properties::properties(tca::allocator* allocator) : 
-    _allocator(allocator), 
-    _props(allocator) {
+    m_allocator(allocator), 
+    m_values(allocator) {
 
     }
 
     bool properties::is_empty() const {
-        return _props.is_empty();
+        return m_values.is_empty();
     }
 
     void properties::set(const string& key, const string& value) {
-        _props.put(key, value);
+        m_values.put(key, value);
     }
 
-    void properties::set(const char* key, const char* value) {
-        tca::scope_allocator scope(_allocator);        
-        _props.put(string(_allocator, key), string(_allocator, value));
+    void properties::set(const char* key, const char* value) {   
+        m_values.put(string(key, m_allocator), string(value, m_allocator));
     }
 
     const string& properties::get(const string& key) const {
-        return _props.get(key);
+        return m_values.get(key);
     }
 
-    const string& properties::get_or_default(const string& key, const string& _default) const {
-        return _props.get_or_default(key, _default);
+    const string& properties::get_or_default(const string& key, string& _default) const {
+        return m_values.get_or_default(key, _default);
     }
 
     const string& properties::get(const char* key) const {
-        return get(string::make_view(key));
+        return get(string(key, m_allocator));
     }
 
     void properties::save(ostream& out) const {
-        const char new_line = '\n';
-        const char assign   = '=';
+        const char NEW_LINE = '\n';
+        const char ASSIGN   = '=';
 
-        {
-            char date_strbuf[64]{'#'};
+        {//store date
             date now = date::now();
-            int len = now.to_string(date_strbuf + 1, sizeof(date_strbuf) - 1);
-            out.write(date_strbuf, len + 1);
-            out.write(&new_line, 1);
+            string date = now.to_string(m_allocator);
+            out.write(date.cstr(), date.length() + 1);
+            out.write(&NEW_LINE, 1);
         }
 
-        for (const entry& e : _props) {
+        for (const entry& e : m_values)
+        {    
             const string& key     = e.get_key();
             const string& value   = e.get_value();
-            out.write(reinterpret_cast<const char*>(key.c_string()), key.length());
-            out.write(&assign, 1);      //add "="
-            out.write(reinterpret_cast<const char*>(value.c_string()), value.length());
-            out.write(&new_line, 1);    //add "\n"
+            
+            out.write(key.cstr(), key.length());
+         
+            out.write(&ASSIGN, 1);                      //add "="
+         
+            out.write(value.cstr(), value.length());
+         
+            out.write(&NEW_LINE, 1);                    //add "\n"
         }
     }
 
     void properties::load(istream& in) {
-#ifndef NDEBUG
-        if (_allocator == nullptr)
-            throw_except<illegal_state_exception>("allocator must be != null");
-#endif//NDEBUG
-        u8string buffer(_allocator);
-        buffer.reserve(128);
-
-        u8string key(_allocator);
-        key.reserve(32);
+        JSTD_DEBUG_CODE(
+            if (m_allocator == nullptr) throw_except<illegal_state_exception>("allocator must be != null")
+        );
         
-        u8string value(_allocator);
-        value.reserve(32);
+        string buffer (m_allocator);
+        string key    (m_allocator);
+        string value  (m_allocator);
 
         int reader;
         char ch;
-        while ((reader = in.read()) != -1) {
+        while ((reader = in.read()) != -1)
+        {
             if (reader == '#') {
-                while ((reader = in.read()) != -1) {
+                while ((reader = in.read()) != -1)
+                {
                     if (reader == '\n')
                         break;
                 }
@@ -86,17 +86,19 @@ namespace jstd {
             ch = (char) (reader & 0xff);
             if (reader == '=') {
                 key.clear();
-                key.append(buffer.c_string());
+                key.append(buffer.cstr());
                 buffer.clear();
             } 
-
-            else if (reader == '\n') {
-                if (buffer.length() != 0) {
-                    value.append(buffer.c_string());
-                    if (key.length() != 0 && value.length() != 0) {
+            else if (reader == '\n')
+            {
+                if (buffer.length() != 0)
+                {
+                    value.append(buffer.cstr());
+                    if (key.length() != 0 && value.length() != 0)
+                    {
                         key.trim();
                         value.trim();
-                        _props.put(key, value);
+                        m_values.put(key, value);
                     }
                 }
                 
@@ -104,17 +106,19 @@ namespace jstd {
                 value.clear();
                 key.clear();
             } 
-
-            else {
+            else
+            {
                 buffer.append(&ch, 1);
             }
         }
-        if (key.length() != 0) {
-            if (buffer.length() != 0) {
-                value.append(buffer.c_string());
+        if (key.length() != 0)
+        {
+            if (buffer.length() != 0)
+            {
+                value.append(buffer.cstr());
                 key.trim();
                 value.trim();
-                _props.put(key, value);
+                m_values.put(key, value);
             }
         }
     }

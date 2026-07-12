@@ -17,7 +17,7 @@ namespace jstd {
 
     }
     
-    image::image(image::byte* data, int32_t w, int32_t h, int8_t channels) : 
+    image::image(image::byte* data, int w, int h, int channels) : 
     m_allocator(nullptr),
     m_pixels(data),
     m_width(w),
@@ -26,7 +26,7 @@ namespace jstd {
 
     }
 
-    image::image(image::byte* data, tca::base_allocator* allocator, int32_t w, int32_t h, int8_t channels) :
+    image::image(image::byte* data, tca::allocator* allocator, int w, int h, int channels) :
     m_allocator(allocator),
     m_pixels(data), 
     m_width(w), 
@@ -35,11 +35,11 @@ namespace jstd {
 
     }
 
-    image::image(int32_t width, int32_t height, int8_t channels, tca::base_allocator* allocator) {
+    image::image(int width, int height, int channels, tca::allocator* allocator) {
         byte* pixels = reinterpret_cast<byte*>(allocator->allocate_align(sizeof(byte) * (width * height * channels), alignof(byte)));
         if (pixels == nullptr)
             throw_except<out_of_memory_error>("Out of memory!");
-        std::memset(pixels, 0, width * height * channels);
+        std::memset(pixels, 0, (width * height * channels));
         m_allocator = allocator;
         m_pixels    = pixels;
         m_width     = width;
@@ -49,7 +49,7 @@ namespace jstd {
     
     void image::cleanup() {
         if (m_allocator != nullptr && m_pixels != nullptr) {
-            m_allocator->deallocate(m_pixels, sizeof(byte) * (m_width * m_height * m_channels));
+            m_allocator->deallocate(m_pixels);
             m_pixels    = nullptr;
             m_allocator = nullptr;
         }
@@ -103,11 +103,11 @@ namespace jstd {
         return *this;
     }
     
-    int32_t image::get_width() const {
+    int image::get_width() const {
         return m_width;
     }
 
-    int32_t image::get_height() const {
+    int image::get_height() const {
         return m_height;
     }
 
@@ -119,14 +119,13 @@ namespace jstd {
         return m_pixels;
     }
 
-    int8_t image::get_channels() const {
+    int image::get_channels() const {
         return m_channels;
     }
 
-    image::rgb& image::get_rgb(int32_t x, int32_t y) {
+    image::rgb& image::get_rgb(int x, int y) {
         JSTD_DEBUG_CODE(
-            if (m_channels != 3)
-                throw_except<illegal_state_exception>("image is not rgb");
+            if (m_channels != 3) throw_except<illegal_state_exception>("image is not rgb");
             check_index(x, m_width);
             check_index(y, m_height);
         );
@@ -134,10 +133,9 @@ namespace jstd {
         return m_rgb[idx];
     }
 
-    const image::rgb& image::get_rgb(int32_t x, int32_t y) const {
+    const image::rgb& image::get_rgb(int x, int y) const {
         JSTD_DEBUG_CODE(
-            if (m_channels != 3)
-                throw_except<illegal_state_exception>("image is not rgb");
+            if (m_channels != 3) throw_except<illegal_state_exception>("image is not rgb");
             check_index(x, m_width);
             check_index(y, m_height);
         );
@@ -145,10 +143,9 @@ namespace jstd {
         return m_rgb[idx];
     }
 
-    image::rgba& image::get_rgba(int32_t x, int32_t y) {
+    image::rgba& image::get_rgba(int x, int y) {
         JSTD_DEBUG_CODE(
-            if (m_channels != 4)
-                throw_except<illegal_state_exception>("image is not rgba");
+            if (m_channels != 4) throw_except<illegal_state_exception>("image is not rgba");
             check_index(x, m_width);
             check_index(y, m_height);
         );
@@ -156,10 +153,9 @@ namespace jstd {
         return m_rgba[idx];
     }
 
-    const image::rgba& image::get_rgba(int32_t x, int32_t y) const {
+    const image::rgba& image::get_rgba(int x, int y) const {
         JSTD_DEBUG_CODE(
-            if (m_channels != 4)
-                throw_except<illegal_state_exception>("image is not rgba");
+            if (m_channels != 4) throw_except<illegal_state_exception>("image is not rgba");
             check_index(x, m_width);
             check_index(y, m_height);
         );
@@ -167,10 +163,9 @@ namespace jstd {
         return m_rgba[idx];
     }
 
-    image::gray& image::get_gray(int32_t x, int32_t y) {
+    image::gray& image::get_gray(int x, int y) {
         JSTD_DEBUG_CODE(
-            if (m_channels != 1)
-                throw_except<illegal_state_exception>("image is not gray");
+            if (m_channels != 1) throw_except<illegal_state_exception>("image is not gray");
             check_index(x, m_width);
             check_index(y, m_height);
         );
@@ -178,10 +173,9 @@ namespace jstd {
         return m_gray[idx];
     }
 
-    const image::gray& image::get_gray(int32_t x, int32_t y) const {
+    const image::gray& image::get_gray(int x, int y) const {
         JSTD_DEBUG_CODE(
-            if (m_channels != 1)
-                throw_except<illegal_state_exception>("image is not gray");
+            if (m_channels != 1) throw_except<illegal_state_exception>("image is not gray");
             check_index(x, m_width);
             check_index(y, m_height);
         );
@@ -189,22 +183,22 @@ namespace jstd {
         return m_gray[idx];
     }
 
-    int image::rgba::to_string(char buf[], int bufsize) const {
-        using ui = unsigned int;
+    int image::rgba::to_string(char buf[], std::size_t bufsize) const {
+        using ui = int;
         return snprintf(buf, bufsize, "[R: %u, G: %u, B: %u, A: %u]", (ui) r, (ui) g, (ui) b, (ui) a);
     }
 
-    int image::rgb::to_string(char buf[], int bufsize) const {
-        using ui = unsigned int;
+    int image::rgb::to_string(char buf[], std::size_t bufsize) const {
+        using ui = int;
         return snprintf(buf, bufsize, "[R: %u, G: %u, B: %u]", (ui) r, (ui) g, (ui) b);
     }
 
-    int image::gray::to_string(char buf[], int bufsize) const {
-        using ui = unsigned int;
+    int image::gray::to_string(char buf[], std::size_t bufsize) const {
+        using ui = int;
         return snprintf(buf, bufsize, "[GRAY: %u]", (ui) brightness);
     }
 
-    image image::resize(int32_t neww, int32_t newh, tca::base_allocator* allocator) const {
+    image image::resize(int neww, int newh, tca::allocator* allocator) const {
         if (neww <= 0 || newh <= 0)
             throw_except<illegal_argument_exception>("Invalid width or height");
         if (allocator == nullptr) {
@@ -219,29 +213,30 @@ namespace jstd {
         return image(std::move(resized_image));
     }
 
-    image image::clone(tca::base_allocator* allocator) const {
+    image image::clone(tca::allocator* allocator) const {
         if (allocator == nullptr) {
             if (m_allocator == nullptr)
                 return image();
             allocator = m_allocator;
         }
         image img(m_width, m_height, m_channels, allocator);
-        std::memcpy(img.m_pixels, m_pixels, sizeof(byte) * (m_width * m_height * m_channels));
+        std::memcpy(img.m_pixels, m_pixels, 
+                                            (m_width * m_height * m_channels));
         return image(std::move(img));
     }
 
-    int image::to_string(char buf[], int bufsize) const {
+    int image::to_string(char buf[], std::size_t bufsize) const {
         return snprintf(buf, bufsize, "[w: %i, h: %i, channels: %i]", (int) m_width, (int) m_height, (int) m_channels);
     }
 
-    /*static*/ image image::make_view(image::byte* data, int32_t width, int32_t height, int8_t channels) {
+    /*static*/ image image::make_view(image::byte* data, int width, int height, int channels) {
         JSTD_DEBUG_CODE(
             check_non_null(data);
         );
         return image(data, width, height, channels);
     }
 
-    /**static */ image image::lock(image::byte* data, tca::base_allocator* allocator, int32_t width, int32_t height, int8_t channels) {
+    /**static */ image image::lock(image::byte* data, tca::allocator* allocator, int width, int height, int channels) {
         JSTD_DEBUG_CODE(
             check_non_null(data);
             check_non_null(allocator);

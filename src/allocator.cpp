@@ -42,10 +42,6 @@ namespace internal
         return &s_malloc_allocator;
     }
 
-    allocator* get_scoped_or_default() {
-        return internal::scoped_allocator != nullptr ? internal::scoped_allocator : get_default_allocator();
-    }
-
     allocator* get_exception_allocator() {
         return get_default_allocator();
     }

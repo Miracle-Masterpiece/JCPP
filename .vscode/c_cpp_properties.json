@@ -2,16 +2,14 @@
     "configurations": [
         {
             "name": "win",
+            "compilerPath": "C:/msys64/ucrt64/bin/g++.exe",
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/zlib/"
             ],
             "cStandard": "c11",
             "cppStandard": "c++23",
-            "intelliSenseMode": "windows-gcc-x86",
-            "compilerArgs": [
-                ""
-            ]
+            "intelliSenseMode": "windows-gcc-x64"
         }
     ],
     "version": 4

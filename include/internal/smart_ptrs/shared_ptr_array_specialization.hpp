@@ -20,7 +20,7 @@ class weak_ptr<T[]> {
     /**
      * Размер массива, на который указывает этот слабый указатель.
      */
-    uint32_t m_len;
+    std::size_t m_len;
 
     /**
      * Конструктор для внутреннего API!
@@ -33,7 +33,7 @@ class weak_ptr<T[]> {
      * 
      * Данный конструктор должен увеличивать счётчик weak-reference.
      */
-    weak_ptr(internal::sptr::shared_control_block* ctrl_block, uint32_t length);
+    weak_ptr(internal::sptr::shared_control_block* ctrl_block, std::size_t length);
     
     /**
      * Выполняет очищение объекта.
@@ -96,7 +96,7 @@ public:
      * @return 
      *      Счётчик сильных ссылок.
      */
-    uint32_t use_count() const;
+    std::size_t use_count() const;
 
     /**
      * Создаёт shared_ptr из weak_ptr, если объект всё ещё существует.
@@ -121,7 +121,7 @@ class shared_ptr<T[]> {
     /**
      * Размер массива.
      */
-    uint32_t m_len;
+    std::size_t m_len;
 
     /**
      * Выполняет очищение объекта.
@@ -240,7 +240,7 @@ public:
      * @return
      *      Ссылку на объект, хранящийся по индексу.
      */
-    T& operator[] (uint32_t idx) const;
+    T& operator[] (std::size_t idx) const;
 
     /**
      * Приводит shared_ptr к сырому указателю.
@@ -264,7 +264,7 @@ public:
      * @return 
      *      Счётчик сильных ссылок.
      */
-    uint32_t use_count() const;
+    std::size_t use_count() const;
 
     /**
      * Создаёт weak_ptr, наблюдающий за тем же объектом.
@@ -289,22 +289,7 @@ public:
     /**
      * Возвращает длину массива.
      */
-    uint32_t length() const;
-
-    const static int32_t TO_STRING_MIN_BUFFER_SIZE = 48;
-    /**
-     * Возвращает отладочную строку о состоянии shared_ptr.
-     * 
-     * @param buf 
-     *      Буфер для записи.
-     * 
-     * @param bufsize 
-     *      Размер буфера.
-     * 
-     * @return 
-     *      Количество записанных символов.
-     */
-    int32_t to_string(char buf[], int32_t bufsize) const;
+    std::size_t length() const;
 };
 
     template<typename T>
@@ -405,7 +390,7 @@ public:
     }
     
     template<typename T>
-    T& shared_ptr<T[]>::operator[] (uint32_t idx) const {
+    T& shared_ptr<T[]>::operator[] (std::size_t idx) const {
         check_access();
         check_index(idx, m_len);
         return reinterpret_cast<T*>(m_block->m_object)[idx];
@@ -439,23 +424,14 @@ public:
     }
 
     template<typename T>
-    uint32_t shared_ptr<T[]>::use_count() const {
+    std::size_t shared_ptr<T[]>::use_count() const {
         if (!m_block) return 0;
         return m_block->m_strong_refs;
     }
 
     template<typename T>
-    uint32_t shared_ptr<T[]>::length() const {
+    std::size_t shared_ptr<T[]>::length() const {
         return m_len;
-    }
-
-    template<typename T>
-    int32_t shared_ptr<T[]>::to_string(char buf[], int32_t bufsize) const {
-        if (m_block != nullptr) {
-            return m_block->to_string(buf, bufsize);
-        } else {
-            return snprintf(buf, bufsize, "null");
-        }
     }
 
     /**
@@ -465,7 +441,7 @@ public:
      */
 
     template<typename T>
-    weak_ptr<T[]>::weak_ptr(internal::sptr::shared_control_block* ctrl_block, uint32_t length) :
+    weak_ptr<T[]>::weak_ptr(internal::sptr::shared_control_block* ctrl_block, std::size_t length) :
     m_block(ctrl_block), m_len(length) {
         if (m_block)
             m_block->inc_weak_ref();
@@ -531,7 +507,7 @@ public:
     }
     
     template<typename T>
-    uint32_t weak_ptr<T[]>::use_count() const {
+    std::size_t weak_ptr<T[]>::use_count() const {
         if (!m_block)
             return 0;
         return m_block->strong_count();

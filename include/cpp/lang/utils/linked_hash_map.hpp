@@ -31,7 +31,7 @@ public:
         /**
          * 
          */
-        uint64_t m_hash;
+        std::size_t m_hash;
 
         /**
          * 
@@ -48,7 +48,7 @@ public:
          * 
          */
         template<typename TKEY_, typename TVALUE_>
-        entry(TKEY_&&, TVALUE_&&, uint64_t hashcode);
+        entry(TKEY_&&, TVALUE_&&, std::size_t hashcode);
 
         /**
          * 
@@ -146,7 +146,7 @@ private:
     /**
      * 
      */
-    int64_t m_size;
+    std::size_t m_size;
 
     /**
      * 
@@ -162,7 +162,7 @@ private:
      * 
      */
     template<typename TKEY_, typename TVALUE_>
-    entry* alloc_entry(TKEY_&&, TVALUE_&&, uint64_t hashcode);
+    entry* alloc_entry(TKEY_&&, TVALUE_&&, std::size_t hashcode);
     
     /**
      * 
@@ -218,7 +218,7 @@ public:
     /**
      * 
      */
-    linked_hash_map(int64_t initial_capacity, float load_factor = 0.75f, bool access_order = false, tca::allocator* allocator = tca::get_scoped_or_default());
+    linked_hash_map(std::size_t initial_capacity, float load_factor = 0.75f, bool access_order = false, tca::allocator* allocator = tca::get_scoped_or_default());
 
     /**
      * 
@@ -299,7 +299,7 @@ public:
      * @return
      *      Размер этой карты.
      */
-    int64_t size() const;
+    std::size_t size() const;
 
     /**
      * @return
@@ -438,7 +438,7 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::linked_hash_map(int64_t initial_capacity, float load_factor, bool access_order, tca::allocator* allocator) :
+    linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::linked_hash_map(std::size_t initial_capacity, float load_factor, bool access_order, tca::allocator* allocator) :
         m_allocator(allocator),
         m_buckets(initial_capacity, allocator),
         m_head(nullptr),
@@ -507,7 +507,7 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TKEY_, typename TVALUE_>
-    typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::alloc_entry(TKEY_&& key, TVALUE_&& value, uint64_t hashcode) {
+    typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::alloc_entry(TKEY_&& key, TVALUE_&& value, std::size_t hashcode) {
         void* mem = m_allocator->allocate_align(sizeof(entry), alignof(entry));
         if (!mem)
             throw_except<out_of_memory_error>("Out of memory!");
@@ -538,18 +538,18 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::rehash() {
-        array<entry*> _new((int64_t) (m_buckets.length * 1.5));
+        array<entry*> _new((std::size_t) (m_buckets.length + (m_buckets.length >> 1)));
         _new.set(nullptr);
         array<entry*> old = std::move(m_buckets);
         m_buckets = std::move(_new);
         
         THASHER hashcode;
-        for (int64_t i = 0, len = old.length; i < len; ++i) {
+        for (std::size_t i = 0, len = old.length; i < len; ++i) {
             for (entry* e = old[i]; e != nullptr; ) {
                 entry* current = e;
                 e = e->get_next();
-                uint64_t hash   = hashcode(current->get_key());
-                uint64_t idx    = hash % m_buckets.length;
+                std::size_t hash   = hashcode(current->get_key());
+                std::size_t idx    = hash % m_buckets.length;
                 
                 current->set_next(nullptr);
                 if (!m_buckets[idx])
@@ -576,8 +576,8 @@ public:
             rehash();
 
         THASHER hashcode;
-        uint64_t hash   = hashcode(key);
-        uint64_t idx    = hash % m_buckets.length;
+        std::size_t hash   = hashcode(key);
+        std::size_t idx    = hash % m_buckets.length;
 
         if (!m_buckets[idx])
         {
@@ -623,8 +623,8 @@ public:
         if (is_empty())
             return false;
         THASHER hashcode;
-        uint64_t hash   = hashcode(key);
-        uint64_t idx    = hash % m_buckets.length;
+        std::size_t hash   = hashcode(key);
+        std::size_t idx    = hash % m_buckets.length;
         
         TEQUALER equals;
         entry* prev = nullptr;
@@ -650,8 +650,8 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     TVALUE* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get0(const TKEY& key) {
         THASHER hashcode;
-        uint64_t hash   = hashcode(key);
-        uint64_t idx    = hash % m_buckets.length;
+        std::size_t hash   = hashcode(key);
+        std::size_t idx    = hash % m_buckets.length;
         TEQUALER equals;
         for (entry* i = m_buckets[idx]; i != nullptr; i = i->get_next()) {
             if (equals(i->get_key(), key)) {
@@ -668,8 +668,8 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     const TVALUE* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get0(const TKEY& key) const {
         THASHER hashcode;
-        uint64_t hash   = hashcode(key);
-        uint64_t idx    = hash % m_buckets.length;
+        std::size_t hash   = hashcode(key);
+        std::size_t idx    = hash % m_buckets.length;
         TEQUALER equals;
         for (entry* i = m_buckets[idx]; i != nullptr; i = i->get_next()) {
             if (equals(i->get_key(), key)) {
@@ -683,8 +683,8 @@ public:
     template<typename TVALUE_>
     bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::replace(const TKEY& key, TVALUE_&& value) {
         THASHER hashcode;
-        uint64_t hash   = hashcode(key);
-        uint64_t idx    = hash % m_buckets.length;
+        std::size_t hash   = hashcode(key);
+        std::size_t idx    = hash % m_buckets.length;
         TEQUALER equals;
         for (entry* i = m_buckets[idx]; i != nullptr; i = i->get_next()) {
             if (equals(i->get_key(), key)) {
@@ -813,7 +813,7 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    int64_t linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::size() const {
+    std::size_t linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::size() const {
         return m_size;
     }
 
@@ -881,7 +881,7 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TKEY_, typename TVALUE_>
-    linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::entry(TKEY_&& key, TVALUE_&& value, uint64_t hashcode) :
+    linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::entry(TKEY_&& key, TVALUE_&& value, std::size_t hashcode) :
         m_next(nullptr),
         m_list_next(nullptr),
         m_list_prev(nullptr),

@@ -22,7 +22,7 @@ public:
         rgba& operator=(const rgba&)    = default;
         rgba& operator=(rgba&&)         = default;
         ~rgba()                         = default;
-        int to_string(char buf[], int bufsize) const;
+        int to_string(char buf[], std::size_t bufsize) const;
     };
     struct rgb {
         byte r, g, b;
@@ -32,7 +32,7 @@ public:
         rgb& operator=(const rgb&)  = default;
         rgb& operator=(rgb&&)       = default;
         ~rgb()                      = default;
-        int to_string(char buf[], int bufsize) const;
+        int to_string(char buf[], std::size_t bufsize) const;
     };
     struct gray {
         byte brightness;
@@ -42,13 +42,13 @@ public:
         gray& operator=(const gray&)    = default;
         gray& operator=(gray&&)         = default;
         ~gray()                         = default;
-        int to_string(char buf[], int bufsize) const;
+        int to_string(char buf[], std::size_t bufsize) const;
     };
 private:
     /**
      * Аллокатор, используемый для управления памятью.
      */
-    tca::base_allocator* m_allocator;
+    tca::allocator* m_allocator;
 
     union {
         byte*   m_pixels;                    // Указатель на массив пикселей изображения.
@@ -60,17 +60,17 @@ private:
     /**
      * Ширина изображения в пикселях.
      */
-    int32_t m_width;
+    int m_width;
     
     /**
      * Высота изображения в пикселях.
      */
-    int32_t m_height;
+    int m_height;
     
     /**
      * Количество цветовых каналов (например, 3 = RGB, 4 = RGBA).
      */
-    int8_t  m_channels;
+    int m_channels;
 
     /**
      * Освобождает ресурсы, связанные с изображением.
@@ -80,12 +80,12 @@ private:
     /**
      * Для создания view на массив байтов.
      */
-    image(image::byte* data, int32_t w, int32_t h, int8_t channels);
+    image(image::byte* data, int w, int h, int channels);
     
     /**
      * Для захвата владения над массивом байтов.
      */
-    image(image::byte* data, tca::base_allocator* allocator, int32_t w, int32_t h, int8_t channels);
+    image(image::byte* data, tca::allocator* allocator, int w, int h, int channels);
 
 public:
     /**
@@ -109,7 +109,7 @@ public:
      * @param channels 
      *      Количество каналов (например, 3 = RGB, 4 = RGBA).
      */
-    image(int32_t width, int32_t height, int8_t channels, tca::base_allocator* allocator = tca::get_scoped_or_default());
+    image(int width, int height, int channels, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Конструктор копирования.
@@ -177,7 +177,7 @@ public:
      * @return 
      *      Ширина в пикселях.
      */
-    int32_t get_width() const;
+    int get_width() const;
 
     /**
      * Возвращает высоту изображения.
@@ -185,7 +185,7 @@ public:
      * @return 
      *      Высота в пикселях.
      */
-    int32_t get_height() const;
+    int get_height() const;
 
     /**
      * Возвращает количество цветовых каналов.
@@ -193,7 +193,7 @@ public:
      * @return 
      *      Количество каналов (например, 3 или 4).
      */
-    int8_t get_channels() const;
+    int get_channels() const;
 
     /**
      * Возвращает новое изображение, масштабированное до заданных размеров.
@@ -213,37 +213,37 @@ public:
      * @return 
      *      Новое масштабированное изображение.
      */
-    image resize(int32_t neww, int32_t newh, tca::base_allocator* allocator = nullptr) const;
+    image resize(int neww, int newh, tca::allocator* allocator = nullptr) const;
 
     /**
      * 
      */
-    rgb& get_rgb(int32_t x, int32_t y);
+    rgb& get_rgb(int x, int y);
 
     /**
      * 
      */
-    const rgb& get_rgb(int32_t x, int32_t y) const;
+    const rgb& get_rgb(int x, int y) const;
 
     /**
      * 
      */
-    rgba& get_rgba(int32_t x, int32_t y);
+    rgba& get_rgba(int x, int y);
 
     /**
      * 
      */
-    const rgba& get_rgba(int32_t x, int32_t y) const;
+    const rgba& get_rgba(int x, int y) const;
 
     /**
      * 
      */
-    gray& get_gray(int32_t x, int32_t y);
+    gray& get_gray(int x, int y);
     
     /**
      * 
      */
-    const gray& get_gray(int32_t x, int32_t y) const;
+    const gray& get_gray(int x, int y) const;
 
     /**
      * Записывает краткое строковое представление изображения в указанный буфер.
@@ -258,7 +258,7 @@ public:
      * @return 
      *      Количество записанных символов.
      */
-    int to_string(char buf[], int bufsize) const;
+    int to_string(char buf[], std::size_t bufsize) const;
 
     /**
      * Создаёт копию изображения.
@@ -273,7 +273,7 @@ public:
      * @return 
      *      Новое изображение, содержащее копию пикселей.
      */
-    image clone(tca::base_allocator* allocator = nullptr) const;
+    image clone(tca::allocator* allocator = nullptr) const;
 
     /**
      * Создаёт view изображения на передаваемую память.
@@ -297,7 +297,7 @@ public:
      * @throw null_pointer_exception
      *      Если data равна nullptr.
      */
-    static image make_view(image::byte* data, int32_t width, int32_t height, int8_t channels);
+    static image make_view(image::byte* data, int width, int height, int channels);
 
     /**
      * Захватывает указатель на массив изображения в своё владение. 
@@ -325,7 +325,7 @@ public:
      *      Если data равна nullptr.
      *      Если allocator равен nullptr.
      */
-    static image lock(image::byte* data, tca::base_allocator* allocator, int32_t width, int32_t height, int8_t channels);
+    static image lock(image::byte* data, tca::allocator* allocator, int width, int height, int channels);
 };
     
 

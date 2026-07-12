@@ -2,6 +2,7 @@
 #include <cpp/lang/concurrency/mutex.hpp>
 #include <cstdarg>
 #include <cstdio>
+#include <cpp/lang/utils/cond_compile.hpp>
 
 #if defined(_WIN32)
     #include <windows.h>
@@ -11,6 +12,7 @@
 	#include<time.h>
 #endif
 
+namespace tc = jstd;
 namespace jstd
 {   
 namespace system
@@ -18,47 +20,57 @@ namespace system
 
 namespace internal
 {
+
     byte_order init_native_byte_order() {
         const unsigned long c   = 1;
         const unsigned char* ip = reinterpret_cast<const unsigned char*>(&c);
         return *ip != 0 ? byte_order::LE : byte_order::BE;
     }
+    
     const byte_order system_order = init_native_byte_order();
+
 }
 
     
-    int64_t current_time_millis() {
-#if defined(__linux__) || defined(__APPLE__)
+    timepoint current_time_millis() {
+    #if defined(__linux__) || defined(__APPLE__)
         timeval time;
         gettimeofday(&time, NULL);
-        return (int64_t) (time.tv_sec * 1000) + (time.tv_usec / 1000);
-#elif _WIN32
+        return (timepoint) ((time.tv_sec * 1000) + (time.tv_usec / 1000));
+    #elif _WIN32
         FILETIME ft;
         GetSystemTimeAsFileTime(&ft);
         ULARGE_INTEGER time;
         time.LowPart    = ft.dwLowDateTime;
         time.HighPart   = ft.dwHighDateTime;
-        ULONGLONG millesec = time.QuadPart / 10000ULL;
-        return (int64_t) (millesec - 11644473600000ULL);
-#endif
+        ULONGLONG millesec = time.QuadPart / (timepoint) 10000;
+        return (timepoint) (millesec - (timepoint) 11644473600000);
+    #else
+        #error Undefined platform
+    #endif
     }
     
-    int64_t current_time_seconds() {
+    timepoint current_time_seconds() {
         return current_time_millis() / 1000;
     }
 
-    int64_t nano_time() {
-		const unsigned long NS_SECOND = 1000000000;
-#if defined(__linux__) || defined(__APPLE__)
-			timespec time;
-			clock_gettime(CLOCK_MONOTONIC, &time);
-			return (int64_t) (time.tv_sec * NS_SECOND) + time.tv_nsec;
-#elif _WIN32
-			LARGE_INTEGER freeq, counter;
-			QueryPerformanceFrequency(&freeq);
-			QueryPerformanceCounter(&counter);
-			return (int64_t) (((double)counter.QuadPart / (double)freeq.QuadPart) * NS_SECOND);
-#endif
+    timepoint nano_time() {
+        const long NS_SECOND = 1000000000L;
+    #if defined(JSTD_OS_WINDOWS)
+		
+		LARGE_INTEGER freeq, counter;
+        
+        QueryPerformanceFrequency(&freeq);
+        QueryPerformanceCounter(&counter);
+        
+        return (timepoint) ((counter.QuadPart * NS_SECOND) / freeq.QuadPart);
+    #elif defined(JSTD_OS_MAC) || defined(JSTD_OS_LINUX)
+		timespec time;
+        clock_gettime(CLOCK_MONOTONIC, &time);
+        return (timepoint) ((time.tv_sec * NS_SECOND) + time.tv_nsec);
+    #else
+        #error Undefined OS
+    #endif
     }
 
 
@@ -80,7 +92,7 @@ namespace internal
 			case ERROR_BAD_FORMAT           : return "Bad format";
             case ERROR_NOACCESS             : return "Invalid access to memory location";
             case ERROR_MAPPED_ALIGNMENT     : return "The base address or the file offset specified does not have the proper alignment";
-            case ERROR_USER_MAPPED_FILE     : return  "The requested operation cannot be performed on a file with a user-mapped section open";
+            case ERROR_USER_MAPPED_FILE     : return "The requested operation cannot be performed on a file with a user-mapped section open";
 			default:
                     std::snprintf(no_specified_error_buffer, sizeof(no_specified_error_buffer), "Windows error: %i", err);
                     return no_specified_error_buffer;

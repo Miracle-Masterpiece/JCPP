@@ -120,7 +120,7 @@ public:
      * @return
      *      Сколько записано символов (Не включая нуль-терминатор).
      */
-    std::size_t to_string(char buf[], std::size_t buf_size) const;
+    int to_string(char buf[], std::size_t buf_size) const;
     
     /**
      * Возвращает распределитель в изначальное состояние.

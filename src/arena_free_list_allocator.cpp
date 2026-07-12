@@ -3,7 +3,7 @@
 #include <cpp/lang/system.hpp>
 #include <utility>
 
-#define JSTD_ALIGN_ASSERT(ptr, align) assert(((std::intptr_t) ptr % align) == 0)
+#define JSTD_ALIGN_ASSERT(ptr, align) assert(((std::uintptr_t) ptr % align) == 0)
 
 namespace tca
 {
@@ -37,13 +37,13 @@ namespace tca
 
     void arena_free_list_allocator::init(void* data, std::size_t length, std::size_t align) {
         m_length            = length;
-        m_header_size       = calc_aligned_size(sizeof(memblock), align);
+        m_header_size       = align_up(sizeof(memblock), align);
         m_min_block_size    = m_header_size + m_alignas;
         m_alignas           = align;
         m_data              = data;
         {//выравнивание адреса
-            std::size_t padding = calc_padding_for(m_data, m_alignas);
-            m_start     = static_cast<void*>(static_cast<unsigned char*>(m_data) + padding);
+            std::uintptr_t padding = calc_padding_for((uintptr_t) m_data, (uintptr_t) m_alignas);
+            m_start = static_cast<void*>(static_cast<unsigned char*>(m_data) + padding);
             JSTD_ALIGN_ASSERT(m_start, m_alignas);
             m_free_size = length - padding;
         }
@@ -64,7 +64,7 @@ namespace tca
     arena_free_list_allocator::arena_free_list_allocator(void* data, std::size_t length, std::size_t align) :
         allocator(nullptr),
         m_alignas(align),
-        m_header_size(calc_aligned_size(sizeof(memblock), m_alignas)),
+        m_header_size(align_up(sizeof(memblock), m_alignas)),
         m_min_block_size(m_header_size + m_alignas),
         m_data(data),
         m_length(length),
@@ -146,14 +146,14 @@ namespace tca
 
     void* arena_free_list_allocator::allocate(std::size_t sz) {
         void* const p = allocate_align(sz, m_alignas);
-        assert(((std::intptr_t) p % m_alignas) == 0);
+        assert(((std::uintptr_t) p % m_alignas) == 0);
         return p;
     }
         
     void* arena_free_list_allocator::allocate_align(std::size_t sz, std::size_t) {
         if (!m_data)
             return nullptr;
-        sz = calc_aligned_size(sz, m_alignas);
+        sz = align_up(sz, m_alignas);
         
         memblock* block = m_tree.ceil_entry(sz);
         if (!block) {

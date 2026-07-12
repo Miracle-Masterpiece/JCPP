@@ -182,7 +182,7 @@ namespace tca {
     }
 
     jstd::internal::sptr::shared_control_block* compact_linear_allocator::allocate(std::size_t sz, std::size_t count, void (*move_func)(void*, void*, std::size_t)) {
-        std::size_t total = calcAlignSize(Header::byteSize() + sz * count, alignof(std::max_align_t));
+        std::size_t total = align_up(Header::byteSize() + sz * count, alignof(std::max_align_t));
         
         if (_offset + total > _capacity) {
             compact();

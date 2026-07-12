@@ -1,6 +1,7 @@
 #include <cpp/lang/io/obstream.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <iostream>
+#include <cassert>
 
 namespace jstd {
 
@@ -8,11 +9,11 @@ namespace jstd {
 
     }
 
-    obstream::obstream(ostream* stream, tca::base_allocator* allocator, int64_t buf_size) : obstream() {
-        if (stream == nullptr)
-            throw_except<null_pointer_exception>("stream is null!");
-        if (allocator == nullptr)
-            throw_except<null_pointer_exception>("allocator is null!");
+    obstream::obstream(ostream* stream, tca::base_allocator* allocator, std::size_t buf_size) : obstream() {
+        JSTD_DEBUG_CODE(
+            if (stream == nullptr)      throw_except<null_pointer_exception>("stream is null!");
+            if (allocator == nullptr)   throw_except<null_pointer_exception>("allocator is null!");
+        )
         char* data  = (char*) allocator->allocate(buf_size);
         _allocator  = allocator;
         _buffer     = data;
@@ -21,11 +22,11 @@ namespace jstd {
         _out        = stream;
     }
     
-    obstream::obstream(ostream* stream, char* buffer, int64_t buf_size) : obstream() {
-        if (stream == nullptr)
-            throw_except<null_pointer_exception>("stream is null!");
-        if (buffer == nullptr)
-            throw_except<null_pointer_exception>("buffer is null!");
+    obstream::obstream(ostream* stream, char* buffer, std::size_t buf_size) : obstream() {
+        JSTD_DEBUG_CODE(
+            if (stream == nullptr)  throw_except<null_pointer_exception>("stream is null!");
+            if (buffer == nullptr)  throw_except<null_pointer_exception>("buffer is null!");
+        )
         _buffer     = buffer;
         _capacity   = buf_size;
         _offset     = 0;
@@ -75,32 +76,38 @@ namespace jstd {
         ostream::write(c);
     }
     
-    void obstream::write(const char* data, int64_t sz) {
-#ifndef NDEBUG
-        if (_out == nullptr)
-            throw_except<io_exception>("Stream is null!");
-#endif
-        if (sz > _capacity - _offset) {
+    void obstream::write(const char* data, std::size_t sz) {
+        JSTD_DEBUG_CODE(
+            if (_out == nullptr)
+                throw_except<io_exception>("Stream is null!");
+        )
+        assert(_capacity >= _offset);
+        std::size_t rem = _capacity - _offset;
+        
+        if (rem < sz)
+        {
             _out->write(_buffer, _offset);
             _offset = 0;
-            if (sz < _capacity) {
-                std::memcpy(_buffer, data, sz);
-                _offset += sz;
-            } else {
-                _out->write(data, sz);
-            }
-        } else {
-            std::memcpy(_buffer + _offset, data, sz);
+        }
+        
+        if (sz > _capacity)
+        {
+            _out->write(data, sz);
+        } 
+        else
+        {
+            memcpy(_buffer + _offset, data, sz);
             _offset += sz;
         }
     }
     
     void obstream::flush() {
-#ifndef NDEBUG
-        if (_out == nullptr)
-            throw_except<io_exception>("Stream is null!");
-#endif
-        if (_offset > 0) {
+        JSTD_DEBUG_CODE(
+            if (_out == nullptr)
+                throw_except<io_exception>("Stream is null!");
+        )
+        if (_offset > 0)
+        {
             _out->write(_buffer, _offset);
             _offset = 0;
         }
@@ -109,8 +116,8 @@ namespace jstd {
     void obstream::close() {
         if (_out == nullptr) 
             return;
-        
-        try {
+        try
+        {
             flush();
         } catch (const io_exception& flush_except) {
             try {

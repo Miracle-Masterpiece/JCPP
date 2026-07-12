@@ -14,98 +14,6 @@ class illegal_argument_exception;
 template<typename T>
 void throw_except(const char* format, ...);
 
-template<std::size_t>
-class cstr_buf;
-    
-template<typename T>
-cstr_buf<T::TO_STRING_MIN_BUFFER_SIZE> obj_to_cstr_buf(const T& object);
-
-/**
-     * 
-     */
-template<std::size_t BUF_SIZE>
-class cstr_buf {
-    /**
-     * 
-     */
-    char m_strbuf[BUF_SIZE];
-    
-    /**
-     * 
-     */
-    template<typename T>
-    friend cstr_buf<T::TO_STRING_MIN_BUFFER_SIZE> obj_to_cstr_buf(const T& object);
-public:
-    /**
-     * Неявное преобразование к C-style строке const char*.
-     *
-     * Позволяет использовать cstr_buf в функциях, ожидающих const char*,
-     * таких как printf, puts, std::cout <<, и т.п.
-     *
-     * @return Указатель на внутренний символьный буфер.
-     */    
-    operator const char*() {
-        return m_strbuf;
-    }
-
-    /**
-     * Возвращает константную си-строку.
-     * 
-     * @return
-     *      Строка в стиле Си.
-     */
-    const char* cstr() const {
-        return m_strbuf;
-    }
-
-    /**
-     * Возвращает длину строки. (Не включая нуль-терминатор)
-     * 
-     * @return
-     *      Длина строки.
-     */
-    std::size_t length() const {
-        std::size_t len = 0;
-        const char* c = m_strbuf;
-        while (*c) {
-            ++c;
-            ++len;
-        }
-        return len;
-    }
-};
-    
-    /**
-     * Формирует строковое представление объекта во внутренний буфер фиксированного размера.
-     *
-     * Универсальная функция, вызывающая метод to_string у объекта object,
-     * передавая ему буфер и его размер. Метод to_string должен иметь сигнатуру:
-     *
-     * int to_string(char* buffer, int buffer_size) const;
-     *
-     * Возвращаемый тип — cstr_buf<STR_BUF_SIZE> — содержит C-style строку,
-     * готовую к использованию без дополнительного выделения памяти.
-     *
-     * @tparam T 
-     *      Тип объекта, поддерживающего метод to_string(char*, int) const.
-     * 
-     * @tparam STR_BUF_SIZE 
-     *      Размер буфера, выделяемого под строку. По умолчанию — 64 байта.
-     *
-     * @param object 
-     *      Объект, строковое представление которого требуется получить.
-     * 
-     * @return 
-     *      Объект cstr_buf<STR_BUF_SIZE>, содержащий C-style строку.
-     */
-    template<typename T>
-    cstr_buf<T::TO_STRING_MIN_BUFFER_SIZE> obj_to_cstr_buf(const T& object) {
-        cstr_buf<T::TO_STRING_MIN_BUFFER_SIZE> a;
-        object.to_string(a.m_strbuf, T::TO_STRING_MIN_BUFFER_SIZE);
-        return a;
-    }
-
-
 namespace objects
 {
 
@@ -124,54 +32,45 @@ namespace objects
      *      Указатель на массив элементов типа T.
      * 
      * @param len 
-     *      Длина массива. Если равна -1, хеш вычисляется до первого нулевого байта.
+     *      Длина массива.
      * 
      * @return 
-     *      uint64_t Хеш-код массива.
-     * 
-     * @warning 
-     *      Если массив не завершается нулём, а длина не указана, может случиться взрыв.
+     *      Хеш-код массива.
      * 
      * @example
      * 
      * char str[] = "Hello, C++";
-     * uint64_t hash = hashcode(str);
+     * uint64_t hash = hashcode(str, std::strlen(str));
      * std::cout << "Hash: " << hash << "\n";
      */
     template<typename T, typename HASH_FOR = hash_for<T>>
-    uint64_t hashcode(const T* array, int64_t len = -1) {
+    std::size_t hashcode(const T* array, std::size_t len) {
         JSTD_DEBUG_CODE(
             if (array == nullptr)
                 throw_except<null_pointer_exception>("array must be != null");        
         );
-        uint64_t hash = 0xcbf29ce484222325;
+        std::size_t hash = (std::size_t) 0xcbf29ce484222325;
         const HASH_FOR hash_calculater;
-        if (len == -1) {
-            while (*array) 
-                hash = (hash ^ hash_calculater(*(array++))) * 0x100000001b3;
-        } else {
-            for (int64_t i = 0; i < len; ++i)
-                hash = (hash ^ hash_calculater(array[i])) * 0x100000001b3;
-        }
-
+        for (std::size_t i = 0; i < len; ++i)
+            hash = (hash ^ hash_calculater(array[i])) * 0x100000001b3;
         return hash;
     }
     
     /**
      * @see 
      *      template<typename T>
-     *      uint64_t hashcode(const T* array, int64_t len = -1);
+     *      std::size_t hashcode(const T* array, std::size_t len);
      */
     template<>
-    uint64_t hashcode<float>(const float* array, int64_t len);
+    std::size_t hashcode<float>(const float* array, std::size_t len);
 
     /**
      * @see 
      *      template<typename T>
-     *      uint64_t hashcode(const T* array, int64_t len = -1);
+     *      std::size_t hashcode(const T* array, int64_t len);
      */
     template<>
-    uint64_t hashcode<double>(const double* array, int64_t len);
+    std::size_t hashcode<double>(const double* array, std::size_t len);
 
     /**
      * Сравнивает два массива элементов типа T на равенство.
@@ -200,10 +99,10 @@ namespace objects
      *      Если один из указателей равен nullptr.
      * 
      * @example
-     * char str1[] = "Hello, C++";
-     * char str2[] = "Hello, C++";
-     * bool result = equals(str1, str2, 10);
-     * std::cout << (result ? "equal" : "not equal") << std::endl;
+     *      char str1[] = "Hello, C++";
+     *      char str2[] = "Hello, C++";
+     *      bool result = equals(str1, str2, 10);
+     *      std::cout << (result ? "equal" : "not equal") << std::endl;
      */
     template<typename T, typename EQUAL_TO = equal_to<T>>
     bool equals(const T* a1, const T* a2, std::size_t len) {

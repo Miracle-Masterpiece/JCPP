@@ -1,24 +1,10 @@
 #include <internal/bsd_socket.hpp>
 #include <iostream>
-
-#if defined(__linux__) || defined(__APPLE__)
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/fcntl.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#elif _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
-#else 
-#error Unsupported platform!
-#endif
+#include <cpp/lang/types.hpp>
+#include <cpp/lang/utils/traits.hpp>
 
 #if defined(__WIN32)
 #define _____WIN_CODE____(___code) ___code 
-#define ___null_socket___ -1 
 #define SHUT_RD SD_RECEIVE 
 #define SHUT_WR SD_SEND
 #else
@@ -27,15 +13,9 @@
     
 #if defined(__linux__) || defined(__APPLE__)
 #define _____UNIX_CODE____(___code) ___code 
-#define ___null_socket___ -1
 #else
 #define _____UNIX_CODE____(___code) 
-#define ___null_socket___ -1
 #endif
-
-#define __WIN_KEEPALIVE_TRY_COUNT__ 10
-
-#define __sock_error_str__ socket_error_string()
 
 namespace jstd 
 {
@@ -43,16 +23,23 @@ namespace jstd
 namespace bsd_socket 
 {
 
-    void ms_to_timeval(struct timeval* tv, int64_t millisec) {
-        tv->tv_sec   =  millisec / 1000;             
-        tv->tv_usec  = (millisec % 1000) * 1000;
+    void ms_to_timeval(struct timeval* tv, timepoint millisec) {
+        // Меня настолько взбесили предупреждения, 
+        // что я решил сделать функцию, которая сама будет присваивать и делать static_cast
+        assign_static_cast( tv->tv_sec, millisec / 1000 );
+        assign_static_cast( tv->tv_usec, (millisec % 1000) * 1000 );
+
     }   
 
-    int64_t timeval_to_ms(struct timeval* tv) {
-        int64_t result = 0;
-        result += tv->tv_sec * 1000;
-        result += tv->tv_usec / 1000;
-        return result;
+    timepoint timeval_to_ms(struct timeval* tv) {
+        
+        timepoint s_sec;
+        assign_static_cast(s_sec, tv->tv_sec * 1000);
+
+        timepoint s_usec;
+        assign_static_cast(s_usec, tv->tv_usec / 1000);
+
+        return s_sec + s_usec;
     }
 
     const char* socket_error_string() {
@@ -258,73 +245,74 @@ namespace bsd_socket
         );
     }
 
-    int32_t open_tcp(inet_family family) {
-        int sock = socket(family, SOCK_STREAM, 0);
-        if (sock == -1)
-            throw_except<socket_exception>("Socket open error: %s", __sock_error_str__);
+    SOCK_TYPE open_tcp(inet_family family) {
+        SOCK_TYPE sock = socket(family, SOCK_STREAM, 0);
+        if (sock == NULL_SOCKET)
+            throw_except<socket_exception>("Socket open error: %s", socket_error_string());
         return sock;
     }
 
-    void close(int32_t sock) {
+    void close(SOCK_TYPE sock) {
         _____WIN_CODE____(
             if (closesocket(sock) != 0)
-                throw_except<socket_exception>("Socket close error: %s", __sock_error_str__);
+                throw_except<socket_exception>("Socket close error: %s", socket_error_string());
         );
         _____UNIX_CODE____(
-            ::close(sock);
+            if (::close(sock) != 0)
+                throw_except<socket_exception>("Socket close error: %s", socket_error_string());
         );
     }
 
-    void bind(int32_t sock, const inet_address& address, int32_t port) {
+    void bind(SOCK_TYPE sock, const inet_address& address, unsigned int port) {
         if (address.get_family() == inet_family::IPV4) {
             sockaddr_in addr;
             std::memset(&addr, 0, sizeof(addr));
             addr.sin_family = address.get_family();
-            addr.sin_port   = htons(port);
+            addr.sin_port   = htons((unsigned short) port);
             address.get_in_addr(&addr.sin_addr);
             if (::bind(sock, (sockaddr*) &addr, sizeof(addr)) != 0)
-                throw_except<bind_exception>("Socket bind error: %s", __sock_error_str__);
+                throw_except<bind_exception>("Socket bind error: %s", socket_error_string());
         } 
         
         else if (address.get_family() == inet_family::IPV6){
             sockaddr_in6 addr;
             std::memset(&addr, 0, sizeof(addr));
             addr.sin6_family = address.get_family();
-            addr.sin6_port   = htons(port);
+            addr.sin6_port   = htons((unsigned short) port);
             address.get_in6_addr(&addr.sin6_addr);
             if (::bind(sock, (sockaddr*) &addr, sizeof(addr)) != 0)
-                throw_except<bind_exception>("Socket bind error: %s", __sock_error_str__);
+                throw_except<bind_exception>("Socket bind error: %s", socket_error_string());
         } else {
             throw_except<illegal_argument_exception>("Bind: Wrong address family");
         }
     }
 
-    void backlog(int32_t sock, int32_t maxq) {
+    void backlog(SOCK_TYPE sock, int maxq) {
         if (::listen(sock, maxq) != 0)
-            throw_except<socket_exception>("Socket backlog error: %s", __sock_error_str__);
+            throw_except<socket_exception>("Socket backlog error: %s", socket_error_string());
     }
 
-    int32_t accept(int32_t serv_sock, socket_address* client_addr) {
+    SOCK_TYPE accept(SOCK_TYPE serv_sock, socket_address* client_addr) {
         sockaddr_storage addr_storage;
         socklen_t size = sizeof(addr_storage);
         
-        int32_t client_socket = ::accept(serv_sock, reinterpret_cast<sockaddr*>(&addr_storage), &size);
+        SOCK_TYPE client_socket = ::accept(serv_sock, reinterpret_cast<sockaddr*>(&addr_storage), &size);
         
         _____WIN_CODE____(
-            if (client_socket == ___null_socket___) {
+            if (client_socket == NULL_SOCKET) {
                 if (WSAGetLastError() == WSAEWOULDBLOCK)
-                    return -1;
+                    return NULL_SOCKET;
                 else
-                    throw_except<socket_exception>("Socket accept error: %s", __sock_error_str__);
+                    throw_except<socket_exception>("Socket accept error: %s", socket_error_string());
             }
         );
     
         _____UNIX_CODE____(
-            if (client_socket == ___null_socket___) {
+            if (client_socket == NULL_SOCKET) {
                 if (errno == EWOULDBLOCK || errno == EAGAIN)
-                    return -1;
+                    return NULL_SOCKET;
                 else
-                    throw_except<socket_exception>("Socket accept error: %s", __sock_error_str__);
+                    throw_except<socket_exception>("Socket accept error: %s", socket_error_string());
             }
         );
 
@@ -346,300 +334,300 @@ namespace bsd_socket
         return client_socket;
     }
     
-    void set_blocking(int32_t sock, bool block_mode) {
+    void set_blocking(SOCK_TYPE sock, bool block_mode) {
         _____WIN_CODE____(
             u_long mode = block_mode ? 0 : 1;
             if (ioctlsocket(sock, FIONBIO, &mode) != 0)
-                throw_except<socket_exception>("Socket set_blocking error: %s", __sock_error_str__);
+                throw_except<socket_exception>("Socket set_blocking error: %s", socket_error_string());
         );
         _____UNIX_CODE____(
             int flags = fcntl(sock, F_GETFL, 0);
             if (flags == -1) 
-                throw_except<socket_exception>("Socket set_blocking: (F_GETFL) error: %s", __sock_error_str__);
+                throw_except<socket_exception>("Socket set_blocking: (F_GETFL) error: %s", socket_error_string());
             
             flags = block_mode ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
             
             if(fcntl(sock, F_SETFL, flags) != 0)
-                throw_except<socket_exception>("Socket set_blocking: (F_SETFL) error: %s", __sock_error_str__);
+                throw_except<socket_exception>("Socket set_blocking: (F_SETFL) error: %s", socket_error_string());
         );
     }
 
-    void connect(int32_t client_sock, const inet_address& address, int32_t port) {
-        if (address.get_family() == inet_family::IPV4) {
+    void connect(SOCK_TYPE client_sock, const inet_address& address, unsigned int port) {
+        if (address.get_family() == inet_family::IPV4)
+        {
             sockaddr_in addr;
             std::memset(&addr, 0, sizeof(addr));
             addr.sin_family = address.get_family();
-            addr.sin_port   = htons(port);
+            addr.sin_port   = htons((unsigned short) port);
             address.get_in_addr(&addr.sin_addr);
+            
             if (::connect(client_sock, (sockaddr*) &addr, sizeof(addr)) != 0)
-                throw_except<connect_exception>("Connect fail: %s", __sock_error_str__);
+            {
+                throw_except<connect_exception>("Connect fail: %s", socket_error_string());
+            }
+
         } 
-        
-        else if (address.get_family() == inet_family::IPV6) {
+        else if (address.get_family() == inet_family::IPV6)
+        {
             sockaddr_in6 addr;
             std::memset(&addr, 0, sizeof(addr));
             addr.sin6_family    = address.get_family();
-            addr.sin6_port      = htons(port);
+            addr.sin6_port      = htons((unsigned short) port);
             address.get_in6_addr(&addr.sin6_addr);
+            
             if (::connect(client_sock, (sockaddr*)&addr, sizeof(addr)) != 0)
-                throw_except<connect_exception>("Connect fail: %s", __sock_error_str__);
+            {
+                throw_except<connect_exception>("Connect fail: %s", socket_error_string());
+            }
         } 
-        
-        else {
+        else
+        {
             throw_except<illegal_argument_exception>("Connect: Wrong address family");
         }
     }
  
-    int64_t send(int32_t sock, const char* data, int64_t length, bool is_blocking) {
-        int64_t sended = 0;
+    std::size_t send(SOCK_TYPE sock, const char* data, std::size_t length, bool is_blocking) {
         _____WIN_CODE____(
-            SetLastError(ERROR_SUCCESS);
-            sended = ::send(sock, data, length, 0);
+            int sended = ::send(sock, data, (int) length, 0);
             if (sended == SOCKET_ERROR) {
-                int err = GetLastError();
-                if (err == WSAEWOULDBLOCK)
-                    return 0;
-                else if (err == WSAETIMEDOUT && is_blocking)
-                    throw_except<socket_timeout_exception>(__sock_error_str__);
-                else if (err == WSAECONNRESET)
-                    throw_except<connect_exception>("Connection is closed by remote side");
-                throw_except<io_exception>(__sock_error_str__);
-            } 
-        );
-        
-        _____UNIX_CODE____(
-            errno = 0;
-            sended = ::send(sock, data, length, MSG_NOSIGNAL);
-            if (sended == -1) {
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    if (is_blocking) 
-                        throw_except<socket_timeout_exception>(__sock_error_str__);
-                    return 0;
-                } 
                 
-                else if (errno == EPIPE) 
-                    throw_except<connect_exception>("Connection is closed by remote side");
-
-                throw_except<io_exception>(__sock_error_str__);
-            } 
-        );
-        
-        return sended;
-    }
-
-    int64_t recv(int32_t sock, char* data, int64_t length, bool is_blocking) {
-        int64_t received = 0;
-        _____WIN_CODE____(
-            SetLastError(ERROR_SUCCESS);
-            received = ::recv(sock, data, length, 0);
-            if (received == SOCKET_ERROR) {
-                int err = GetLastError();
+                int err = WSAGetLastError();
+                
                 if (err == WSAEWOULDBLOCK)
-                    return 0;
-                else if (err == WSAETIMEDOUT && is_blocking)
-                    throw_except<socket_timeout_exception>(__sock_error_str__);
-                else if (err == WSAECONNRESET)
-                    throw_except<connect_exception>("Connection is closed by remote side");
-            }
-
-            else if (received == 0)
-                throw_except<connect_exception>("Connection is closed by remote side");
-        );
-
-        _____UNIX_CODE____(
-            errno = 0;
-            received = ::recv(sock, data, length, 0);
-            if (received == -1) {
-                if (errno == EWOULDBLOCK || errno == EAGAIN) {
-                    if (is_blocking)
-                        throw_except<socket_timeout_exception>(__sock_error_str__);    
+                {
                     return 0;
                 }
-                throw_except<io_exception>(__sock_error_str__);
-            }
-            
-            else if (received == 0) {
-                throw_except<connect_exception>("Connection is closed by remote side");
-            }
+                else if (err == WSAETIMEDOUT && is_blocking)
+                {
+                    throw_except<socket_timeout_exception>(socket_error_string());
+                }
+                else if (err == WSAECONNRESET)
+                {
+                    throw_except<connect_exception>("Connection is closed by remote side");
+                }
+                
+                throw_except<io_exception>(socket_error_string());
+            } 
+
+            return (std::size_t) sended;
         );
-        return received;
+        
+        _____UNIX_CODE____
+        (
+            errno = 0;
+            ssize_t sended = ::send(sock, data, length, MSG_NOSIGNAL);
+            if (sended == -1) {
+                
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                {
+                    if (is_blocking) 
+                        throw_except<socket_timeout_exception>(socket_error_string());
+                    return 0;
+                } 
+                else if (errno == EPIPE) 
+                {
+                    throw_except<connect_exception>("Connection is closed by remote side");
+                }
+
+                throw_except<io_exception>(socket_error_string());
+            } 
+            
+            return (std::size_t) sended;
+        );
     }
 
-    void get_sock_name(int32_t sock, socket_address& address) {
-        sockaddr_storage addr_storage;
-        socklen_t len = sizeof(addr_storage);
-        std::memset(&addr_storage, 0, len);
-        if (getsockname(sock, reinterpret_cast<sockaddr*>(&addr_storage), &len) != 0)
-            throw_except<socket_exception>(__sock_error_str__);
+    std::size_t recv(SOCK_TYPE sock, char* data, std::size_t length, bool is_blocking) {
+        _____WIN_CODE____
+        (
+            int received = ::recv(sock, data, (int) length, 0);
+            if (received == SOCKET_ERROR)
+            {
+                int err = WSAGetLastError();
+                if (err == WSAEWOULDBLOCK)
+                    return 0;
+                else if (err == WSAETIMEDOUT && is_blocking)
+                    throw_except<socket_timeout_exception>(socket_error_string());
+                else if (err == WSAECONNRESET)
+                    throw_except<connect_exception>("Connection is closed by remote side");
+            }
+            else if (received == 0)
+            {
+                throw_except<connect_exception>("Connection is closed by remote side");
+            }
 
-        if (len == sizeof(sockaddr_in)) {
+            return (std::size_t) received;
+        );
+
+        _____UNIX_CODE____
+        (
+            errno = 0;
+            ssize_t received = ::recv(sock, data, length, 0);
+            if (received == -1)
+            {
+                if (errno == EWOULDBLOCK || errno == EAGAIN)
+                {
+                    if (is_blocking)
+                    {
+                        throw_except<socket_timeout_exception>(socket_error_string());    
+                    }
+                    return 0;
+                }
+                throw_except<io_exception>(socket_error_string());
+            }
+            else if (received == 0) 
+            {
+                throw_except<connect_exception>("Connection is closed by remote side");
+            }
+
+            return (std::size_t) received;
+        );
+    }
+
+    void get_sock_name(SOCK_TYPE sock, socket_address& address) {
+        sockaddr_storage addr_storage = {};
+        
+        socklen_t len = sizeof(addr_storage);
+        
+        if (getsockname(sock, reinterpret_cast<sockaddr*>(&addr_storage), &len) != 0)
+            throw_except<socket_exception>(socket_error_string());
+
+        if (len == sizeof(sockaddr_in))
+        {
             sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(&addr_storage);
             address = socket_address(inet_address::as_in_addr(&addr->sin_addr), ntohs(addr->sin_port));
         } 
-        
-        else if (len == sizeof(sockaddr_in6)) {
+        else if (len == sizeof(sockaddr_in6))
+        {
             sockaddr_in6* addr = reinterpret_cast<sockaddr_in6*>(&addr_storage);
             address = socket_address(inet_address::as_in6_addr(&addr->sin6_addr), ntohs(addr->sin6_port));
         } 
-        
-        else {
+        else
+        {
             throw_except<unsupported_operation_exception>("Unsupported address family type");
         }
     }
 
-    void shutdown_in(int32_t sock) {
+    void shutdown_in(SOCK_TYPE sock) {
         if (::shutdown(sock, SHUT_RD) != 0)
-            throw_except<socket_exception>("Shutdown read: %s", __sock_error_str__);
+            throw_except<socket_exception>("Shutdown read: %s", socket_error_string());
     }
     
-    void shutdown_out(int32_t sock) {
+    void shutdown_out(SOCK_TYPE sock) {
         if (::shutdown(sock, SHUT_WR) != 0)
-            throw_except<socket_exception>("Shutdown write: %s", __sock_error_str__);
+            throw_except<socket_exception>("Shutdown write: %s", socket_error_string());
     }
 
-#define ___to_string___(str) #str
-
-/**
- * ============================================================= S E T ===========================================================================
- */
-#define ___make_set_socket_func_int__(__func_name__, level, optID)                                                      \
-                void __func_name__(int32_t sock, const socket_option& value) {                                          \
-                    int val = value.int_value;                                                                          \
-                    if (setsockopt(sock, level, optID, (const char*) &val, sizeof(val)) != 0)                           \
-                        throw_except<socket_exception>(___to_string___(__func_name__ fail: %s), __sock_error_str__);    \
-                }       
-
-#define ___make_set_socket_func_timeval__(__func_name__, level, optID)                                                                  \
-                void __func_name__(int32_t sock, const socket_option& value) {                                                          \
-                    _____WIN_CODE____(                                                                                                  \
-                        DWORD ms = value.timeout.millis;                                                                                \
-                        if (setsockopt(sock, level, optID, (const char*) &ms, sizeof(ms)) != 0)                                         \
-                            throw_except<socket_exception>(___to_string___(__func_name__ fail: %s), __sock_error_str__);                \
-                    );                                                                                                                  \
-                                                                                                                                        \
-                    _____UNIX_CODE____(                                                                                                 \
-                        struct timeval tv;                                                                                              \
-                        ms_to_timeval(&tv, value.timeout.millis);                                                                       \
-                        if (setsockopt(sock, level, optID, (const char*) &tv, sizeof(tv)) != 0)                                         \
-                            throw_except<socket_exception>(___to_string___(__func_name__ fail: %s), __sock_error_str__);                \
-                    );                                                                                                                  \
-                }                                                                                                                       \
-
-/**
- * set bool options
- */
-___make_set_socket_func_int__(set_tcp_no_delay,         IPPROTO_TCP,    TCP_NODELAY)
-___make_set_socket_func_int__(set_reuse_addr,           SOL_SOCKET,     SO_REUSEADDR)
-___make_set_socket_func_int__(set_broadcast,            SOL_SOCKET,     SO_BROADCAST)
-___make_set_socket_func_int__(set_oobinline,            SOL_SOCKET,     SO_OOBINLINE)
-___make_set_socket_func_int__(set_receive_buffer_size,  SOL_SOCKET,     SO_RCVBUF);
-___make_set_socket_func_int__(set_send_buffer_size,     SOL_SOCKET,     SO_RCVBUF);
-___make_set_socket_func_int__(set_type_of_service,      IPPROTO_TCP,    IP_TOS);
-___make_set_socket_func_int__(set_keep_alive,           SOL_SOCKET,     SO_KEEPALIVE);
-
-/**
- * set timeval options
- */
- ___make_set_socket_func_timeval__(set_send_timeout,    SOL_SOCKET, SO_SNDTIMEO)
- ___make_set_socket_func_timeval__(set_receive_timeout, SOL_SOCKET, SO_RCVTIMEO)
-
-/**
- * ============================================================= G E T ===========================================================================
- */
-#define ___make_get_socket_func_int__(__func_name__, level, optID)                                                                  \
-                            void __func_name__(int32_t sock, socket_option& value) {                                                \
-                                int val         = 0;                                                                                \
-                                socklen_t len   = sizeof(val);                                                                      \
-                                if (getsockopt(sock, level, optID, (char*) &val, &len) != 0)                                        \
-                                    throw_except<socket_exception>(___to_string___(__func_name__ fail: %s), __sock_error_str__);    \
-                                value.int_value = val;                                                                              \
-                            }     
-
-#define ___make_get_socket_func_timeval__(__func_name__, level, optID)                                                                  \
-                            void __func_name__(int32_t sock, socket_option& value) {                                                    \
-                                _____WIN_CODE____(                                                                                      \
-                                    DWORD ms = 0;                                                                                       \
-                                    socklen_t len = sizeof(ms);                                                                         \
-                                    if (getsockopt(sock, level, optID, (char*) &ms, &len) != 0)                                         \
-                                        throw_except<socket_exception>(___to_string___(__func_name__ fail: %s), __sock_error_str__);    \
-                                    value.timeout.millis = ms;                                                                          \
-                                );                                                                                                      \
-                                                                                                                                        \
-                                _____UNIX_CODE____(                                                                                     \
-                                    struct timeval tv;                                                                                  \
-                                    std::memset(&tv, 0, sizeof(tv));                                                                    \
-                                    socklen_t len = sizeof(tv);                                                                         \
-                                    if (getsockopt(sock, level, optID, (char*) &tv, &len) != 0)                                         \
-                                        throw_except<socket_exception>(___to_string___(__func_name__ fail: %s), __sock_error_str__);    \
-                                    value.timeout.millis = timeval_to_ms(&tv);                                                          \
-                                );                                                                                                      \
-                                                                                                                                        \
-                            }                                                                                                           \
-
-/**
- * get bool options
- */
-___make_get_socket_func_int__(get_tcp_no_delay,        IPPROTO_TCP,    TCP_NODELAY)
-___make_get_socket_func_int__(get_reuse_addr,          SOL_SOCKET,     SO_REUSEADDR)
-___make_get_socket_func_int__(get_broadcast,           SOL_SOCKET,     SO_BROADCAST)
-___make_get_socket_func_int__(get_oobinline,           SOL_SOCKET,     SO_OOBINLINE)
-___make_get_socket_func_int__(get_receive_buffer_size,  SOL_SOCKET,     SO_RCVBUF);
-___make_get_socket_func_int__(get_send_buffer_size,     SOL_SOCKET,     SO_RCVBUF);
-___make_get_socket_func_int__(get_type_of_service,      IPPROTO_TCP,    IP_TOS);
-___make_get_socket_func_int__(get_keep_alive,           SOL_SOCKET,     SO_KEEPALIVE);
-
-___make_get_socket_func_timeval__(get_send_timeout,    SOL_SOCKET, SO_SNDTIMEO)
-___make_get_socket_func_timeval__(get_receive_timeout, SOL_SOCKET, SO_RCVTIMEO)
-
-
- 
-
-    void set_linger(int32_t sock, const socket_option& value) {
-        struct linger l;
-        l.l_linger  = value.linger.sec_time;
-        l.l_onoff   = value.linger.on_off;
-        if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (const char*) &l, sizeof(l)) != 0)
-            throw_except<socket_exception>("set_linger fail: %s", __sock_error_str__);
+    template<int LEVEL, int OPTNAME>
+    void set_int_sock_opt(SOCK_TYPE sock, const socket_option& value) {
+        int val = value.int_value;
+        if (setsockopt(sock, LEVEL, OPTNAME, (const char*) &val, sizeof(val)) != 0)
+            throw_except<socket_exception>("%s fail: %s", __func__ , socket_error_string());
     }
 
-    void get_linger(int32_t sock, socket_option& value) {
-        struct linger l;
-        socklen_t len = sizeof(l);
-        std::memset(&l, 0, len);
-        if (getsockopt(sock, SOL_SOCKET, SO_LINGER, (char*) &l, &len) != 0)
-            throw_except<socket_exception>("set_linger fail: %s", __sock_error_str__);
-        value.linger.on_off     = l.l_onoff;
-        value.linger.sec_time   = l.l_linger;
-    }
-
-    void set_keep_alive_ex(int32_t sock, const socket_option& value) {
+    template<int LEVEL, int OPTNAME>
+    void set_time_sock_opt(SOCK_TYPE sock, const socket_option& value) {
+        _____WIN_CODE____
+        (
+            DWORD ms = (DWORD) value.timeout.millis;
+            if (setsockopt(sock, LEVEL, OPTNAME, (const char*) &ms, sizeof(ms)) != 0)
+                throw_except<socket_exception>("%s fail: %s", __func__ , socket_error_string());
+        );
         
-        socket_option opt;
-        if (!value.keepalive.on_off) {
-            opt.int_value = false;
-            set_keep_alive(sock, opt);
-            return;
-        } else {
-            opt.int_value = true;
-            set_keep_alive(sock, opt);
-        }
+        _____UNIX_CODE____
+        (
+            struct timeval tv;
+            ms_to_timeval(&tv, value.timeout.millis);
+            if (setsockopt(sock, LEVEL, OPTNAME, (const char*) &tv, sizeof(tv)) != 0)
+                throw_except<socket_exception>("%s fail: %s", __func__ , socket_error_string());
+        ); 
+    }
+    
+    template<int LEVEL, int OPTNAME>
+    void get_int_sock_opt(SOCK_TYPE sock, socket_option& value) {
+        int val         = 0;
+        socklen_t len   = sizeof(val);
+        if (getsockopt(sock, LEVEL, OPTNAME, (char*) &val, &len) != 0)
+            throw_except<socket_exception>("%s fail: %s", __func__ , socket_error_string());
+        value.int_value = val;  
+    }
 
-        _____UNIX_CODE____(
-            int idle        = value.keepalive.time_to_first;
-            int interval    = value.keepalive.time_interval;
-            int count       = value.keepalive.try_count;
-
-            if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle)) != 0)
-                throw_except<socket_exception>("set_keep_alive_ex fail: %s", __sock_error_str__);
-            
-            if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(interval)) != 0) 
-                throw_except<socket_exception>("set_keep_alive_ex fail: %s", __sock_error_str__);
-            
-            if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &count, sizeof(count)) != 0) 
-                throw_except<socket_exception>("set_keep_alive_ex fail: %s", __sock_error_str__);
+    template<int LEVEL, int OPTNAME>
+    void get_time_sock_opt(SOCK_TYPE sock, socket_option& value) {
+        _____WIN_CODE____(
+            DWORD ms = 0;
+            socklen_t len = sizeof(ms);
+            if (getsockopt(sock, LEVEL, OPTNAME, (char*) &ms, &len) != 0)
+                throw_except<socket_exception>("%s fail: %s", __func__ , socket_error_string());
+            value.timeout.millis = (timepoint) ms;
         );
 
-        _____WIN_CODE____(
+        _____UNIX_CODE____(
+            struct timeval tv;
+            std::memset(&tv, 0, sizeof(tv));
+            socklen_t len = sizeof(tv);
+            if (getsockopt(sock, LEVEL, OPTNAME, (char*) &tv, &len) != 0)
+                throw_except<socket_exception>("%s fail: %s", __func__ , socket_error_string());
+            value.timeout.millis = timeval_to_ms(&tv);
+        ); 
+    }
+ 
+    void set_linger(SOCK_TYPE sock, const socket_option& value) {
+        struct linger l;
+        
+        assign_static_cast( l.l_linger, value.linger.sec_time );
+        assign_static_cast( l.l_onoff,  value.linger.on_off );
+        
+        if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (const char*) &l, sizeof(l)) != 0)
+            throw_except<socket_exception>("set_linger fail: %s", socket_error_string());
+    }
+
+    void get_linger(SOCK_TYPE sock, socket_option& value) {
+        struct linger l = {};
+        socklen_t len = sizeof(l);
+        if (getsockopt(sock, SOL_SOCKET, SO_LINGER, (char*) &l, &len) != 0)
+            throw_except<socket_exception>("set_linger fail: %s", socket_error_string());
+        assign_static_cast(value.linger.on_off,     l.l_onoff);
+        assign_static_cast(value.linger.sec_time,   l.l_linger);
+    }
+
+    void set_keep_alive(SOCK_TYPE sock, const socket_option& value) {
+        
+        socket_option opt;
+        if (value.keepalive.on_off)
+        {
+            opt.int_value = true;
+        }
+        else
+        {
+            opt.int_value = false;
+        }
+
+        set_int_sock_opt<SOL_SOCKET, SO_KEEPALIVE>(sock, opt);
+
+        if (!value.keepalive.on_off)
+        {
+            return;
+        }
+
+        _____UNIX_CODE____
+        (
+            
+            int idle;       assign_static_cast(idle,     value.keepalive.time_to_first);
+            int interval;   assign_static_cast(interval, value.keepalive.time_interval);
+            int count;      assign_static_cast(count,    value.keepalive.try_count);
+            
+            if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle)) != 0)
+                throw_except<socket_exception>("set_keep_alive_ex fail: %s", socket_error_string());
+            
+            if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(interval)) != 0) 
+                throw_except<socket_exception>("set_keep_alive_ex fail: %s", socket_error_string());
+            
+            if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &count, sizeof(count)) != 0) 
+                throw_except<socket_exception>("set_keep_alive_ex fail: %s", socket_error_string());
+        );
+
+        _____WIN_CODE____
+        (
             struct tcp_keepalive ka;
             ka.onoff                = 1; 
             ka.keepalivetime        = value.keepalive.time_to_first;
@@ -647,86 +635,84 @@ ___make_get_socket_func_timeval__(get_receive_timeout, SOL_SOCKET, SO_RCVTIMEO)
         
             DWORD bytesReturned;
             if (WSAIoctl(sock, SIO_KEEPALIVE_VALS, &ka, sizeof(ka), NULL, 0, &bytesReturned, NULL, NULL) != 0)
-                throw_except<socket_exception>("set_keep_alive_ex fail: %s", __sock_error_str__);
+                throw_except<socket_exception>("set_keep_alive_ex fail: %s", socket_error_string());
         );
     }
 
-    void set_sock_opt(int32_t sock, int32_t opt, const socket_option& value) {
+    void set_sock_opt(SOCK_TYPE sock, int opt, const socket_option& value) {
         switch(opt) {
             case socket_option::bsd::TCP_NODELAY_:
-                set_tcp_no_delay(sock, value);
+                set_int_sock_opt<IPPROTO_TCP, TCP_NODELAY>(sock, value);
                 return;
             case socket_option::bsd::SO_REUSEADDR_:
-                set_reuse_addr(sock, value);
+                set_int_sock_opt<SOL_SOCKET, SO_REUSEADDR>(sock, value);
                 return;
             case socket_option::bsd::SO_BROADCAST_:
-                set_broadcast(sock, value);
+                set_int_sock_opt<SOL_SOCKET, SO_BROADCAST>(sock, value);
                 return;
             case socket_option::bsd::IP_TOS_:
-                set_type_of_service(sock, value);
+                set_int_sock_opt<IPPROTO_TCP, IP_TOS>(sock, value);
+                return;
+            case socket_option::bsd::SO_RCVBUF_:
+                set_int_sock_opt<SOL_SOCKET, SO_RCVBUF>(sock, value);
+                return;
+            case socket_option::bsd::SO_SNDBUF_:
+                set_int_sock_opt<SOL_SOCKET, SO_SNDBUF>(sock, value);
+                return;
+            case socket_option::bsd::SO_OOBINLINE_:
+                set_int_sock_opt<SOL_SOCKET, SO_OOBINLINE>(sock, value);
                 return;
             case socket_option::bsd::SO_LINGER_:
                 set_linger(sock, value);
                 return;
             case socket_option::bsd::SO_RCVTIMEO_:
-                set_receive_timeout(sock, value);
+                set_time_sock_opt<SOL_SOCKET, SO_RCVTIMEO>(sock, value);
                 return;
             case socket_option::bsd::SO_SNDTIMEO_:
-                set_send_timeout(sock, value);
-                return;
-            case socket_option::bsd::SO_RCVBUF_:
-                set_receive_buffer_size(sock, value);
-                return;
-            case socket_option::bsd::SO_SNDBUF_:
-                set_send_buffer_size(sock, value);
+                set_time_sock_opt<SOL_SOCKET, SO_SNDTIMEO>(sock, value);
                 return;
             case socket_option::bsd::SO_KEEPALIVE_:
-                set_keep_alive_ex(sock, value);
-                return;
-            case socket_option::bsd::SO_OOBINLINE_:
-                set_oobinline(sock, value);
+                set_keep_alive(sock, value);
                 return;
             default:
                 throw_except<illegal_argument_exception>("Option %i is invalid", (int) opt);
         }
     }
 
-
-
-    void get_sock_opt(int32_t sock, int32_t opt, socket_option& value) {
+    void get_sock_opt(SOCK_TYPE sock, int opt, socket_option& value) {
         switch(opt) {
             case socket_option::bsd::TCP_NODELAY_:
-                get_tcp_no_delay(sock, value);
+                get_int_sock_opt<IPPROTO_TCP, TCP_NODELAY>(sock, value);
                 return;
             case socket_option::bsd::SO_REUSEADDR_:
-                get_reuse_addr(sock, value);
+                get_int_sock_opt<SOL_SOCKET, SO_REUSEADDR>(sock, value);
                 return;
             case socket_option::bsd::SO_BROADCAST_:
-                get_broadcast(sock, value);
+                get_int_sock_opt<SOL_SOCKET, SO_BROADCAST>(sock, value);
                 return;
             case socket_option::bsd::IP_TOS_:
-                get_type_of_service(sock, value);
+                get_int_sock_opt<IPPROTO_TCP, IP_TOS>(sock, value);
                 return;
             case socket_option::bsd::SO_LINGER_:
                 get_linger(sock, value);
                 return;
             case socket_option::bsd::SO_RCVTIMEO_:
-                get_receive_timeout(sock, value);
+                get_time_sock_opt<SOL_SOCKET, SO_RCVTIMEO>(sock, value);
                 return;
             case socket_option::bsd::SO_SNDTIMEO_:
-                get_send_timeout(sock, value);
+                get_time_sock_opt<SOL_SOCKET, SO_SNDTIMEO>(sock, value);
                 return;
             case socket_option::bsd::SO_RCVBUF_:
-                get_receive_buffer_size(sock, value);
+                get_int_sock_opt<SOL_SOCKET, SO_RCVBUF>(sock, value);
                 return;
             case socket_option::bsd::SO_SNDBUF_:
-                get_send_buffer_size(sock, value);
+                get_int_sock_opt<SOL_SOCKET, SO_SNDBUF>(sock, value);
                 return;
             case socket_option::bsd::SO_OOBINLINE_:
-                get_oobinline(sock, value);
+                get_int_sock_opt<SOL_SOCKET, SO_OOBINLINE>(sock, value);
                 return;
             case socket_option::bsd::SO_KEEPALIVE_:
-                get_keep_alive(sock, value);
+                get_int_sock_opt<SOL_SOCKET, SO_KEEPALIVE>(sock, value);    
                 return;
             default:
                 throw_except<illegal_argument_exception>("Option %i is invalid!", (int) opt);
@@ -736,3 +722,75 @@ ___make_get_socket_func_timeval__(get_receive_timeout, SOL_SOCKET, SO_RCVTIMEO)
 }//bsd_socket
 
 }//jstd
+
+
+#if 0
+#include <internal/bsd_socket_class.hpp>
+#include <cpp/lang/net/inet.hpp>
+
+// clang++ -g -std=c++11 -O0 -Wextra -pedantic -Wall -Wsign-promo -Wfloat-equal -Wconversion -Wno-nested-anon-types -Wno-unused-parameter -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wnon-virtual-dtor -Wno-unused-function  -o a.exe -I"include" -I"./tmp/include/" ./src/system.cpp ./src/bsd_socket.cpp ./src/inet.cpp ./src/exceptions.cpp ./src/stacktrace.cpp ./src/inetaddr.cpp ./src/ip_parser.cpp ./src/mutex.cpp -lws2_32 -L./tmp/static/ -lliblz4_static
+int main(int argc, const char** args) {
+    printf("sock\n");
+    using namespace jstd::bsd_socket;
+
+    const unsigned int PORT = 25565;
+    const tc::inet_address ADDRESS = tc::inet_address::localhost(tc::inet_family::IPV4);
+
+    try {
+
+    tc::inet_context inet_ctx;
+
+    if (argc > 1)
+    {
+        socket_impl sock;
+        
+        if (strcmp(args[1], "-s") == 0)
+        {
+            sock.create(tc::inet_family::IPV4);
+            sock.bind(tc::inet_address(), PORT);
+            sock.listen(64);
+
+            socket_impl client;
+            sock.accept(&client);
+
+            client.set_blocking(false);
+            std::printf("client connected\n");
+            while (1)
+            {
+                char buf[4];
+                std::size_t readed = client.read(buf, sizeof(buf));
+                if (readed > 0)
+                {
+                    for (std::size_t i = 0; i < readed; ++i)
+                    {
+                        std::printf("%c", buf[i]);
+                    }
+                    std::printf("\n");
+                }
+                
+                std::printf("i\n");
+
+            }
+
+        }
+        else if (strcmp(args[1], "-c") == 0)
+        {
+            sock.create(tc::inet_family::IPV4);
+            sock.connect(ADDRESS, PORT);
+            char buf[1024];
+            while (1)
+            {
+                std::scanf("%s", buf);
+                std::printf("send: '%s'", buf);
+                sock.write(buf, std::strlen(buf));
+            }
+        }
+    }
+    
+    } catch(const tc::throwable& t) {
+        std::printf("%s\n", t.cause());
+    }
+
+}
+
+#endif

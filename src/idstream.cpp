@@ -30,19 +30,19 @@ namespace jstd {
         
     }
     
-    int64_t idstream::read(char buf[], int64_t sz) {
-#ifndef NDEBUG
-        if (_in == nullptr)
-            throw_except<io_exception>("Stream is null!");
-#endif
+    std::size_t idstream::read(char buf[], std::size_t sz) {
+        JSTD_DEBUG_CODE(
+            if (_in == nullptr)
+                throw_except<io_exception>("Stream is null!");
+        )
         return _in->read(buf, sz);
     }
 
-    int64_t idstream::available() const {
-#ifndef NDEBUG
-        if (_in == nullptr)
-            throw_except<io_exception>("Stream is null!");
-#endif
+    std::uintmax_t idstream::available() const {
+        JSTD_DEBUG_CODE(
+            if (_in == nullptr)
+                throw_except<io_exception>("Stream is null!");
+        )
         return _in->available();
     }
 

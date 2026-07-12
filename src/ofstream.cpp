@@ -1,5 +1,5 @@
 #include <cpp/lang/io/ofstream.hpp>
-#include <cpp/lang/io/filesystem.hpp>
+#include <internal/io/filesystem.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/system.hpp>
 #include <errno.h>
@@ -12,12 +12,13 @@ namespace jstd {
 
     }
 
-    ofstream::ofstream(const char* path, bool append, int path_length) : ofstream(file(path, path_length), append) {
+    
+    ofstream::ofstream(const char* path, bool append) : ofstream(file(path), append) {
         
     }
     
     ofstream::ofstream(const file& f, bool append) : ofstream() {    
-        _handle = filesystem::open(f.str_path(), append ? "ab" : "wb");
+        _handle = filesystem::open(f.cstr(), append ? "ab" : "wb");
     }
 
     ofstream::ofstream(ofstream&& stream) : _handle(stream._handle) {
@@ -47,12 +48,12 @@ namespace jstd {
         return ostream::write(c);
     }
     
-    void ofstream::write(const char* data, int64_t sz) {
-#ifndef NDEBUG
-        if (_handle == nullptr)
-            throw_except<io_exception>("File stream is null!");
-#endif
-        int64_t writed = fwrite(data, 1, sz, _handle);
+    void ofstream::write(const char* data, std::size_t sz) {
+        JSTD_DEBUG_CODE(
+            if (_handle == nullptr)
+                throw_except<io_exception>("File stream is null!");
+        )
+        std::size_t writed = fwrite(data, 1, sz, _handle);
         if (writed != sz)
             throw_except<io_exception>(strerror(errno));
     }

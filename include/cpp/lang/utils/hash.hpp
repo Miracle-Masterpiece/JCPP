@@ -1,5 +1,5 @@
-#ifndef _JSTD_CPP_LANG_UTILS_HASH_H_
-#define _JSTD_CPP_LANG_UTILS_HASH_H_
+#ifndef JSTD_CPP_LANG_UTILS_HASH_H_
+#define JSTD_CPP_LANG_UTILS_HASH_H_
 
 #include <cpp/lang/utils/traits.hpp>
 #include <cstdint>
@@ -24,12 +24,11 @@ struct hash_for {
      *      Ключ, для которого вычисляется хэш.
      * 
      * @return 
-     *      uint64_t Хэш-код.
+     *      Хэш-код.
      */
-    uint64_t operator() (const K& key) const {
-        if (is_primitive<K>::value)
-            return (uint64_t) key;
-        return (uint64_t) &key;
+    std::size_t operator() (const K& key) const {
+        if (is_primitive<K>::value) return (std::size_t) key;
+        return (std::size_t) &key;
     }
 };
 
@@ -58,6 +57,5 @@ struct equal_to {
     }
 };
 
-#undef ____JSTD_MAKE_PRIMITIVE_HASH_FOR_AND_EQUAL_TO___
 }
-#endif//_JSTD_CPP_LANG_UTILS_HASH_H_
+#endif//JSTD_CPP_LANG_UTILS_HASH_H_

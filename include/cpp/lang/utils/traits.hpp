@@ -1,6 +1,10 @@
-#ifndef _JSTD_CPP_LANG_UTILS_TRAITS_H_
-#define _JSTD_CPP_LANG_UTILS_TRAITS_H_
-namespace jstd {
+#ifndef JSTD_CPP_LANG_UTILS_TRAITS_H
+#define JSTD_CPP_LANG_UTILS_TRAITS_H
+
+#include <utility>
+
+namespace jstd
+{
 
 /**
  * Метаструктура для проверки, является ли тип указателем.
@@ -103,6 +107,8 @@ struct is_primitive {
 ___JSTD__MAKE_PRIMITIVE_SPECIALIZATION__(char)
 ___JSTD__MAKE_PRIMITIVE_SPECIALIZATION__(signed char)
 ___JSTD__MAKE_PRIMITIVE_SPECIALIZATION__(unsigned char)
+___JSTD__MAKE_PRIMITIVE_SPECIALIZATION__(wchar_t)
+___JSTD__MAKE_PRIMITIVE_SPECIALIZATION__(bool)
 
 ___JSTD__MAKE_PRIMITIVE_SPECIALIZATION__(signed short)
 ___JSTD__MAKE_PRIMITIVE_SPECIALIZATION__(unsigned short)
@@ -404,5 +410,11 @@ ___JSTD__MAKE_IS_UNSIGNED_SPECIALIZATION__(unsigned long long);
 
 #undef ___JSTD__MAKE_IS_UNSIGNED_SPECIALIZATION__
 
+
+    template<typename TARGET_T, typename SOURCE_T>
+    static void assign_static_cast(TARGET_T& t, SOURCE_T&& s) {
+        t = static_cast<TARGET_T>(std::forward<SOURCE_T>(s));
+    }
+
 }
-#endif//_JSTD_CPP_LANG_UTILS_TRAITS_H_
+#endif//JSTD_CPP_LANG_UTILS_TRAITS_H

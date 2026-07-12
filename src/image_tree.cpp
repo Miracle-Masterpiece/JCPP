@@ -3,12 +3,11 @@
 #include <cpp/lang/utils/unique_ptr.hpp>
 #include <new>
 
-namespace jstd {
-namespace texturing {
+namespace jstd
+{
 
-    int rect::to_string(char buf[], int bufsize) const {
-        return std::snprintf(buf, bufsize, "[x=%li, y=%li, w=%li, h=%li]", (long int) x, (long int) y, (long int) w, (long int) h);
-    }
+namespace texturing
+{
 
     node::node() : 
     m_allocator(nullptr), 
@@ -19,7 +18,7 @@ namespace texturing {
 
     }
 
-    node::node(int32_t w, int32_t h, tca::allocator* allocator) : node({0,0,w,h}, allocator) {
+    node::node(int w, int h, tca::allocator* allocator) : node({0, 0, w, h}, allocator) {
 
     }
 
@@ -64,7 +63,7 @@ namespace texturing {
         return m_left == nullptr && m_right == nullptr;
     }
 
-    node* node::put_image(int32_t w, int32_t h, int32_t imageID) {
+    node* node::put_image(int w, int h, std::size_t imageID) {
         
         if (m_allocator == nullptr)
             throw_except<illegal_state_exception>("allocator must be != null");
@@ -110,14 +109,8 @@ namespace texturing {
         return m_rect;
     }
 
-    int32_t node::get_id() const {
+    std::size_t node::get_id() const {
         return m_ID;
-    }
-
-    int node::to_string(char buf[], int bufsize) const {
-        char rect_str_buffer[64];
-        m_rect.to_string(rect_str_buffer, sizeof(rect_str_buffer));
-        return std::snprintf(buf, bufsize, "[%s, ID=%li]", rect_str_buffer, (long int) m_ID);
     }
 
 }//namespace jstd

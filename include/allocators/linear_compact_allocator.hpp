@@ -83,7 +83,7 @@ namespace tca {
          * 
          */
         constexpr static std::size_t byteSize() {
-            return calcAlignSize(sizeof(Header), alignof(std::max_align_t));
+            return align_up(sizeof(Header), alignof(std::max_align_t));
         }
     
     private:

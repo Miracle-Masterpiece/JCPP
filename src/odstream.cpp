@@ -37,27 +37,27 @@ namespace jstd {
         }
     }
 
-    void odstream::write(const char* data, int64_t sz) {
-#ifndef NDEBUG
-        if (_out == nullptr)
-            throw_except<io_exception>("Stream is null!");
-#endif
+    void odstream::write(const char* data, std::size_t sz) {
+        JSTD_DEBUG_CODE(
+            if (_out == nullptr)
+                throw_except<io_exception>("Stream is null!");
+        )
         _out->write(data, sz);
     }
     
     void odstream::flush() {
-#ifndef NDEBUG
-        if (_out == nullptr)
-            throw_except<io_exception>("Stream is null!");
-#endif
+        JSTD_DEBUG_CODE(
+            if (_out == nullptr)
+                throw_except<io_exception>("Stream is null!");
+        )
         _out->flush();
     }
     
     void odstream::close() {
-#ifndef NDEBUG
-        if (_out == nullptr)
-            throw_except<io_exception>("Stream is null!");
-#endif
+        JSTD_DEBUG_CODE(
+            if (_out == nullptr)
+                throw_except<io_exception>("Stream is null!");
+        )
         try {
             _out->close();
             _out = nullptr;

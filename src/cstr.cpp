@@ -2,7 +2,7 @@
 
 namespace jstd {
 
-    cstr::cstr(const char* s) : m_cstr(s), m_length(-1) {
+    cstr::cstr(const char* s) : m_cstr(s), m_length(~(std::size_t) 0) {
         
     }
 
@@ -10,17 +10,17 @@ namespace jstd {
         return m_cstr;
     }
     
-    int32_t cstr::length() const {
-        if (m_length == -1) {
+    std::size_t cstr::length() const {
+        if (m_length == ~(std::size_t) 0) {
             if (m_cstr != nullptr)
-                m_length = (int32_t) std::strlen(m_cstr);
+                m_length = std::strlen(m_cstr);
             else
                 m_length = 0;
         }
         return m_length;
     }
 
-    const char& cstr::operator[] (int32_t idx) const {
+    const char& cstr::operator[] (std::size_t idx) const {
 #ifndef NDEBUG
         check_index(idx, length());
 #endif//NDEBUG
@@ -28,11 +28,11 @@ namespace jstd {
     }
 
     bool cstr::equals(const cstr& s) const {
-        int32_t len1 = length();
-        int32_t len2 = s.length();
+        std::size_t len1 = length();
+        std::size_t len2 = s.length();
         if (len1 != len2)
             return false;
-        for (int32_t i = 0, len = len1; i < len; ++i)
+        for (std::size_t i = 0, len = len1; i < len; ++i)
             if ((*this)[i] != s[i])
                 return false;
         return true;
@@ -46,7 +46,7 @@ namespace jstd {
         return !equals(s);
     }
 
-    uint64_t cstr::hashcode() const {
+    std::size_t cstr::hashcode() const {
         return objects::hashcode(m_cstr, m_length);
     }
 

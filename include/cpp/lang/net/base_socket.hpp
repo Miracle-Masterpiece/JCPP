@@ -1,13 +1,14 @@
-#ifndef _JSTD_CPP_LANG_BASE_SOCKET_H_
-#define _JSTD_CPP_LANG_BASE_SOCKET_H_
+#ifndef JSTD_CPP_LANG_BASE_SOCKET_H
+#define JSTD_CPP_LANG_BASE_SOCKET_H
 #include <cpp/lang/net/inetaddr.hpp>
 #include <cpp/lang/net/socket_option.hpp>
 #include <cstdint>
 
-namespace jstd {
+namespace jstd
+{
 
 /**
- * @brief Абстрактный базовый класс для работы с сокетами.
+ * Абстрактный базовый класс для работы с сокетами.
  * 
  * @tparam 
  *      SOCKET_T Тип дескриптора сокета.
@@ -22,27 +23,27 @@ class base_socket {
     base_socket& operator= (const base_socket&) = delete;
 protected:
     //Значение для нулевого порта.    
-    static const int32_t NULL_PORT = 0;
+    static const int NULL_PORT = 0;
 
     //Дескриптор сокета.
-    SOCKET_T        _ID;         
+    SOCKET_T sock_id;         
     
     // Адрес сокета.
-    inet_address    _address;    
+    inet_address address;    
     
     // Порт сокета.
-    int32_t         _port; 
+    unsigned int port; 
     
     // Локальный порт сокета.
-    int32_t         _localport;
+    unsigned int localport;
 
     /**
-     * @brief Конструктор по умолчанию.
+     * Конструктор по умолчанию.
      */
     base_socket();
 
     /**
-     * @brief Конструктор перемещения.
+     * Конструктор перемещения.
      * 
      * @param other 
      *      Перемещаемый объект.
@@ -50,7 +51,7 @@ protected:
     base_socket(base_socket&& other);
 
     /**
-     * @brief 
+     * 
      *      Оператор присваивания (перемещение).
      * 
      * @param other 
@@ -62,12 +63,12 @@ protected:
     base_socket& operator= (base_socket&& other);
 
     /**
-     * @brief Виртуальный деструктор, обязательный для абстрактного класса.
+     * Виртуальный деструктор, обязательный для абстрактного класса.
      */
     virtual ~base_socket() = 0;
 
     /**
-     * @brief Устанавливает параметр сокета.
+     * Устанавливает параметр сокета.
      * 
      * @param opt_id 
      *      Идентификатор параметра.
@@ -75,10 +76,10 @@ protected:
      * @param value 
      *      Значение параметра.
      */
-    virtual void set_socket_option(int32_t opt_id, const socket_option& value) = 0;
+    virtual void set_socket_option(int opt_id, const socket_option& value) = 0;
 
     /**
-     * @brief Получает параметр сокета.
+     * Получает параметр сокета.
      * 
      * @param opt_id 
      *      Идентификатор параметра.
@@ -86,10 +87,10 @@ protected:
      * @return 
      *      Значение параметра.
      */
-    virtual socket_option get_socket_option(int32_t opt_id) const = 0;
+    virtual socket_option get_socket_option(int opt_id) const = 0;
 
     /**
-     * @brief Подключается к удалённому хосту.
+     * Подключается к удалённому хосту.
      * 
      * @param host 
      *      Имя хоста или IP-адрес.
@@ -100,10 +101,10 @@ protected:
      * @throws io_exception
      *      Если произошла ошибка при подключении.
      */
-    virtual void connect(const char* host, int32_t port) = 0;
+    virtual void connect(const char* host, unsigned int port) = 0;
 
     /**
-     * @brief Подключается к удалённому хосту по объекту inet_address.
+     * Подключается к удалённому хосту по объекту inet_address.
      * 
      * @param host 
      *      Адрес хоста.
@@ -113,10 +114,10 @@ protected:
      * @throws io_exception
      *      Если произошла ошибка при подключении.
      */
-    virtual void connect(const inet_address& host, int32_t port) = 0;
+    virtual void connect(const inet_address& host, unsigned int port) = 0;
 
     /**
-     * @brief Привязывает сокет к указанному адресу и порту.
+     * Привязывает сокет к указанному адресу и порту.
      * 
      * @param address 
      *      Адрес, к которому будет привязан сокет.
@@ -127,10 +128,10 @@ protected:
      * @throws io_exception
      *      Если произошла ошибка при связывании сокета.
      */
-    virtual void bind(const inet_address& address, int32_t port) = 0;
+    virtual void bind(const inet_address& address, unsigned int port) = 0;
 
     /**
-     * @brief Переводит сокет в режим прослушивания входящих подключений.
+     * Переводит сокет в режим прослушивания входящих подключений.
      * 
      * @param backlog 
      *      Размер очереди ожидающих подключений.
@@ -138,10 +139,10 @@ protected:
      * @throws io_exception
      *      Если произошла ошибка при изменении очереди ожидающих подключения.
      */
-    virtual void listen(int32_t backlog) = 0;
+    virtual void listen(int backlog) = 0;
 
     /**
-     * @brief Принимает входящее соединение.
+     * Принимает входящее соединение.
      * 
      * @param client 
      *      Указатель на новый клиентский сокет.
@@ -155,7 +156,7 @@ protected:
     virtual bool accept(base_socket<SOCKET_T>* client) = 0;
 
     /**
-     * @brief Закрывает сокет.
+     * Закрывает сокет.
      * 
      * @throws io_exception
      *      Если произошла ошибка при закрытии сокета.
@@ -163,7 +164,7 @@ protected:
     virtual void close() = 0;
 
     /**
-     * @brief Останавливает приём данных на сокет.
+     * Останавливает приём данных на сокет.
      * 
      * @throws io_exception
      *      Если произошла ошибка при остановке приёма данных.
@@ -171,7 +172,7 @@ protected:
     virtual void shutdown_in() = 0;
 
     /**
-     * @brief Останавливает отправку данных через сокет.
+     * Останавливает отправку данных через сокет.
      * 
      * @throws io_exception
      *      Если произошла ошибка при остановке отправки данных.
@@ -179,7 +180,7 @@ protected:
     virtual void shutdown_out() = 0;
 
     /**
-     * @brief Преобразует информацию о сокете в строку.
+     * Преобразует информацию о сокете в строку.
      * 
      * @param buf 
      *      Буфер для записи строки.
@@ -190,10 +191,10 @@ protected:
      * @return 
      *      Длина записанной строки.
      */
-    virtual int32_t to_string(char buf[], int32_t bufsize) const;
+    virtual int to_string(char buf[], std::size_t bufsize) const;
 
     /**
-     * @brief Читает данные из сокета.
+     * Читает данные из сокета.
      * 
      * @param buf 
      *      Буфер для хранения прочитанных данных.
@@ -207,10 +208,10 @@ protected:
      * @throws io_exception
      *      Если произошла ошибка при чтении данных.
      */
-    virtual int64_t read(char buf[], int64_t len) = 0;
+    virtual std::size_t read(char buf[], std::size_t len) = 0;
 
     /**
-     * @brief Отправляет данные через сокет.
+     * Отправляет данные через сокет.
      * 
      * @param data 
      *      Указатель на отправляемые данные.
@@ -224,10 +225,10 @@ protected:
      * @throws io_exception
      *      Если произошла ошибка при отправке данных.
      */
-    virtual int64_t write(const char* data, int64_t len) = 0;
+    virtual std::size_t write(const char* data, std::size_t len) = 0;
 
     /**
-     * @brief Устанавливает режим блокировки сокета.
+     * Устанавливает режим блокировки сокета.
      * 
      * @param block 
      *      true — блокирующий режим, false — неблокирующий.
@@ -238,7 +239,7 @@ protected:
     virtual void set_blocking(bool block) = 0;
 
     /**
-     * @brief Проверяет, является ли сокет блокирующим.
+     * Проверяет, является ли сокет блокирующим.
      * 
      * @return 
      *      true, если сокет работает в блокирующем режиме, иначе false.
@@ -247,7 +248,7 @@ protected:
 
 public:
     /**
-     * @brief Создаёт сокет указанного семейства.
+     * Создаёт сокет указанного семейства.
      * 
      * @param family 
      *      Семейство адресов (например, AF_INET или AF_INET6).
@@ -258,7 +259,7 @@ public:
     virtual void create(inet_family family) = 0;
 
     /**
-     * @brief Проверяет, был ли сокет создан.
+     * Проверяет, был ли сокет создан.
      * 
      * @return 
      *      true, если сокет создан, иначе false.
@@ -266,7 +267,7 @@ public:
     virtual bool is_created() const = 0;
 
     /**
-     * @brief Получает дескриптор сокета.
+     * Получает дескриптор сокета.
      * 
      * @return 
      *      Ссылка на дескриптор сокета.
@@ -274,7 +275,7 @@ public:
     SOCKET_T& get_descriptor();
 
     /**
-     * @brief Получает дескриптор сокета (константная версия).
+     * Получает дескриптор сокета (константная версия).
      * 
      * @return 
      *      Константная ссылка на дескриптор сокета.
@@ -282,7 +283,7 @@ public:
     const SOCKET_T& get_descriptor() const;
 
     /**
-     * @brief Получает адрес сокета.
+     * Получает адрес сокета.
      * 
      * @return 
      *      Ссылка на объект inet_address.
@@ -290,7 +291,7 @@ public:
     inet_address& get_address();
 
     /**
-     * @brief Получает адрес сокета (константная версия).
+     * Получает адрес сокета (константная версия).
      * 
      * @return 
      *      Константная ссылка на объект inet_address.
@@ -298,61 +299,59 @@ public:
     const inet_address& get_address() const;
 
     /**
-     * @brief Получает порт сокета.
+     * Получает порт сокета.
      */
-    int32_t get_port() const;
+    unsigned int get_port() const;
 
     /**
-     * @brief Получает локальный порт сокета.
+     * Получает локальный порт сокета.
      */
-    int32_t get_localport() const;
+    unsigned int get_localport() const;
 
     /**
-     * @brief Устанавливает адрес сокета.
+     * Устанавливает адрес сокета.
      */
     void set_address(const inet_address& addr);
 
     /**
-     * @brief Устанавливает порт сокета.
+     * Устанавливает порт сокета.
      */
-    void set_port(int32_t port);
+    void set_port(unsigned int port);
 
     /**
-     * @brief Устанавливает локальный порт сокета.
+     * Устанавливает локальный порт сокета.
      */
-    void set_localport(int32_t localport);
+    void set_localport(unsigned int localport);
 
     /**
-     * @brief Устанавливает дескриптор сокета.
+     * Устанавливает дескриптор сокета.
      */
     void set_descriptor(SOCKET_T&& sID);
 };
 
 
     template<typename SOCKET_T>
-    base_socket<SOCKET_T>::base_socket() : _ID(), _address(), _port(0), _localport(0) {
+    base_socket<SOCKET_T>::base_socket() : sock_id(), address(), port(0), localport(0) {
 
     }
 
     template<typename SOCKET_T>
     base_socket<SOCKET_T>::base_socket(base_socket<SOCKET_T>&& sock) : 
-    _ID(std::move(sock._ID)), 
-    _address(std::move(sock._address)), 
-    _port(sock._port), 
-    _localport(sock._localport) {
-        sock._port      = NULL_PORT;
-        sock._localport = NULL_PORT;
+    sock_id(std::move(sock.sock_id)), 
+    address(std::move(sock.address)), 
+    port(sock.port), 
+    localport(sock.localport) {
+        sock.port      = NULL_PORT;
+        sock.localport = NULL_PORT;
     }
 
     template<typename SOCKET_T>
     base_socket<SOCKET_T>& base_socket<SOCKET_T>::operator= (base_socket<SOCKET_T>&& sock) {
         if (&sock != this) {
-            _ID         = std::move(sock._ID);
-            _address    = std::move(sock._address);
-            _port       = sock._port;
-            _localport  = sock._localport;
-            sock._port      = NULL_PORT;
-            sock._localport = NULL_PORT;
+            std::swap(sock_id,   sock.sock_id);
+            std::swap(address,   sock.address);
+            std::swap(port,      sock.port);
+            std::swap(localport, sock.localport);
         }
         return *this;
     }
@@ -364,59 +363,59 @@ public:
 
     template<typename SOCKET_T>
     const SOCKET_T& base_socket<SOCKET_T>::get_descriptor() const {
-        return _ID;
+        return sock_id;
     }
 
     template<typename SOCKET_T>
     SOCKET_T& base_socket<SOCKET_T>::get_descriptor() {
-        return _ID;
+        return sock_id;
     }
 
     template<typename SOCKET_T>
     inet_address& base_socket<SOCKET_T>::get_address() {
-        return _address;
+        return address;
     }
 
     template<typename SOCKET_T>
     const inet_address& base_socket<SOCKET_T>::get_address() const {
-        return _address;
+        return address;
     }
 
     template<typename SOCKET_T>
-    int32_t base_socket<SOCKET_T>::get_port() const {
-        return _port;
+    unsigned int base_socket<SOCKET_T>::get_port() const {
+        return port;
     }
     
     template<typename SOCKET_T>
-    int32_t base_socket<SOCKET_T>::get_localport() const {
-        return _localport;
+    unsigned int base_socket<SOCKET_T>::get_localport() const {
+        return localport;
     }
 
     template<typename SOCKET_T>
     void base_socket<SOCKET_T>::set_address(const inet_address& addr) {
-        _address = addr;
+        address = addr;
     }
     
     template<typename SOCKET_T>
-    void base_socket<SOCKET_T>::set_port(int32_t port) {
-        _port = port;
+    void base_socket<SOCKET_T>::set_port(unsigned int port_in) {
+        port = port_in;
     }
     
     template<typename SOCKET_T>
-    void base_socket<SOCKET_T>::set_localport(int32_t localport) {
-        _localport = localport;
+    void base_socket<SOCKET_T>::set_localport(unsigned int localport_in) {
+        localport = localport_in;
     }
     
     template<typename SOCKET_T>
     void base_socket<SOCKET_T>::set_descriptor(SOCKET_T&& sID) {
-        _ID = std::move(sID);
+        sock_id = std::move(sID);
     }
     
     template<typename SOCKET_T>
-    int32_t base_socket<SOCKET_T>::to_string(char buf[], int32_t bufsize) const {
-        char _ipbuf[64];
-        _address.to_string(_ipbuf, sizeof(_ipbuf));
-        return std::snprintf(buf, bufsize, "[addr=/%s, port=%i, localport=%i]", _ipbuf, (int) _port, _localport);
+    int base_socket<SOCKET_T>::to_string(char buf[], std::size_t bufsize) const {
+        char ipbuf[64];
+        address.to_string(ipbuf, sizeof(ipbuf));
+        return std::snprintf(buf, bufsize, "[addr=/%s, port=%i, localport=%i]", ipbuf, port, localport);
     }
 }
-#endif//_JSTD_CPP_LANG_BASE_SOCKET_H_
+#endif //JSTD_CPP_LANG_BASE_SOCKET_H

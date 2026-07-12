@@ -1,24 +1,65 @@
-#ifndef _JSTD_INTERNAL_BSD_SOCKET_CLASS_H_
-#define _JSTD_INTERNAL_BSD_SOCKET_CLASS_H_
+#ifndef JSTD_INTERNAL_BSD_SOCKET_CLASS_H
+#define JSTD_INTERNAL_BSD_SOCKET_CLASS_H
 
 #include <cpp/lang/net/base_socket.hpp>
 #include <cstdint>
 
-namespace jstd {
-namespace bsd_socket {
+namespace jstd
+{
 
+namespace bsd_socket
+{
 
-struct sock_id {
-    int32_t ID;
-    sock_id();
-    sock_id(int32_t ID);
-    sock_id(sock_id&&);
-    sock_id& operator= (sock_id&&);
-    ~sock_id();
+/**
+ * 
+ */
+struct sock_handle {
+    
+    /**
+     * 
+     */
+    std::intptr_t handle;
+
+    /**
+     * 
+     */
+    sock_handle();
+    
+    /**
+     * 
+     */
+    sock_handle(std::intptr_t handle);
+    
+    /**
+     * 
+     */
+    sock_handle(sock_handle&&);
+    
+    /**
+     * 
+     */
+    sock_handle& operator= (sock_handle&&);
+    
+    /**
+     * 
+     */
+    ~sock_handle();
+
 private:
+    /**
+     * 
+     */
     void close();
-    sock_id(const sock_id&) = delete;
-    sock_id& operator= (const sock_id&) = delete;
+    
+    /**
+     * 
+     */
+    sock_handle(const sock_handle&) = delete;
+    
+    /**
+     * 
+     */
+    sock_handle& operator= (const sock_handle&) = delete;
 };
 
 /**
@@ -28,14 +69,13 @@ private:
  * 
  * @since 1.0
  */
-class socket_impl : public base_socket<sock_id> {
+class socket_impl : public base_socket<sock_handle> {
     /**
      * Является ли сокет неблокирующим.
      */
     bool _blocking;    
     
 public:
-    
     /**
      * Создаёт непривязанный сокет
      */
@@ -72,7 +112,7 @@ public:
      *      Если сокет не был открыт.
      *      Если сокет уже закрыт.
      */
-    void set_socket_option(int32_t opt_id, const socket_option& value);
+    void set_socket_option(int opt_id, const socket_option& value) override;
     
     /**
      * @throws illegal_argument_exception
@@ -88,13 +128,13 @@ public:
      *      Если сокет не был открыт.
      *      Если сокет уже закрыт.
      */
-    socket_option get_socket_option(int32_t opt_id) const;
+    socket_option get_socket_option(int opt_id) const override;
     
     /**
      * @throws connect_exception 
      *      Если произошла ошибка при подключении.
      */
-    void connect(const char* host, int32_t port);
+    void connect(const char* host, unsigned int port) override;
     
     /**
      * @throws connect_exception 
@@ -103,7 +143,7 @@ public:
      * @throws illegal_argument_exception
      *      Если тип семейства адреса не поддерживается
      */
-    void connect(const inet_address& host, int32_t port);
+    void connect(const inet_address& host, unsigned int port) override;
     
     /**
      * @throws bind_exception 
@@ -112,13 +152,13 @@ public:
      * @throws illegal_argument_exception
      *      Если тип семейства адреса не поддерживается.
      */
-    void bind(const inet_address& address, int32_t port);
+    void bind(const inet_address& address, unsigned int port) override;
     
     /**
      * @throws socket_exception 
      *      Если произошла ошибка при установки размера максимальной очереди.
      */
-    void listen(int32_t backlog);
+    void listen(int backlog) override;
     
     /**
      * @throws socket_exception
@@ -127,35 +167,35 @@ public:
      * @throws unsupported_operation_exception
      *      Если имя сокета не поддерживает семейство адресов отличное от IPv4 и IPv6
      */
-    bool accept(base_socket<sock_id>* client);
+    bool accept(base_socket<sock_handle>* client) override;
     
     /**
      * Создаёт дескриптор сокета для указанного семейства адресов.
      */
-    void create(inet_family family);
+    void create(inet_family family) override;
     
     /**
      * Сознал ли дескриптор сокета.
      */
-    bool is_created() const;
+    bool is_created() const override;
 
     /**
      * @throws socket_exception 
      *      Если произошла ошибка при закрытии сокета.
      */
-    void close();
+    void close() override;
     
     /**
      * @throws socket_exception
      *      Если произошла ошибка при заглушении чтения.
      */
-    void shutdown_in();
+    void shutdown_in() override;
     
     /**
      * @throws socket_exception
      *      Если произошла ошибка при заглушении записи.
      */
-    void shutdown_out();
+    void shutdown_out() override;
 
     /**
      * @throws socket_exception
@@ -173,7 +213,7 @@ public:
      * @return
      *      Сколько фактически прочиталось байт.
      */
-    int64_t read(char buf[], int64_t len);
+    std::size_t read(char buf[], std::size_t len) override;
     
     /**
      * @throws socket_exception
@@ -191,7 +231,7 @@ public:
      * @return
      *      Сколько фактически отправилось байт.     
      */
-    int64_t write(const char* data, int64_t len);
+    std::size_t write(const char* data, std::size_t len) override;
 
     /**
      * @note
@@ -204,15 +244,15 @@ public:
      * @throws socket_exception 
      *      Если произошла ошибка при установке блокирующего/неблокирущего режима.
      */
-    void set_blocking(bool non_block);
+    void set_blocking(bool non_block) override;
     
     /**
      * Является ли сокет блокирующим.
      * @return true - если блокирующий, false - неблокирующий.
      */
-    bool is_blocking() const;
+    bool is_blocking() const override;
 };
 
 }//bsd_socket
 }//jstd
-#endif//_JSTD_INTERNAL_BSD_SOCKET_CLASS_H_
+#endif// JSTD_INTERNAL_BSD_SOCKET_CLASS_H

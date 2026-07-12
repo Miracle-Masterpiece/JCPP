@@ -15,8 +15,8 @@ namespace jstd {
  * Поддерживает сравнение, хеширование и доступ к символам по индексу.
  */
 class cstr {
-    const char*     m_cstr;     // Указатель на C-строку (null-terminated).
-    mutable int32_t m_length;   // Кэшированная длина строки. Вычисляется при первом вызове length().
+    const char* m_cstr;             // Указатель на C-строку (null-terminated).
+    mutable std::size_t m_length;   // Кэшированная длина строки. Вычисляется при первом вызове length().
 public:
     /**
      * Конструктор из C-строки.
@@ -44,7 +44,7 @@ public:
      * @return 
      *      Количество символов в строке.
      */
-    int32_t length() const;
+    std::size_t length() const;
 
     /**
      * Возвращает символ по индексу.
@@ -58,7 +58,7 @@ public:
      * @throws index_out_of_bound_exception
      *      Если индекс меньше нуля или больше длины. (Если не определён NDEBUG).
      */
-    const char& operator[] (int32_t idx) const;
+    const char& operator[] (std::size_t idx) const;
 
     /**
      * Сравнивает две строки на равенство содержимого.
@@ -103,9 +103,9 @@ public:
      * Вычисляет хеш-код строки.
      * 
      * @return 
-     *      64-битное целое, представляющее хеш-код строки.
+     *      Хеш-код строки.
      */
-    uint64_t hashcode() const;
+    std::size_t hashcode() const;
 
     /**
      * Проверяет, является ли строка пустой.
@@ -124,7 +124,7 @@ public:
 
 template<>
 struct hash_for<cstr> {
-    uint64_t operator ()(const cstr& s) const {
+    std::size_t operator ()(const cstr& s) const {
         return s.hashcode();
     }
 };

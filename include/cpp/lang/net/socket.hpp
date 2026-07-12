@@ -1,5 +1,5 @@
-#ifndef _JSTD_CPP_LANG_NET_SOCKET_H_
-#define _JSTD_CPP_LANG_NET_SOCKET_H_
+#ifndef JSTD_CPP_LANG_NET_SOCKET_H
+#define JSTD_CPP_LANG_NET_SOCKET_H
 
 #include <cpp/lang/net/socket_option.hpp>
 #include <cpp/lang/net/inetaddr.hpp>
@@ -1215,4 +1215,4 @@ public:
 typedef tsocket<bsd_socket::socket_impl> socket;
 
 }
-#endif//_JSTD_CPP_LANG_NET_SOCKET_H_
+#endif//JSTD_CPP_LANG_NET_SOCKET_H

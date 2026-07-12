@@ -1,12 +1,14 @@
 #include <cpp/lang/io/file.hpp>
-#include <cpp/lang/io/filesystem.hpp>
+#include <internal/io/filesystem.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/objects.hpp>
+#include <cpp/lang/math.hpp>
 #include <cstring>
 #include <algorithm>
 #include <cstdarg>
 #include <iostream>
 #include <utility>
+#include <cassert>
 
 namespace jstd {
 
@@ -14,12 +16,15 @@ namespace jstd {
         _path[0] = '\0';
     }
 
-    file::file(const char* path, int path_length) {
-        path_length = path_length < 0 ? std::strlen(path) : path_length;
-        const int buf_size = sizeof(_path) - 1;
-        int result_size = std::min(buf_size, path_length);
+    file::file(const char* path, std::size_t path_length) {
+        path_length = path_length == npos() ? std::strlen(path) : path_length;
+        
+        const std::size_t BUF_SIZE  = sizeof(_path) - 1;
+        std::size_t result_size     = math::min(BUF_SIZE, path_length);
+        
         std::memcpy(_path, path, result_size);
         _path[result_size] = '\0';
+        
         filesystem::normalize_path(_path, result_size);
     }
     
@@ -59,11 +64,11 @@ namespace jstd {
         return filesystem::is_dir(_path);
     }
 
-    uint64_t file::length() const {
+    std::uintmax_t file::length() const {
         return filesystem::length(_path);
     }
 
-    uint64_t file::last_modified() const {
+    timepoint file::last_modified() const {
         return filesystem::last_modified(_path);
     }
 
@@ -91,8 +96,8 @@ namespace jstd {
         return filesystem::remove(_path);
     }
 
-    bool file::rename_to(const char* new_name, int new_name_length) {
-        return filesystem::rename_to(_path, new_name, -1, new_name_length);
+    bool file::rename_to(const char* new_name, std::size_t new_name_length) {
+        return filesystem::rename_to(_path, new_name, filesystem::npos(), new_name_length);
     }
 
     bool file::can_execute() const {
@@ -119,58 +124,107 @@ namespace jstd {
         return filesystem::set_writable(_path, on_off);
     }
 
-    const char* file::str_path() const {
+    const char* file::cstr() const {
         return _path;
     }
 
-    int file::get_name(char buf[], int bufsize) const {
+    // Принято решение о том, что данная функция уже ненужна, поскольку она не безопасна с точки зрения логики.
+    // Так как буфера может не хватить.
+    #if 0
+    /**
+     * Копирует имя файла в передаваемый буфер. 
+     * А так же заканчивает строку нуль-терминатором.
+     * 
+     * @param buf
+     *      Буфер в который будет скопировано название файла.
+     * 
+     * @param bufsize
+     *      Размер передаваемого буфера.
+     * 
+     * @return
+     *      Сколько было скопировано символов. (Не включает нулевой).
+     */
+    std::size_t       get_name(char buf[], std::size_t bufsize) const;
+    std::size_t file::get_name(char buf[], std::size_t bufsize) const {
+        if (bufsize == 0)
+            return 0;
+    
         char path[sizeof(_path)];
         std::memcpy(path, _path, sizeof(path));
-        
         filesystem::normalize_path(path);
 
-        const int len = std::strlen(path);
-        int idx = 0;
-        for (int i = len - 1; i >= 0; --i) {
-            if (filesystem::is_separator(path[i])) {
+        const std::size_t len = std::strlen(path);
+        std::size_t idx = 0;
+        for (std::size_t i = len; i > 0; ) {
+            --i;
+            if (filesystem::is_separator(path[i]))
+            {
                 idx = i + 1;
                 break;    
             }
         }
-        
-        int name_length = std::min((len - idx), bufsize - 1);
-        
-        if (name_length >= 0) {
-            for (int i = 0; i < name_length; ++i)
-                buf[i] = path[i + idx];
-            buf[name_length] = '\0';
-            return len;
-        } 
 
-        return 0;
+        std::size_t rp = idx;
+        std::size_t wp = 0;
+        while (rp < len && wp < (bufsize - 1))
+        {
+            buf[wp++] = path[rp++];
+        }
+
+        buf[wp] = '\0';
+
+        return wp;
+    }
+    #endif
+
+    tc::string file::get_name(tca::allocator* alloc) const {
+        tc::string str_path(alloc);
+     
+        // Временный буфер для нормализованного пути.
+        char path[sizeof(_path)];
+        std::memcpy(path, _path, sizeof(path));
+        filesystem::normalize_path(path);
+
+        // Поиск индекса, откуда начинается название файла
+        const std::size_t len = std::strlen(path);
+        std::size_t idx = 0;
+        for (std::size_t i = len; i > 0; ) {
+            --i;
+            if (filesystem::is_separator(path[i]))
+            {
+                idx = i + 1;
+                break;    
+            }
+        }
+
+        assert(len >= idx);
+        str_path.append(path + idx, len - idx);
+
+        return tc::string(std::move(str_path));
     }
 
-    array<file> file::list_files(file_filter* filter /*= nullptr*/, tca::allocator* allocator) const {
-        accept_all_filter accept_all;
-        if (filter == nullptr)
-            filter = &accept_all;
-        
-        int32_t count_files = filesystem::count_files_in_directory(_path, filter);
+    array<file> file::list_files(const file_filter& filter, tca::allocator* allocator) const {
+
+        std::size_t count_files = filesystem::count_files_in_directory(_path, filter);
         
         array<file> files(count_files, allocator);
 
         directory_iterator begin(_path);
         directory_iterator end;
 
-        int32_t i = 0;
+        std::size_t i = 0;
         char path_buf[filesystem::MAX_LENGTH_PATH];
         while (begin != end) {
-            directory_entry entry = *begin;
-            int path_length = std::strlen(entry.get_name());
-            if (filter->apply(entry.get_name(), path_length)) {
-                path_length = std::snprintf(path_buf, sizeof(path_buf), "%s/%s", _path, entry.get_name());
+            
+            directory_entry entry   = *begin;
+            std::size_t path_length = std::strlen(entry.get_name());
+            
+            if (filter.apply(entry.get_name(), path_length))
+            {
+                std::snprintf(path_buf, sizeof(path_buf), "%s/%s", _path, entry.get_name());
                 files[i++]  = file(path_buf);
             }
+            
             ++begin;
         }
 
@@ -179,32 +233,40 @@ namespace jstd {
 
     /*static*/ file file::runtime_path() {
         char buf[filesystem::MAX_LENGTH_PATH];
-        int sz = filesystem::runtime_path(buf, sizeof(buf));
+        std::size_t sz = filesystem::runtime_path(buf, sizeof(buf));
         return file(buf, sz);
     }
 
     /*static*/ file file::make(const char* format, ...) {
         va_list args;
         char buf[filesystem::MAX_LENGTH_PATH];
+        
         va_start(args, format);
         std::vsnprintf(buf, sizeof(buf), format, args);
         va_end(args);
+        
         return file(buf);
     }
 
     /*static*/ file file::make_absolute(const char* format, ...) {
         char rt_path[filesystem::MAX_LENGTH_PATH];
-        int len = filesystem::runtime_path(rt_path, sizeof(rt_path));
+        std::size_t len = filesystem::runtime_path(rt_path, sizeof(rt_path));
+        
         if (len + 1 > (int) sizeof(rt_path))
             throw_except<illegal_state_exception>("buffer is small!");
+        
         rt_path[len++] = filesystem::FILE_SEPARATOR;
-        int free_space = sizeof(rt_path) - len;
+        
+        assert(sizeof(rt_path) >= len);
+        std::size_t free_space = sizeof(rt_path) - len;
+        
         {
             va_list args;
             va_start(args, format);
             std::vsnprintf(rt_path + len, free_space, format, args);
             va_end(args);
         }
+        
         return file(rt_path);
     }
 
@@ -214,8 +276,8 @@ namespace jstd {
         return file(parent_path_buf);
     }
 
-    int64_t file::hashcode() const {
-        return objects::hashcode(_path);
+    std::size_t file::hashcode() const {
+        return objects::hashcode(_path, std::strlen(_path));
     }
 
     file file::plus(const file& f) const {

@@ -111,14 +111,12 @@ namespace tca {
             native_protect = PAGE_EXECUTE_READWRITE;
         else if ((prot & MEM_PROTECT_EXEC) && (prot & MEM_PROTECT_READ))
             native_protect = PAGE_EXECUTE_READ;
-        else if ((prot & MEM_PROTECT_READ) && (prot & MEM_PROTECT_WRITE))
+        else if (((prot & MEM_PROTECT_READ) && (prot & MEM_PROTECT_WRITE)) || (prot & MEM_PROTECT_WRITE))
             native_protect = PAGE_READWRITE;
         else if (prot & MEM_PROTECT_EXEC)
             native_protect = PAGE_EXECUTE;
         else if (prot & MEM_PROTECT_READ)
             native_protect = PAGE_READONLY;
-        else if (prot & MEM_PROTECT_WRITE)
-            native_protect = PAGE_EXECUTE_READWRITE;
         else 
             return PAGE_NOACCESS;
         

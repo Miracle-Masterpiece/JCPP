@@ -112,13 +112,13 @@ namespace concurrency
             m_force_non_sleeping = true;
     }
 
-    fixed_thread_pool::fixed_thread_pool(int32_t count_threads, tca::allocator* allocator) : 
+    fixed_thread_pool::fixed_thread_pool(std::size_t count_threads, tca::allocator* allocator) : 
     m_threads(count_threads, allocator),
     m_queue(allocator),
     m_queue_locker(),
     m_tp_mutex(),
     m_terminated(false) {
-        for (int32_t i = 0; i < count_threads; ++i) {
+        for (std::size_t i = 0; i < count_threads; ++i) {
             m_threads[i] = worker(this);
             m_threads[i].start();
         }
@@ -135,25 +135,21 @@ namespace concurrency
         m_threads[0].wakeup();
     }
 
-    void fixed_thread_pool::submit(task* tasks[], int32_t bufsize) {
+    void fixed_thread_pool::submit(task* tasks[], std::size_t bufsize) {
         {
             unique_lock pool_lock(m_tp_mutex);
             JSTD_DEBUG_CODE(
-                if (tasks == nullptr)
-                    throw_except<illegal_argument_exception>("tasks == null");
-                if (bufsize < 0)
-                    throw_except<illegal_argument_exception>("bufsize %lli illegal", (long long) bufsize);
-                if (m_terminated)
-                    throw_except<illegal_state_exception>("thread_pool is terminated!");
+                if (tasks == nullptr)   throw_except<illegal_argument_exception>("tasks == null");
+                if (m_terminated)       throw_except<illegal_state_exception>("thread_pool is terminated!");
             );
             {
                 unique_lock lock(m_queue_locker);
-                for (int32_t i = 0; i < bufsize; ++i)
+                for (std::size_t i = 0; i < bufsize; ++i)
                     m_queue.add_last(tasks[i]);
             }
         }
-        int32_t neeed_threads = std::min<int32_t>(bufsize, m_threads.length);
-        for (int32_t i = 0; i < neeed_threads; ++i)
+        std::size_t neeed_threads = std::min<std::size_t>(bufsize, m_threads.length);
+        for (std::size_t i = 0; i < neeed_threads; ++i)
             m_threads[i].wakeup();
     }
 
@@ -166,15 +162,16 @@ namespace concurrency
     }
 
     void fixed_thread_pool::join_all() {
-        for (int32_t i = m_threads.length - 1; i >= 0; --i)
-            m_threads[i].join();
+        std::size_t i = m_threads.length;
+        while (i > 0)
+            m_threads[--i].join();
     }
 
     void fixed_thread_pool::shutdown() {
         unique_lock lock(m_tp_mutex);
         if (m_terminated)
             return;
-        for (int32_t i = 0; i < m_threads.length; ++i) {
+        for (std::size_t i = 0; i < m_threads.length; ++i) {
             m_threads[i].shutdown();
             m_threads[i].wakeup();
         }

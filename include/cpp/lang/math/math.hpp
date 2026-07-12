@@ -21,15 +21,7 @@ namespace math
      * 
      */
     template<typename T>
-    constexpr T lerp(const T a, const T b, double t) {
-        return (b - a) * t + a;
-    }
-
-    /**
-     * 
-     */
-    template<typename T>
-    constexpr T lerp(const T a, const T b, float t) {
+    constexpr T lerp(const T& a, const T& b, const T& t) {
         return (b - a) * t + a;
     }
 
@@ -253,39 +245,13 @@ namespace math
     inline float atan2(float y, float x) {
         return ::atan2f(y, x);
     }
-
+    
     /**
      * 
      */
-    inline uint64_t hash2d(int64_t x, int64_t y) {
-        const uint64_t ux = (uint64_t) x;
-        const uint64_t uy = (uint64_t) y;
-        uint64_t hash = (ux * 0x0B00B135U) + (uy * 0x50FFC001U);
-        hash ^= hash >> 13U;
-        hash += hash & 832749825U;
-        hash ^= hash >> 16U;
-        return hash;
-    }
-
-    /**
-     * 
-     */
-    constexpr double quintic(double x) {
-        return x * x * x * (x * (x * 6 - 15) + 10);
-    }
-
-    /**
-     * 
-     */
-    constexpr float quintic(float x) {
-        return x * x * x * (x * (x * 6 - 15) + 10);
-    }
-
-    /**
-     * 
-     */
-    constexpr long double quintic(long double x) {
-        return x * x * x * (x * (x * 6 - 15) + 10);
+    template<typename T>
+    constexpr T quintic(const T& x) {
+        return x * x * x * (x * (x * T(6) - T(15)) + T(10));
     }
 
     /**
@@ -316,7 +282,7 @@ namespace math
     T min(const T& a, const T& b) {
         return a < b ? a : b;
     }
-
+    
     /**
      * 
      */

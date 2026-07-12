@@ -1,6 +1,8 @@
-#ifndef _JSTD_CPP_LANG_NET_SOCKET_OPTIONS_H_
-#define _JSTD_CPP_LANG_NET_SOCKET_OPTIONS_H_
-#include <cstdint>
+#ifndef JSTD_CPP_LANG_NET_SOCKET_OPTIONS_H
+#define JSTD_CPP_LANG_NET_SOCKET_OPTIONS_H
+
+#include <cpp/lang/types.hpp>
+
 namespace jstd {
 
 /**
@@ -19,31 +21,20 @@ struct socket_option {
      * Позволяет задавать значения разного типа в зависимости от выбранной опции.
      */
     union {
-        /** Значение типа int8_t (1 байт). */
-        char byte_value;
-        
-        /** Значение типа int16_t (2 байта). */
-        short short_value;
-        
-        /** Значение типа int32_t (4 байта). */
-        int int_value;
-        
-        /** Значение типа float (4 байта, с плавающей точкой). */
-        float float_value;
-        
-        /** Значение типа int64_t (8 байт). */
-        long long_value;
-        
-        /** Значение типа double (8 байт, с плавающей точкой). */
-        double double_value;
+        char    byte_value;
+        short   short_value;
+        int     int_value;
+        float   float_value;
+        long    long_value;
+        double  double_value;
         
         /** 
          * Параметры linger (SO_LINGER).
          * Управляет поведением сокета при закрытии.
          */
         struct {
-            bool on_off;        /**< Включение/выключение linger (true = включено, false = выключено). */
-            uint32_t sec_time;  /**< Время ожидания перед закрытием соединения (0 = закрытие немедленно). */
+            bool         on_off;    /* Включение/выключение linger (true = включено, false = выключено).     */
+            unsigned int sec_time;  /* Время ожидания перед закрытием соединения (0 = закрытие немедленно).  */
         } linger;
 
         /** 
@@ -51,7 +42,7 @@ struct socket_option {
          * Определяет максимальное время ожидания операций.
          */
         struct {
-            int64_t millis; /**< Время ожидания в миллисекундах. */
+            timepoint millis; /* Время ожидания в миллисекундах. */
         } timeout;
 
         /** 
@@ -59,10 +50,10 @@ struct socket_option {
          * Используются для поддержания соединения.
          */
         struct {
-            bool on_off;            /**< Включение keep-alive (true = включено, false = выключено). */
-            uint32_t time_to_first; /**< Время до первой проверки активности (в секундах). */
-            uint32_t time_interval; /**< Интервал между проверками (в секундах). */
-            uint32_t try_count;     /**< Количество попыток перед закрытием соединения. */
+            bool on_off;        /* Включение keep-alive (true = включено, false = выключено).   */
+            unsigned int  time_to_first; /* Время до первой проверки активности (в секундах).            */
+            unsigned int  time_interval; /* Интервал между проверками (в секундах).                      */
+            unsigned int  try_count;     /* Количество попыток перед закрытием соединения.               */
         } keepalive;
     };
 
@@ -170,4 +161,4 @@ struct socket_option {
 
 }
 
-#endif//_JSTD_CPP_LANG_NET_SOCKET_OPTIONS_H_
+#endif //JSTD_CPP_LANG_NET_SOCKET_OPTIONS_H

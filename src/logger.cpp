@@ -40,27 +40,27 @@ namespace jstd
         void logger::message(level lvl, const char* msg) {
             JSTD_DEBUG_CODE(check_non_null(msg));
 
-            const int RESULT_BUFFER_SIZE = 129;
+            const std::size_t RESULT_BUFFER_SIZE = 129;
             char result[RESULT_BUFFER_SIZE];
-            int32_t result_size = 0;
+            int result_size = 0;
 
-            date now = date::now();
-            cstr_buf<date::TO_STRING_MIN_BUFFER_SIZE> buf = jstd::obj_to_cstr_buf(now);
+            tc::string strdate = date::now().to_string();
+
             switch (lvl) {
                 case level::INFO : {
-                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[INFO] (%s) %s\n", buf.cstr(), msg);
+                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[INFO] (%s) %s\n", strdate.cstr(), msg);
                     break;
                 }
                 case level::WARN : {
-                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[WARNING] (%s) %s\n", buf.cstr(), msg);
+                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[WARNING] (%s) %s\n", strdate.cstr(), msg);
                     break;
                 }
                 case level::ERROR : {
-                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[ERROR] (%s) %s\n", buf.cstr(), msg);
+                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[ERROR] (%s) %s\n", strdate.cstr(), msg);
                     break;
                 }
                 case level::EXCEPT : {
-                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[EXCEPTION] (%s) %s\n", buf.cstr(), msg);
+                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[EXCEPTION] (%s) %s\n", strdate.cstr(), msg);
                     break;
                 }
             }
@@ -72,7 +72,7 @@ namespace jstd
         else
         {
             try {
-                m_out->write(result, result_size);
+                m_out->write(result, (std::size_t) result_size);
             } catch (const io_exception& e) {
                 system::tsprintf("%s\n", e.cause());
                 e.print_stack_trace();

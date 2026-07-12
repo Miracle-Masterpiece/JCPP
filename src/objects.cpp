@@ -9,40 +9,26 @@ namespace objects
 {
 
     template<>
-    uint64_t hashcode<float>(const float* array, int64_t len) {
+    std::size_t hashcode<float>(const float* array, std::size_t len) {
 #ifndef NDEBUG
         if (array == nullptr)
             throw_except<null_pointer_exception>("array must be != null");        
 #endif//NDEBUG
-        uint64_t hash = 0xcbf29ce484222325;
-
-        if (len == -1) {
-            while (*array) 
-                hash = (hash ^ num::float_to_int_bits(*(array++))) * 0x100000001b3;
-        } else {
-            for (int64_t i = 0; i < len; ++i)
-                hash = (hash ^ num::float_to_int_bits(array[i])) * 0x100000001b3;
-        }
-
+        std::size_t hash = 0xcbf29ce484222325;
+        for (std::size_t i = 0; i < len; ++i)
+            hash = (hash ^ (std::size_t) num::float_to_uint_bits(array[i])) * 0x100000001b3;
         return hash;
     }
 
     template<>
-    uint64_t hashcode<double>(const double* array, int64_t len) {
+    std::size_t hashcode<double>(const double* array, std::size_t len) {
 #ifndef NDEBUG
         if (array == nullptr)
             throw_except<null_pointer_exception>("array must be != null");        
 #endif//NDEBUG
-        uint64_t hash = 0xcbf29ce484222325;
-
-        if (len == -1) {
-            while (*array) 
-                hash = (hash ^ num::double_to_long_bits(*(array++))) * 0x100000001b3;
-        } else {
-            for (int64_t i = 0; i < len; ++i)
-                hash = (hash ^ num::double_to_long_bits(array[i])) * 0x100000001b3;
-        }
-
+        std::size_t hash = 0xcbf29ce484222325;
+        for (std::size_t i = 0; i < len; ++i)
+            hash = (hash ^ (std::size_t) num::double_to_uint_bits(array[i])) * 0x100000001b3;
         return hash;
     }
 

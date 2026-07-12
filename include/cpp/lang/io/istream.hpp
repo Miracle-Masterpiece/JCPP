@@ -49,7 +49,7 @@ public:
      * @throws io_exception 
      *      Если произошла ошибка ввода/вывода
      */
-    virtual int64_t read(char buf[], int64_t sz) = 0;
+    virtual std::size_t read(char buf[], std::size_t sz) = 0;
 
     /**
      * Пропускает указанное количество байт во входном потоке.
@@ -63,19 +63,20 @@ public:
      * @throws io_exception 
      *      Если произошла ошибка ввода/вывода
      */
-    virtual int64_t skip(int64_t n = 1);
+    virtual std::size_t skip(std::size_t n = 1);
 
     /**
      * Возвращает количество доступных для чтения байт.
      * 
      * Позволяет узнать, сколько данных можно прочитать из этого потока.
      * 
-     * @return Количество доступных байт в потоке.
+     * @return
+     *      Количество доступных байт в потоке.
      * 
      * @throws io_exception 
      *      Если произошла ошибка ввода/вывода
      */
-    virtual int64_t available() const = 0;
+    virtual std::uintmax_t available() const = 0;
 
     /**
      * @note
@@ -90,6 +91,11 @@ public:
      *      Если произошла ошибка ввода/вывода
      */
     virtual void close() = 0;
+
+    // 
+    // 
+    // 
+    static std::size_t eof_value() {return (std::size_t) -1;} 
 };
 
 }

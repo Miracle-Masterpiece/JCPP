@@ -1,5 +1,5 @@
 #include <cpp/lang/io/ifstream.hpp>
-#include <cpp/lang/io/filesystem.hpp>
+#include <internal/io/filesystem.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/system.hpp>
 #include <errno.h>
@@ -8,22 +8,22 @@
 
 namespace jstd {
 
-    ifstream::ifstream() : istream(), _handle(nullptr), _available(0) {
+    ifstream::ifstream() : istream(), m_handle(nullptr), m_available(0) {
 
     }
 
-    ifstream::ifstream(const char* path, int path_length) : ifstream(file(path, path_length)) {
+    ifstream::ifstream(const char* path) : ifstream(file(path)) {
 
     }
     
-    ifstream::ifstream(const file& file) : _handle(nullptr), _available(0) {
+    ifstream::ifstream(const file& file) : m_handle(nullptr), m_available(0) {
         //функция filesystem::open уже кидает нужные исключения.
-        _handle = filesystem::open(file.str_path(), "rb");
+        m_handle = filesystem::open(file.cstr(), "rb");
         try {
-            _available = filesystem::length(file.str_path());
+            m_available = filesystem::length(file.cstr());
         } catch (const io_exception& except) {
             try {
-                filesystem::close(_handle);
+                filesystem::close(m_handle);
             } catch (const throwable& dontCare) {
 
             }
@@ -31,35 +31,34 @@ namespace jstd {
         }
     }
     
-    ifstream::ifstream(ifstream&& stream) : istream(), _handle(stream._handle), _available(stream._available) {
-        stream._handle      = nullptr;
-        stream._available   = 0;
+    ifstream::ifstream(ifstream&& stream) : istream(), m_handle(stream.m_handle), m_available(stream.m_available) {
+        stream.m_handle      = nullptr;
+        stream.m_available   = 0;
     }
     
     ifstream& ifstream::operator= (ifstream&& stream) {
         if (&stream != this) {
-            if (_handle != nullptr)
+            if (m_handle != nullptr)
                 close();
-            _handle     = stream._handle;
-            _available  = stream._available;
-            stream._handle      = nullptr;
-            stream._available   = 0;
+            m_handle     = stream.m_handle;
+            m_available  = stream.m_available;
+            stream.m_handle      = nullptr;
+            stream.m_available   = 0;
         }
         return *this;
     }
     
     void ifstream::close() {
-        if (_handle == nullptr)
-            return;
+        if (m_handle == nullptr) return;
         try {
-            filesystem::close(_handle);
+            filesystem::close(m_handle);
         } catch (const io_exception& e) {
-            _handle     = nullptr;
-            _available  = 0;
+            m_handle     = nullptr;
+            m_available  = 0;
             throw e;
         }
-        _handle     = nullptr;
-        _available  = 0;
+        m_handle     = nullptr;
+        m_available  = 0;
     }
     
     ifstream::~ifstream() {
@@ -70,36 +69,36 @@ namespace jstd {
         return istream::read();
     }
     
-    int64_t ifstream::read(char buf[], int64_t sz) {
-#ifndef NDEBUG
-        if (_handle == nullptr)
-            throw_except<io_exception>("File stream is null!");
-#endif
-        int64_t readed = fread(buf, 1, sz, _handle);   
+    std::size_t ifstream::read(char buf[], std::size_t sz) {
+        JSTD_DEBUG_CODE(
+            if (m_handle == nullptr)
+                throw_except<io_exception>("File stream is null!")
+        );
+        std::size_t readed = fread(buf, 1, sz, m_handle);   
         if (readed == 0) {
-            if (feof(_handle))
-                return -1;
-            if (ferror(_handle))
+            if (feof(m_handle))
+                return istream::eof_value();
+            if (ferror(m_handle))
                 throw_except<io_exception>(strerror(errno));
         }
-        _available -= readed;
+        m_available -= readed;
         return readed;
     }
     
-    int64_t ifstream::skip(int64_t n) {
-#ifndef NDEBUG
-        if (_handle == nullptr)
-            throw_except<io_exception>("File stream is null!");
-#endif
+    std::size_t ifstream::skip(std::size_t n) {
+        JSTD_DEBUG_CODE(
+            if (m_handle == nullptr)
+                throw_except<io_exception>("File stream is null!");
+        );
         return istream::skip(n);
     }
     
-    int64_t ifstream::available() const {
-#ifndef NDEBUG
-        if (_handle == nullptr)
-            throw_except<io_exception>("File stream is null!");
-#endif
-        return _available;
+    std::uintmax_t ifstream::available() const {
+        JSTD_DEBUG_CODE(
+            if (m_handle == nullptr)
+                throw_except<io_exception>("File stream is null!");
+        );
+        return m_available;
     }
 
 }

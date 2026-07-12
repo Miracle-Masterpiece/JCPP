@@ -57,7 +57,7 @@ namespace internal {
     }
     
     pool::pool(std::size_t blocksize, std::size_t count_blocks, base_allocator* allocator) : pool() {
-        blocksize = calcAlignSize(blocksize, alignof(std::max_align_t));
+        blocksize = align_up(blocksize, alignof(std::max_align_t));
         void* data = allocator->allocate_align(byte_size_for_pool(blocksize, count_blocks), alignof(std::max_align_t));
         if (data != nullptr) {
             m_allocator     = allocator;
@@ -252,7 +252,7 @@ namespace internal {
     void* pool_allocator::allocate_align(std::size_t sz, std::size_t/*ingnored*/) {
         assert(sz <= m_pool_size);
         void* p = nullptr;
-        for (uint64_t i = 0; i < m_pool.size(); ++i) {
+        for (std::size_t i = 0; i < m_pool.size(); ++i) {
             internal::pool& pool = m_pool.at(i);
             p = pool.allocate();
             if (p != nullptr)
@@ -278,7 +278,7 @@ namespace internal {
     }
 
     void pool_allocator::free_unsused_pools() {
-        for (uint64_t i = 0; i < m_pool.size(); ++i) {
+        for (std::size_t i = 0; i < m_pool.size(); ++i) {
             internal::pool& pool = m_pool.at(i);
             if (pool.is_free())
                 m_pool.remove_at(i--);

@@ -2,7 +2,7 @@
 #define _JSTD_CPP_LANG_IO_PROPERTIES_H_
 
 #include <cpp/lang/utils/hash_map.hpp>
-#include <cpp/lang/ustring.hpp>
+#include <cpp/lang/string.hpp>
 #include <cpp/lang/io/ostream.hpp>
 #include <cpp/lang/io/istream.hpp>
 
@@ -12,18 +12,18 @@ namespace jstd {
  * Класс для хранения и управления парой "ключ-значение".
  * 
  * Позволяет устанавливать, получать и загружать свойства из потока ввода/вывода.
- * Использует хеш-таблицу (hash_map<u8string, u8string>) для хранения данных.
+ * Использует хеш-таблицу (hash_map<string, string>) для хранения данных.
  */
 class properties {
     /**
      * Аллокатор для управления памятью
      */
-    tca::allocator*        _allocator; 
+    tca::allocator* m_allocator; 
     
     /**
      * Хеш-таблица для хранения свойств
      */
-    hash_map<string, string>    _props;
+    hash_map<string, string> m_values;
 
 public:
     /**
@@ -47,7 +47,7 @@ public:
      * @param allocator 
      *      Указатель на пользовательский аллокатор.
      */
-    properties(tca::allocator* allocator = tca::get_scoped_or_default());
+    properties(tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Устанавливает значение свойства по ключу.
@@ -105,7 +105,7 @@ public:
      * @return 
      *      Ссылка на значение, если ключ найден, иначе _default.
      */
-    const string& get_or_default(const string& key, const string& _default) const;
+    const string& get_or_default(const string& key, string& _default) const;
 
     /**
      * Сохраняет свойства в поток.
@@ -138,7 +138,7 @@ public:
      *      Константный итератор на первый элемент.
      */
     const_entry_iterator begin() const {
-        return _props.begin();
+        return m_values.begin();
     }
 
     /**
@@ -148,7 +148,7 @@ public:
      *      Константный итератор на элемент, следующий за последним.
      */
     const_entry_iterator end() const {
-        return _props.end();
+        return m_values.end();
     }
 };
 

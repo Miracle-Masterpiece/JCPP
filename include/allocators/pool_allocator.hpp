@@ -33,7 +33,7 @@ public:
         }
     };
 private:
-    static const std::size_t HEADER_SIZE = calcAlignSize(sizeof(memblock), alignof(std::max_align_t));
+    static const std::size_t HEADER_SIZE = align_up(sizeof(memblock), alignof(std::max_align_t));
 
     /**
      * 
@@ -173,7 +173,7 @@ public:
      * 
      */
     static constexpr std::size_t byte_size_for_pool(std::size_t block_size, std::size_t count_buckets) {
-        return (calcAlignSize(block_size, alignof(std::max_align_t)) + HEADER_SIZE) * count_buckets;
+        return (align_up(block_size, alignof(std::max_align_t)) + HEADER_SIZE) * count_buckets;
     }
 
     /**

@@ -199,7 +199,7 @@ public:
      *      Eсли tasks == nullptr. 
      *      Если bufsize <= 0.
      */
-    virtual void submit(task* tasks[], int32_t bufsize) = 0;
+    virtual void submit(task* tasks[], std::size_t bufsize) = 0;
 
     /**
      * Плавно завершает работу пула.

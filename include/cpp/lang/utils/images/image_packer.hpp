@@ -5,7 +5,6 @@
 #include <cpp/lang/utils/unique_ptr.hpp>
 #include <cpp/lang/utils/hash_map.hpp>
 #include <cpp/lang/array.hpp>
-#include <cpp/lang/ustring.hpp>
 #include <cstdint>
 
 namespace jstd {
@@ -25,15 +24,10 @@ class image;
 class image_packer {
     
     /**
-     * Основной аллокатор для внутренних нужд.
+     * 
      */
-    tca::allocator*        m_allocator;
-    
-    /**
-     * Аллокатор для узлов дерева размещения (node).
-     */
-    tca::allocator*        m_node_allocator;
-    
+    tca::allocator* m_allocator;
+
     /**
      * Корневой узел дерева размещения изображений.
      */
@@ -42,17 +36,17 @@ class image_packer {
     /**
      * Входной массив изображений.
      */
-    array<const image>          m_images;
+    array<const image> m_images;
     
     /**
      * Ширина выходного изображения (атласа).
      */
-    int32_t                     m_width;
+    int m_width;
     
     /**
      * Высота выходного изображения (атласа).
      */
-    int32_t                     m_height;
+    int m_height;
 
     /**
      * Внутренний метод для построения дерева размещения.
@@ -67,10 +61,10 @@ public:
      * Все координаты заданы в пикселях относительно результирующего изображения (атласа).
      */
     struct uv {
-        int32_t u0; // Левая граница (X) изображения в атласе.
-        int32_t v0; // Верхняя граница (Y) изображения в атласе.
-        int32_t u1; // Правая граница (X) изображения в атласе.
-        int32_t v1; // Нижняя граница (Y) изображения в атласе.
+        int u0; // Левая граница (X) изображения в атласе.
+        int v0; // Верхняя граница (Y) изображения в атласе.
+        int u1; // Правая граница (X) изображения в атласе.
+        int v1; // Нижняя граница (Y) изображения в атласе.
     };
 
     /**
@@ -101,8 +95,7 @@ public:
      *      Аллокатор для размещения узлов дерева. Может быть nullptr — в этом случае используется основной аллокатор.
      *      Лучше использовать какой-то пул аллокатор на размер sizeof(texturing::node), поскольку этот аллокатор выделяет только этот размер!
      */
-    image_packer(const image* img_array, int32_t count_images, int32_t w, int32_t h,
-                 tca::allocator* allocator = tca::get_scoped_or_default(), tca::allocator* node_allocator = tca::get_scoped_or_default());
+    image_packer(const image* img_array, std::size_t count_images, int w, int h, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Конструктор перемещения.
@@ -138,7 +131,7 @@ public:
      * @return 
      *      Сформированное изображение — текстурный атлас, содержащий все входные изображения.
      */
-    image pack(int32_t scale_factor = 1, int32_t out_image_channels = 4);
+    image pack(int scale_factor = 1, int out_image_channels = 4);
 
     /**
      * Возвращает массив координат (uv) всех изображений в атласе. 

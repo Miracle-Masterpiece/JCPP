@@ -15,7 +15,7 @@ namespace sptr
 
         }
 
-        shared_control_block::shared_control_block(tca::allocator* allocator, void* object, uint32_t blocksize) :
+        shared_control_block::shared_control_block(tca::allocator* allocator, void* object, std::size_t blocksize) :
         m_allocator(allocator), 
         m_object(object), 
         m_blocksize(blocksize),  
@@ -46,18 +46,14 @@ namespace sptr
             --m_weak_refs;
         }
 
-        uint32_t shared_control_block::strong_count() const {
+        std::size_t shared_control_block::strong_count() const {
             return m_strong_refs;
         }
         
-        uint32_t shared_control_block::weak_count() const {
+        std::size_t shared_control_block::weak_count() const {
             return m_weak_refs;
         }
-
-        int32_t shared_control_block::to_string(char buf[], int32_t bufsize) const {
-            return snprintf(buf, bufsize, "[data=0x%llx, strong=%llu, weak=%llu]", (unsigned long long) m_object, (unsigned long long) m_strong_refs, (unsigned long long) m_weak_refs);
-        }
-
+        
 }// namespace sptr 
 
 }// namespace internal 

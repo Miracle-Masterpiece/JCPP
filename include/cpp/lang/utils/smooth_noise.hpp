@@ -2,6 +2,7 @@
 #define JSTD_CPP_LANG_UTILS_SMOOTH_NOISE_H
 #include <cpp/lang/array.hpp>
 #include <cpp/lang/utils/random.hpp>
+#include <cpp/lang/numbers.hpp>
 
 namespace jstd
 {
@@ -16,10 +17,15 @@ namespace jstd
  * 
  */
 class smooth_noise {
-    int8_t        m_buffer[32];     // Длина должна быть степенью двойки.
-    array<int8_t> m_values;         // Обёртка над буфером.
-    int64_t       m_seed;           // Сид для генератора.
-    float (*m_curve_func)(float x);  // Функция искажения параметра интерполяции.
+
+    // Должно быть степенью двойки.
+    static const std::size_t BUF_SIZE = 32;
+    // 
+    signed char m_buffer[BUF_SIZE]; // Длина должна быть степенью двойки.
+    // 
+    unsigned long long m_seed;      // Сид для генератора.
+    // 
+    num::q16 (*m_curve_func)(const num::q16& x); // Функция искажения параметра интерполяции.
 
     /**
      * Возвращает значение шума в заданной целочисленной координате.
@@ -32,9 +38,9 @@ class smooth_noise {
      *      Y-координата.
      * 
      * @return 
-     *      Значение из массива, приведённое к диапазону [0.0, 1.0].
+     *      Значение из массива, из диапазона [0, CHAR_MAX].
      */
-    float value_at(int64_t x, int64_t y) const;
+    signed char value_at(long x, long y) const;
 
 public:
     /**
@@ -42,7 +48,7 @@ public:
      * При интерполяции между значениями функция {@code curve_func} применяется к параметру {@code t ∈ [0, 1]},
      * чтобы добиться сглаживания (например, quintic-кривые).
      */
-    typedef float (*curve_func)(float x);
+    typedef num::q16 (*curve_func)(const num::q16& x);
 
     /**
      * Создаёт генератор с произвольным сидом и заданной функцией искривления.
@@ -62,7 +68,7 @@ public:
      * @param curve 
      *      Функция искривления интерполяционного параметра.
      */
-    smooth_noise(int64_t seed, curve_func curve = no_smooth);
+    smooth_noise(unsigned long long seed, curve_func curve = no_smooth);
 
     /** Конструктор копирования. */
     smooth_noise(const smooth_noise& other);
@@ -85,7 +91,7 @@ public:
      * @return 
      *      Значение сида.
      */
-    int64_t get_seed() const;
+    unsigned long long get_seed() const;
 
     /**
      * Устанавливает новое значение сида.
@@ -94,11 +100,11 @@ public:
      * @param seed 
      *      Новое значение сида.
      */
-    void set_seed(int64_t seed);
+    void set_seed(unsigned long long seed);
 
     /**
      * Заполняет массив значений случайными числами на основе текущего сида.
-     * Каждое значение будет от {@code 0} до {@code num_limits<int8_t>::max()}.
+     * Каждое значение будет от {@code 0} до {@code num_limits<signed char>::max()}.
      */
     void generate_values();
 
@@ -119,9 +125,35 @@ public:
      *      Если масштаб равен нулю, то функция возвращает 0.
      * 
      * @return 
-     *      Значение шума в диапазоне [0.0, 1.0].
+     *      Значение шума в диапазоне [0.0, SCHAR_MAX].
      */
-    float get(int64_t x, int64_t y, int32_t scale) const;
+    signed char get0(long x, long y, int scale) const;
+    
+    /**
+     * 
+     */
+    num::q16 get1(long x, long y, int scale) const;
+    
+    /**
+     * Возвращает сглаженное значение шума в координатах (x, y) при заданном масштабе.
+     * 
+     * Координаты сначала делятся на {@code scale}, затем интерполируются с использованием
+     * функции сглаживания {@code curve_func}.
+     * 
+     * @param x 
+     *      X-координата.
+     * 
+     * @param y 
+     *      Y-координата.
+     * 
+     * @param scale 
+     *      Масштаб выборки (должен быть > 0). 
+     *      Если масштаб равен нулю, то функция возвращает 0.
+     * 
+     * @return 
+     *      Значение шума в диапазоне [0.0, 1].
+     */
+    float get(long x, long y, int scale) const;
 
     /**
      * Возвращает значение многослойного (фрактального) шума.
@@ -153,12 +185,12 @@ public:
      *      Значение шума в диапазоне [0.0, 1.0].
      * 
      * @throws illegal_argument_exception 
-     *      Если scale <= 0.
-     *      Если octaves <= 0.
-     *      Если scale_factor < 0.
-     *      Если freeq_factor < 0.
+     *      Если scale        <= 0.
+     *      Если octaves      <= 0.
+     *      Если scale_factor <  0.
+     *      Если freeq_factor <  0.
      */
-    float get(int64_t x, int64_t y, int32_t scale, int32_t octaves, float scale_factor = 0.5f, float freeq_factor = 0.5f) const;
+    float get(long x, long y, int scale, int octaves, int scale_factor = 2, int freeq_factor = 2) const;
 
     /**
      * Простая функция без сглаживания.
@@ -169,7 +201,7 @@ public:
      * 
      * @return x
      */
-    static float no_smooth(float x);
+    static num::q16 no_smooth(const num::q16& x);
 
     /**
      * Устанавливает новую функцию искривления параметра интерполяции.

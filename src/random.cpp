@@ -4,22 +4,21 @@
 namespace jstd
 {
 
-    uint64_t random::next0() {
-        // const uint64_t a = 25214903917L;                            // Multiplier constant.
-        // const uint64_t c = abs(next1() + next1()) & 0xfff;          // Increment constant.
-        // m_seed = (m_seed * a + c);
-        // return m_seed;
-        m_seed = next1();
-        return m_seed;
+    unsigned long long random::random_seed() {
+        return (unsigned long long) (system::current_time_millis() & 0xffff);
     }
     
-    uint64_t random::next1() {
-        const uint64_t a = 25214903917L;
-        const uint64_t c = 17;
-        return (m_seed * a + c);
+    unsigned long long random::next() {
+        const unsigned long long a = 0x2363239423U;
+        const unsigned long long c = 17U;
+        m_seed = (m_seed * a + c);
+        unsigned long long result = m_seed;
+        result ^= result >> 16;
+        result *= 0xa68bU;
+        return result;
     }
     
-    random::random(int64_t seed) : m_seed(seed) {
+    random::random(unsigned long long seed) : m_seed(seed) {
 
     }
     
@@ -47,25 +46,24 @@ namespace jstd
 
     template<>
     float random::next() {
-        int32_t v = static_cast<int32_t>(next0());
-        return math::abs(v) / (float) num_limits<int64_t>::max();
+        unsigned long long v = next();
+        return (float) math::abs(v) / (float) num_limits<unsigned long long>::max();
     }
 
     template<>
     double random::next() {
-        int64_t v = static_cast<int64_t>(next0());
-        return abs(v) / (double) num_limits<int64_t>::max();
+        unsigned long long v = next();
+        return (double) math::abs(v) / (double) num_limits<unsigned long long>::max();
     }
 
     template<>
     long double random::next() {
-        int64_t v = static_cast<int64_t>(next0());
-        return abs(v) / (long double) num_limits<int64_t>::max();
+        unsigned long long v = next();
+        return (long double) math::abs(v) / (long double) num_limits<unsigned long long>::max();
     }
 
     template<>
     bool random::next() {
-        return (((next0() >> 31) & 0xffffffff) & 1) != 0;
+        return ((next() >> 31) & 1) != 0;
     }
-
 }

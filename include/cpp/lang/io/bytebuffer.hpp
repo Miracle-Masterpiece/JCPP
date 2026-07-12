@@ -22,42 +22,42 @@ protected:
     /**
      * 
      */
-    tca::allocator*    _allocator;
+    tca::allocator* m_allocator;
     
     /**
      * 
      */
-    char*                   _data;
+    char* m_data;
     
     /**
      * 
      */
-    int64_t                 _cap;
+    std::size_t m_capacity;
     
     /**
      * 
      */
-    int64_t                 _pos;
+    std::size_t m_position;
     
     /**
      * 
      */
-    int64_t                 _limit;
+    std::size_t m_limit;
     
     /**
      * 
      */
-    int64_t                 _mark;
+    std::size_t m_mark;
     
     /**
      * 
      */
-    byte_order              _order;
+    byte_order m_order;
     
     /**
      * 
      */
-    bool                    m_readonly;
+    bool m_readonly;
 
 
     /**
@@ -78,13 +78,13 @@ protected:
     /**
      * 
      */
-    void checkIndex(int64_t idx, int64_t sz) const {
+    void checkIndex(std::size_t idx, std::size_t sz) const {
         JSTD_DEBUG_CODE(
-            if (idx > _limit) {
-                throw_except<index_out_of_bound_exception>("Index %zu > _limit %zu", idx, _limit);
+            if (idx > m_limit) {
+                throw_except<index_out_of_bound_exception>("Index %zu > _limit %zu", idx, m_limit);
             }
-            else if (_limit - idx < sz) {
-                throw_except<index_out_of_bound_exception>("Remaining %zu < tsize %zu", _limit - idx, sz);
+            else if (m_limit - idx < sz) {
+                throw_except<index_out_of_bound_exception>("Remaining %zu < tsize %zu", m_limit - idx, sz);
             }
         );
     }
@@ -108,12 +108,12 @@ public:
     /**
      * 
      */
-    byte_buffer(char* buf, int64_t bufsize, bool readonly = false);
+    byte_buffer(char* buf, std::size_t bufsize, bool readonly = false);
     
     /**
      * 
      */
-    explicit byte_buffer(int64_t capacity, tca::allocator* allocator = tca::get_scoped_or_default());
+    explicit byte_buffer(std::size_t capacity, tca::allocator* allocator = tca::get_scoped_or_default());
     
     /**
      * 
@@ -133,37 +133,37 @@ public:
     /**
      * 
      */
-    static byte_buffer allocate(int64_t capacity, tca::allocator* allocator = tca::get_scoped_or_default());
+    static byte_buffer allocate(std::size_t capacity, tca::allocator* allocator = tca::get_scoped_or_default());
     
     /**
      * 
      */
-    int64_t position() const;
+    std::size_t position() const;
     
     /**
      * 
      */
-    byte_buffer& position(int64_t newpos);
+    byte_buffer& position(std::size_t newpos);
 
     /**
      * 
      */
-    int64_t limit() const;
+    std::size_t limit() const;
     
     /**
      * 
      */
-    byte_buffer& limit(int64_t newlimit);
+    byte_buffer& limit(std::size_t newlimit);
 
     /**
      * 
      */
-    int64_t remaining() const;
+    std::size_t remaining() const;
 
     /**
      * 
      */
-    int64_t capacity() const;
+    std::size_t capacity() const;
 
     /**
      * 
@@ -215,19 +215,19 @@ public:
      * 
      */
     template<typename T>
-    byte_buffer& put(int64_t idx, T v);
+    byte_buffer& put(std::size_t idx, T v);
     
     /**
      * 
      */
     template<typename T>
-    byte_buffer& puts(const T* arr, int64_t sz);
+    byte_buffer& puts(const T* arr, std::size_t sz);
     
     /**
      * 
      */
     template<typename T>
-    byte_buffer& puts(int64_t idx, const T* arr, int64_t sz);
+    byte_buffer& puts(std::size_t idx, const T* arr, std::size_t sz);
         
     /**
      * 
@@ -239,19 +239,19 @@ public:
      * 
      */
     template<typename T>
-    T get(int64_t idx) const;
+    T get(std::size_t idx) const;
     
     /**
      * 
      */
     template<typename T>
-    byte_buffer& gets(T* arr, int64_t sz);
+    byte_buffer& gets(T* arr, std::size_t sz);
     
     /**
      * 
      */
     template<typename T>
-    byte_buffer& gets(int64_t idx, T* arr, int64_t sz);
+    byte_buffer& gets(std::size_t idx, T* arr, std::size_t sz);
     
     /**
      * 
@@ -261,74 +261,74 @@ public:
     /**
      * 
      */
-    int to_string(char buf[], int bufsize) const;
+    int to_string(char buf[], std::size_t bufsize) const;
 };
 
     template<typename T>
     byte_buffer& byte_buffer::put(T v) {
         check_write_or_except();                                                                                                                            \
-        put<T>(_pos, v);
-        _pos += sizeof(v);
+        put<T>(m_position, v);
+        m_position += sizeof(v);
         return *this;
     }
     
     template<typename T>
-    byte_buffer& byte_buffer::put(int64_t idx, T v) {
+    byte_buffer& byte_buffer::put(std::size_t idx, T v) {
         check_write_or_except();                                                                                                                            \
         checkIndex(idx, sizeof(v));
-        utils::write_with_order<T>(_data + idx, v, _order);
+        utils::write_with_order<T>(m_data + idx, v, m_order);
         return *this;
     }
 
     template<typename T>
-    byte_buffer& byte_buffer::puts(const T* arr, int64_t sz) {
+    byte_buffer& byte_buffer::puts(const T* arr, std::size_t sz) {
         check_write_or_except();                                                                                                                            \
-        puts<T>(_pos, arr, sz);
-        _pos += sizeof(T) * sz;
+        puts<T>(m_position, arr, sz);
+        m_position += sizeof(T) * sz;
         return *this;
     }
 
     template<typename T>
-    byte_buffer& byte_buffer::puts(int64_t idx, const T* arr, int64_t sz) {
+    byte_buffer& byte_buffer::puts(std::size_t idx, const T* arr, std::size_t sz) {
         check_write_or_except();                                                                                                                            \
         checkIndex(idx, sizeof(T) * sz);
-        if (_order != system::native_byte_order()) {
-            utils::copy_swap_memory<T>(_data + idx, reinterpret_cast<const char*>(arr), sz);
+        if (m_order != system::native_byte_order()) {
+            utils::copy_swap_memory<T>(m_data + idx, reinterpret_cast<const char*>(arr), sz);
         } 
         else {
-            std::memcpy(_data + idx, reinterpret_cast<const char*>(arr), sizeof(T) * sz);
+            std::memcpy(m_data + idx, reinterpret_cast<const char*>(arr), sizeof(T) * sz);
         }
         return *this;
     }
     
     template<typename T>
     T byte_buffer::get() {
-        T tmp = get<T>(_pos);
-        _pos += sizeof(tmp);
+        T tmp = get<T>(m_position);
+        m_position += sizeof(tmp);
         return tmp;
     }
 
     template<typename T>
-    T byte_buffer::get(int64_t idx) const {
+    T byte_buffer::get(std::size_t idx) const {
         checkIndex(idx, sizeof(T));
-        return utils::read_with_order<T>(_data + idx, _order);
+        return utils::read_with_order<T>(m_data + idx, m_order);
     }
 
     template<typename T>
-    byte_buffer& byte_buffer::gets(T* arr, int64_t sz) {
-        gets<T>(_pos, arr, sz);
-        _pos += sizeof(T) * sz;
+    byte_buffer& byte_buffer::gets(T* arr, std::size_t sz) {
+        gets<T>(m_position, arr, sz);
+        m_position += sizeof(T) * sz;
         return *this;
     }
 
     template<typename T>
-    byte_buffer& byte_buffer::gets(int64_t idx, T* arr, int64_t sz) {
+    byte_buffer& byte_buffer::gets(std::size_t idx, T* arr, std::size_t sz) {
         checkIndex(idx, sizeof(T) * sz);
-        if (_order != system::native_byte_order()) {
-            utils::copy_swap_memory<T>(reinterpret_cast<char*>(arr), _data + idx, sz);
+        if (m_order != system::native_byte_order()) {
+            utils::copy_swap_memory<T>(reinterpret_cast<char*>(arr), m_data + idx, sz);
         } 
         else {
-            std::memcpy(reinterpret_cast<char*>(arr), _data + idx, sizeof(T) * sz);
+            std::memcpy(reinterpret_cast<char*>(arr), m_data + idx, sizeof(T) * sz);
         }
         return *this;
     }
@@ -339,37 +339,29 @@ public:
      * ###############################################################
      */
 
-#define ______MAKE____SPECIALIZATION____ALLOCATORS_LIB_BYTE_BUFFER(type_name__jstd_io_bytebuffer)                                                       \
-                                                                                                                                                        \
-    template<>                                                                                                                                          \
-    byte_buffer& byte_buffer::put<type_name__jstd_io_bytebuffer>(type_name__jstd_io_bytebuffer v);                                                      \
-                                                                                                                                                        \
-    template<>                                                                                                                                          \
-    byte_buffer& byte_buffer::put<type_name__jstd_io_bytebuffer>(int64_t idx, type_name__jstd_io_bytebuffer v);                                     \
-                                                                                                                                                        \
-    template<>                                                                                                                                          \
-    byte_buffer& byte_buffer::puts<type_name__jstd_io_bytebuffer>(const type_name__jstd_io_bytebuffer* arr, int64_t sz);                            \
-                                                                                                                                                        \
-    template<>                                                                                                                                          \
-    byte_buffer& byte_buffer::puts<type_name__jstd_io_bytebuffer>(int64_t idx, const type_name__jstd_io_bytebuffer* arr, int64_t sz);           \
-                                                                                                                                                        \
-    template<>                                                                                                                                          \
-    type_name__jstd_io_bytebuffer byte_buffer::get<type_name__jstd_io_bytebuffer>();                                                                    \
-                                                                                                                                                        \
-    template<>                                                                                                                                          \
-    type_name__jstd_io_bytebuffer byte_buffer::get<type_name__jstd_io_bytebuffer>(int64_t idx) const;                                               \
-                                                                                                                                                        \
-    template<>                                                                                                                                          \
-    byte_buffer& byte_buffer::gets<type_name__jstd_io_bytebuffer>(type_name__jstd_io_bytebuffer* arr, int64_t sz);                                  \
-                                                                                                                                                        \
-    template<>                                                                                                                                          \
-    byte_buffer& byte_buffer::gets<type_name__jstd_io_bytebuffer>(int64_t idx, type_name__jstd_io_bytebuffer* arr, int64_t sz);                 \
+#define MAKE_SPECIALIZATION_ALLOCATORS_LIB_BYTE_BUFFER(type_name__jstd_io_bytebuffer)\
+    template<>\
+    byte_buffer& byte_buffer::put<type_name__jstd_io_bytebuffer>(type_name__jstd_io_bytebuffer v);\
+    template<>\
+    byte_buffer& byte_buffer::put<type_name__jstd_io_bytebuffer>(std::size_t idx, type_name__jstd_io_bytebuffer v);\
+    template<>\
+    byte_buffer& byte_buffer::puts<type_name__jstd_io_bytebuffer>(const type_name__jstd_io_bytebuffer* arr, std::size_t sz);\
+    template<>\
+    byte_buffer& byte_buffer::puts<type_name__jstd_io_bytebuffer>(std::size_t idx, const type_name__jstd_io_bytebuffer* arr, std::size_t sz);\
+    template<>\
+    type_name__jstd_io_bytebuffer byte_buffer::get<type_name__jstd_io_bytebuffer>();\
+    template<>\
+    type_name__jstd_io_bytebuffer byte_buffer::get<type_name__jstd_io_bytebuffer>(std::size_t idx) const;\
+    template<>\
+    byte_buffer& byte_buffer::gets<type_name__jstd_io_bytebuffer>(type_name__jstd_io_bytebuffer* arr, std::size_t sz);\
+    template<>\
+    byte_buffer& byte_buffer::gets<type_name__jstd_io_bytebuffer>(std::size_t idx, type_name__jstd_io_bytebuffer* arr, std::size_t sz);\
 
-______MAKE____SPECIALIZATION____ALLOCATORS_LIB_BYTE_BUFFER(char)
-______MAKE____SPECIALIZATION____ALLOCATORS_LIB_BYTE_BUFFER(signed char)
-______MAKE____SPECIALIZATION____ALLOCATORS_LIB_BYTE_BUFFER(unsigned char)
+    MAKE_SPECIALIZATION_ALLOCATORS_LIB_BYTE_BUFFER(char)
+    MAKE_SPECIALIZATION_ALLOCATORS_LIB_BYTE_BUFFER(signed char)
+    MAKE_SPECIALIZATION_ALLOCATORS_LIB_BYTE_BUFFER(unsigned char)
 
-#undef ______MAKE____SPECIALIZATION____ALLOCATORS_LIB_BYTE_BUFFER
+#undef MAKE_SPECIALIZATION_ALLOCATORS_LIB_BYTE_BUFFER
 }                                                                                                                                                   
 
 #endif//ALLOCATORS_LANG_IO_BYTEBUFFER_H_

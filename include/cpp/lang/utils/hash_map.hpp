@@ -21,7 +21,7 @@ public:
         /**
          * 
          */
-        uint64_t m_hash;
+        std::size_t m_hash;
 
         /**
          * 
@@ -38,7 +38,7 @@ public:
          * 
          */
         template<typename TKEY_, typename TVALUE_>
-        entry(TKEY_&&, TVALUE_&&, uint64_t hashcode);
+        entry(TKEY_&&, TVALUE_&&, std::size_t hashcode);
 
         /**
          * 
@@ -96,7 +96,7 @@ private:
     /**
      * 
      */
-    int64_t m_size;
+    std::size_t m_size;
 
     /**
      * 
@@ -107,7 +107,7 @@ private:
      * 
      */
     template<typename TKEY_, typename TVALUE_>
-    entry* alloc_entry(TKEY_&&, TVALUE_&&, uint64_t hashcode);
+    entry* alloc_entry(TKEY_&&, TVALUE_&&, std::size_t hashcode);
     
     /**
      * 
@@ -143,12 +143,12 @@ public:
     /**
      * 
      */
-    hash_map(tca::allocator* allocator = tca::get_scoped_or_default());
+    hash_map(tca::allocator* allocator = tca::get_default_allocator());
     
     /**
      * 
      */
-    hash_map(int64_t initial_capacity, float load_factor = 0.75f, tca::allocator* allocator = tca::get_scoped_or_default());
+    hash_map(std::size_t initial_capacity, float load_factor = 0.75f, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * 
@@ -218,7 +218,7 @@ public:
     /**
      * 
      */
-    const TVALUE& get_or_default(const TKEY& key, const TVALUE& value) const;
+    const TVALUE& get_or_default(const TKEY& key, TVALUE& value) const;
     
     /**
      * 
@@ -229,7 +229,7 @@ public:
      * @return
      *      Размер этой карты.
      */
-    int64_t size() const;
+    std::size_t size() const;
 
     /**
      * @return
@@ -282,17 +282,17 @@ public:
         /**
          * 
          */
-        int64_t m_length;
+        std::size_t m_length;
 
         /**
          * 
          */
-        int64_t m_idx;
+        std::size_t m_idx;
     public:
         /**
          * 
          */
-        iterator(TENTRY* const* e, int64_t length);
+        iterator(TENTRY* const* e, std::size_t length);
         
         /**
          * 
@@ -377,7 +377,7 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    hash_map<TKEY, TVALUE, THASHER, TEQUALER>::hash_map(int64_t initial_capacity, float load_factor, tca::allocator* allocator) :
+    hash_map<TKEY, TVALUE, THASHER, TEQUALER>::hash_map(std::size_t initial_capacity, float load_factor, tca::allocator* allocator) :
         m_allocator(allocator),
         m_buckets(initial_capacity, allocator),
         m_size(0),
@@ -433,7 +433,7 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TKEY_, typename TVALUE_>
-    typename hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* hash_map<TKEY, TVALUE, THASHER, TEQUALER>::alloc_entry(TKEY_&& key, TVALUE_&& value, uint64_t hashcode) {
+    typename hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* hash_map<TKEY, TVALUE, THASHER, TEQUALER>::alloc_entry(TKEY_&& key, TVALUE_&& value, std::size_t hashcode) {
         void* mem = m_allocator->allocate_align(sizeof(entry), alignof(entry));
         if (!mem)
             throw_except<out_of_memory_error>("Out of memory!");
@@ -464,18 +464,19 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::rehash() {
-        array<entry*> _new((int64_t) (m_buckets.length * 1.5));
+        array<entry*> _new((std::size_t) (m_buckets.length + (m_buckets.length >> 1)));
         _new.set(nullptr);
-        array<entry*> old = std::move(m_buckets);
-        m_buckets = std::move(_new);
+
+        array<entry*> old   = std::move(m_buckets);
+        m_buckets           = std::move(_new);
         
         THASHER hashcode;
-        for (int64_t i = 0, len = old.length; i < len; ++i) {
+        for (std::size_t i = 0, len = old.length; i < len; ++i) {
             for (entry* e = old[i]; e != nullptr; ) {
                 entry* current = e;
                 e = e->get_next();
-                uint64_t hash   = hashcode(current->get_key());
-                uint64_t idx    = hash % m_buckets.length;
+                std::size_t hash   = hashcode(current->get_key());
+                std::size_t idx    = hash % m_buckets.length;
                 
                 current->set_next(nullptr);
                 if (!m_buckets[idx])
@@ -502,8 +503,8 @@ public:
             rehash();
 
         THASHER hashcode;
-        uint64_t hash   = hashcode(key);
-        uint64_t idx    = hash % m_buckets.length;
+        std::size_t hash    = hashcode(key);
+        std::size_t idx     = hash % m_buckets.length;
 
         if (!m_buckets[idx])
         {
@@ -534,8 +535,8 @@ public:
         if (is_empty())
             return false;
         THASHER hashcode;
-        uint64_t hash   = hashcode(key);
-        uint64_t idx    = hash % m_buckets.length;
+        std::size_t hash = hashcode(key);
+        std::size_t idx  = hash % m_buckets.length;
         
         TEQUALER equals;
         entry* prev = nullptr;
@@ -562,8 +563,8 @@ public:
         if (is_empty())
             return nullptr;
         THASHER hashcode;
-        uint64_t hash   = hashcode(key);
-        uint64_t idx    = hash % m_buckets.length;
+        std::size_t hash = hashcode(key);
+        std::size_t idx  = hash % m_buckets.length;
         TEQUALER equals;
         for (entry* i = m_buckets[idx]; i != nullptr; i = i->get_next()) {
             if (equals(i->get_key(), key))
@@ -577,8 +578,8 @@ public:
         if (is_empty())
             return nullptr;
         THASHER hashcode;
-        uint64_t hash   = hashcode(key);
-        uint64_t idx    = hash % m_buckets.length;
+        std::size_t hash = hashcode(key);
+        std::size_t idx  = hash % m_buckets.length;
         TEQUALER equals;
         for (entry* i = m_buckets[idx]; i != nullptr; i = i->get_next()) {
             if (equals(i->get_key(), key)) {
@@ -594,8 +595,8 @@ public:
         if (is_empty())
             return false;
         THASHER hashcode;
-        uint64_t hash   = hashcode(key);
-        uint64_t idx    = hash % m_buckets.length;
+        std::size_t hash = hashcode(key);
+        std::size_t idx  = hash % m_buckets.length;
         TEQUALER equals;
         for (entry* i = m_buckets[idx]; i != nullptr; i = i->get_next()) {
             if (equals(i->get_key(), key)) {
@@ -612,8 +613,7 @@ public:
         if (val)
             return *val;
         else
-            throw_except<no_such_element_exception>("No such element in map"); 
-        throw 0; //[-Wreturn-type]
+            throw make_except<no_such_element_exception>("No such element in map"); 
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -622,8 +622,7 @@ public:
         if (val)
             return *val;
         else
-            throw_except<no_such_element_exception>("No such element in map"); 
-        throw 0; //[-Wreturn-type]
+            throw make_except<no_such_element_exception>("No such element in map"); 
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -636,7 +635,7 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    const TVALUE& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_or_default(const TKEY& key, const TVALUE& value) const {
+    const TVALUE& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_or_default(const TKEY& key, TVALUE& value) const {
         const TVALUE* val = get0(key);
         if (val)
             return *val;
@@ -661,13 +660,13 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    int64_t hash_map<TKEY, TVALUE, THASHER, TEQUALER>::size() const {
+    std::size_t hash_map<TKEY, TVALUE, THASHER, TEQUALER>::size() const {
         return m_size;
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     float hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_load_factor() const {
-        return m_size / (float) m_buckets.length;
+        return (float) m_size / (float) m_buckets.length;
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -682,7 +681,7 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::clear() {
-        for (int64_t i = 0; i < m_buckets.length; ++i) {
+        for (std::size_t i = 0; i < m_buckets.length; ++i) {
             entry* e = m_buckets[i];
             while (e) {
                 entry* current = e;
@@ -726,7 +725,7 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TKEY_, typename TVALUE_>
-    hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::entry(TKEY_&& key, TVALUE_&& value, uint64_t hashcode) :
+    hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::entry(TKEY_&& key, TVALUE_&& value, std::size_t hashcode) :
         m_next(nullptr),
         m_hash(hashcode),
         m_key(std::forward<TKEY_>(key)),
@@ -777,7 +776,7 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TENTRY>
-    hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::iterator(TENTRY* const* e, int64_t length) :
+    hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::iterator(TENTRY* const* e, std::size_t length) :
         m_entries(e),
         m_node(nullptr),
         m_length(length),
@@ -804,7 +803,7 @@ public:
     typename hash_map<TKEY, TVALUE, THASHER, TEQUALER>::template iterator<TENTRY>& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator++ () {
         if (m_node == nullptr || m_node->get_next() == nullptr)
         {
-            for (int64_t i = m_idx; i < m_length; ++i)
+            for (std::size_t i = m_idx; i < m_length; ++i)
             {
                 if (m_entries[i])
                 {

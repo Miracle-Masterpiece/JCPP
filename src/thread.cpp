@@ -13,21 +13,15 @@ namespace jstd {
     /*static*/ const thread::state thread::state::RUNNABLE    = {1};
     /*static*/ const thread::state thread::state::TERMINATED  = {2};
     
-    int32_t thread::state::to_string(char buf[], int32_t bufsize) const {
-        const char* value = nullptr;
-        if (*this == NEW) 
-            value = "NEW";
-        else if (*this == RUNNABLE) 
-            value = "RUNNABLE";
-        else if (*this == TERMINATED) 
-            value = "TERMINATED";
-        else
-            value = "Illegal state!";
-        return ncopy(value, buf, bufsize);
+    const char* thread::state::to_string() const {
+        if (*this == NEW)               return "NEW";
+        else if (*this == RUNNABLE)     return "RUNNABLE";
+        else if (*this == TERMINATED)   return "TERMINATED";
+        else                            return "Illegal state!";
     }
     
-    uint64_t thread::state::hashcode() const {
-        return m_state;
+    std::size_t thread::state::hashcode() const {
+        return (std::size_t) m_state;
     }
     
     bool thread::state::equals(const state& other) const {
@@ -51,7 +45,7 @@ namespace jstd {
      */
     void new_thread_start_func(thread* _this);
 
-    /*static */ uint64_t thread::total_threads = 0;
+    /*static */ std::size_t thread::total_threads = 0;
 
     /*static */ std::mutex thread::global_lock;
 
@@ -59,7 +53,7 @@ namespace jstd {
 
     }
 
-    thread::thread(runnable* task, const char* thread_name, int32_t) : m_thread(), m_runnable(nullptr), m_thread_id(0) {
+    thread::thread(runnable* task, const char* thread_name, std::size_t) : m_thread(), m_runnable(nullptr), m_thread_id(0) {
         global_lock.lock(); {
             m_thread_id = total_threads++;
         } global_lock.unlock();
@@ -67,11 +61,10 @@ namespace jstd {
         m_runnable  = task;    
         m_state     = thread::state::NEW;
 
-        if (thread_name != nullptr) {
+        if (thread_name != nullptr)
             set_name(thread_name);
-        } else {
+        else
             std::snprintf(m_name, sizeof(m_name), "Thread-%llu", (unsigned long long ) m_thread_id);
-        }
     }
     
     thread::thread(thread&& t) : m_thread(), m_runnable(nullptr), m_thread_id(0), m_state(state::NEW) {
@@ -88,6 +81,7 @@ namespace jstd {
             m_state     = t.get_state();
             set_name(t.get_name());
             m_runnable  = t.m_runnable;
+
         }
         return *this;
     }
@@ -113,10 +107,9 @@ namespace jstd {
         } catch (const std::exception& e2) {
             system::tsprintf("Exception in thread \"%s\": %s\n", _this->get_name(), e2.what());
         }
-        //Может быть тут нужен лок... 
-        //thread::global_lock.lock();
-            _this->m_state = thread::state::TERMINATED;
-        //thread::global_lock.unlock();
+        
+        _this->m_state = thread::state::TERMINATED;
+        
     }
 
     void thread::run() {

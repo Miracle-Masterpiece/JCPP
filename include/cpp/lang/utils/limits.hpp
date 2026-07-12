@@ -83,16 +83,16 @@ ___JSTD_MAKE_NUMERIC_LIMITS_SIGNED(signed long long)
 
 #undef ___JSTD_MAKE_NUMERIC_LIMITS_SIGNED
 
-#define ___JSTD_MAKE_NUMERIC_LIMITS_UNSIGNED(type)                                          \
-template<>                                                                                  \
-struct num_limits<type> {                                                                   \
-    static constexpr type max() {                                                           \
-        return ~0;                                                                          \
-    }                                                                                       \
-    static constexpr type min() {                                                           \
-        return 0;                                                                           \
-    }                                                                                       \
-};                                                                                          \
+#define ___JSTD_MAKE_NUMERIC_LIMITS_UNSIGNED(type)\
+template<>\
+struct num_limits<type> {\
+    static constexpr type max() {\
+        return (type) ~((type) 0);\
+    }\
+    static constexpr type min() {\
+        return 0;\
+    }\
+};\
 
 ___JSTD_MAKE_NUMERIC_LIMITS_UNSIGNED(unsigned char)
 ___JSTD_MAKE_NUMERIC_LIMITS_UNSIGNED(unsigned short)

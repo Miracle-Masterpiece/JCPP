@@ -3,8 +3,8 @@
 
 
 #include <cpp/lang/utils/optional.hpp>
+#include <cpp/lang/string.hpp>
 #include <cstdint>
-
 
 /**
  * BSD types
@@ -12,35 +12,69 @@
 struct in_addr;
 struct in6_addr;
 
-namespace jstd {
+namespace jstd
+{
 
 class inet_family {
-    int32_t m_value;
+    int m_value;
 public:
-    constexpr inet_family(int32_t value = 0) : m_value(value) {}
-    inet_family(const inet_family& f) : m_value(f.m_value) {}
-    inet_family(inet_family&& f) : m_value(f.m_value) {}
-    inet_family& operator= (const inet_family& f) { m_value = f.m_value; return *this;}
-    inet_family& operator= (inet_family&& f) { m_value = f.m_value; return *this;}
-    bool operator==(const inet_family& f) const {return m_value == f.m_value;}
-    bool operator!=(const inet_family& f) const {return m_value != f.m_value;};
-    operator int32_t() const {return m_value;}
+    // 
+    // 
+    // 
+    constexpr inet_family(int value = 0) : m_value(value) {}
     
-    /**
-     * NO IP
-     */
+    // 
+    // 
+    // 
+    inet_family(const inet_family& f) : m_value(f.m_value) {}
+    
+    // 
+    // 
+    // 
+    inet_family(inet_family&& f) : m_value(f.m_value) {}
+    
+    // 
+    // 
+    // 
+    inet_family& operator= (const inet_family& f) { m_value = f.m_value; return *this;}
+    
+    // 
+    // 
+    // 
+    inet_family& operator= (inet_family&& f) { m_value = f.m_value; return *this;}
+    
+    // 
+    // 
+    // 
+    bool operator==(const inet_family& f) const {return m_value == f.m_value;}
+    
+    // 
+    // 
+    // 
+    bool operator!=(const inet_family& f) const {return m_value != f.m_value;};
+    
+    // 
+    // 
+    // 
+    operator int() const {return m_value;}
+
+    // 
+    // NO IP
+    // 
     static const inet_family NONE;
     
-    /**
-     * Internet protocol v4
-     */
+    // 
+    // Internet protocol v4
+    // 
     static const inet_family IPV4;
     
-    /**
-     * Internet protocol v6
-     */
+    // 
+    // Internet protocol v6
+    // 
     static const inet_family IPV6;
 };
+
+namespace tc = jstd;
 
 namespace internal
 {
@@ -199,12 +233,12 @@ public:
      * @return 
      *      Количество записанных символов (без учёта завершающего '\0')
      */
-    int to_string(char buf[], int bufsize) const;
+    int to_string(char buf[], std::size_t bufsize) const;
 
     /**
      * Вычисляет хеш-код адреса.
      */
-    int64_t hashcode() const;
+    std::size_t hashcode() const;
 
     /**
      * Проверяет равенство двух адресов.
@@ -234,17 +268,17 @@ public:
      * @throws illegal_state_exception 
      *      Eсли не удалось получить адреса
      */
-    static int get_all_by_name(inet_address buf[], int bufsize, const char* domain);
+    static std::size_t get_all_by_name(inet_address buf[], std::size_t bufsize, const char* domain);
 
     /**
      * Создаёт IPv4-адрес из массива байт.
      */
-    static inet_address as_IPv4(const uint8_t buf[], int bufsize);
+    static inet_address as_ip4(const unsigned char buf[], std::size_t bufsize);
 
     /**
      * Создаёт IPv6-адрес из массива 16-битных значений.
      */
-    static inet_address as_IPv6(const uint16_t buf[], int bufsize);
+    static inet_address as_ip6(const unsigned short buf[], std::size_t bufsize);
 
     /**
      * Парсит строку как IPv4-адрес.
@@ -266,12 +300,12 @@ public:
     /**
      * Преобразует IPv4-адрес в строку.
      */
-    static int IPv4ToString(char buf[], int bufsize, const inet_address& address);
+    static int IPv4ToString(char buf[], std::size_t bufsize, const inet_address& address);
 
     /**
      * Преобразует IPv6-адрес в строку.
      */
-    static int IPv6ToString(char buf[], int bufsize, const inet_address& address);
+    static int IPv6ToString(char buf[], std::size_t bufsize, const inet_address& address);
 
     /**
      * Создаёт объект из структуры in_addr.
@@ -294,9 +328,9 @@ public:
     void get_in6_addr(in6_addr* addr_out) const;
 
     /**
-     * Минимальный рекомендуемый размер буфера для to_string.
+     * Возвращает строковое представление IP адреса.
      */
-    static const int32_t TO_STRING_MIN_BUFFER_SIZE = 64;
+    tc::string to_string(tca::allocator* = tca::get_default_allocator()) const;
 };
 
 /**
@@ -304,16 +338,10 @@ public:
  * Используется для установления соединений и привязки.
  */
 class socket_address {
-    /**
-     * IP-адрес.
-     */
+    // The ip socket address
     inet_address m_address;
-
-    /**
-     * Порт (от 0 до 65535).
-     */
-    int32_t m_port;
-
+    // The port 
+    unsigned int m_port;
 public:
     /**
      * Конструктор по умолчанию.
@@ -323,7 +351,7 @@ public:
     /**
      * Конструктор с IP-адресом и портом.
      */
-    socket_address(const inet_address& address, int32_t port);
+    socket_address(const inet_address& address, unsigned int port);
 
     /**
      * Конструктор копирования.
@@ -348,7 +376,7 @@ public:
     /**
      * Возвращает порт.
      */
-    int32_t get_port() const;
+    unsigned int get_port() const;
 
     /**
      * Возвращает IP-адрес.
@@ -358,7 +386,7 @@ public:
     /**
      * Вычисляет хеш-код.
      */
-    int64_t hashcode() const;
+    std::size_t hashcode() const;
 
     /**
      * Проверяет равенство двух адресов сокета.
@@ -378,7 +406,7 @@ public:
      * @return 
      *      Количество записанных символов (не считая '\0').
      */
-    int to_string(char buf[], int bufsize);
+    int to_string(char buf[], std::size_t bufsize);
 };
 
 

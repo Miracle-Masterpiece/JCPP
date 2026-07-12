@@ -15,19 +15,41 @@ namespace jstd {
  */
 class ibstream : public istream {
     static const int DEFAULT_BUFFER_SIZE = 4096;
+    
+    // 
     tca::allocator* _allocator;
-    char*           _buffer;
-    int64_t         _capacity;
-    int64_t         _offset;
-    int64_t         _limit;
-    istream*        _in;
+    
+    // 
+    char* _buffer;
+    
+    // 
+    std::size_t _capacity;
+    
+    // 
+    std::size_t _offset;
+    
+    // 
+    std::size_t _limit;
+    
+    // 
+    istream* _in;
 
     //особождает память, выделенную под буфер.
     //если аллокатор != nullptr.
     //если аллокатор == nullptr - значит использовался внешний буфер.
     void free();
+
+    // 
+    // 
+    // 
+    void fill_buffer();
+
+    // 
+    // 
+    // 
+    std::size_t read_from_buffer(char* v, std::size_t len);
+
 public:
-    
     /**
      * Создаёт пустой, не открытый, поток.
      */
@@ -43,7 +65,7 @@ public:
      * @param buf_size
      *          Необязательный параметр, задающий размер внутреннего буфера.
      */
-    ibstream(istream* stream, tca::allocator* allocator, int64_t buf_size = DEFAULT_BUFFER_SIZE);
+    ibstream(istream* stream, tca::allocator* allocator, std::size_t buf_size = DEFAULT_BUFFER_SIZE);
     
     /**
      * @param stream
@@ -55,7 +77,7 @@ public:
      * @param buf_size
      *          Размер буфера.
      */
-    ibstream(istream* stream, char* buf, int64_t buf_size);
+    ibstream(istream* stream, char* buf, std::size_t buf_size);
 
     /**
      * Перемещение
@@ -80,7 +102,7 @@ public:
      *      Если произошла ошибка ввода/вывода.
      *      Если поток не был открыт.
      */
-    int read();
+    int read() override;
 
     /**
      * Читает несколько байт из потока.
@@ -100,7 +122,7 @@ public:
      *      Если произошла ошибка ввода/вывода.
      *      Если поток не был открыт.
      */
-    int64_t read(char buf[], int64_t sz);
+    std::size_t read(char buf[], std::size_t sz) override;
 
     /**
      * Пропускает указанное количество байт во входном потоке.
@@ -115,7 +137,7 @@ public:
      *      Если произошла ошибка ввода/вывода.
      *      Если поток не был открыт.
      */
-    int64_t skip(int64_t n = 1);
+    std::size_t skip(std::size_t n = 1) override;
 
     /**
      * Возвращает количество доступных для чтения байт.
@@ -129,7 +151,7 @@ public:
      *      Если произошла ошибка ввода/вывода.
      *      Если поток не был открыт.
      */
-    int64_t available() const;
+    std::uintmax_t available() const override;
 
     /**
      * @note
@@ -145,7 +167,7 @@ public:
      *      Если поток не был открыт.
      *      Если поток уже закрыт.
      */
-    void close();
+    void close() override;
 
 };
 

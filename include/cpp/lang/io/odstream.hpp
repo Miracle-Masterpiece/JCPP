@@ -59,7 +59,7 @@ public:
      *      Если произошла ошибка ввода/вывода
      *      Если поток закрыт или не был открыт
      */
-    void write(const char* data, int64_t sz);
+    void write(const char* data, std::size_t sz) override;
     
     /**
      * Сбрасывает буферизированные данные.
@@ -68,7 +68,7 @@ public:
      *      Если произошла ошибка ввода/вывода
      *      Если поток закрыт или не был открыт
      */
-    void flush();
+    void flush() override;
 
     /**
      * Закрывает поток.
@@ -77,10 +77,10 @@ public:
      *      Если произошла ошибка ввода/вывода
      *      Если поток закрыт или не был открыт
      */
-    void close();
+    void close() override;
     
     /**
-     * @see this->write<T>(const T* v, int64_t sz);
+     * @see this->write<T>(const T* v, std::size_t sz);
      */
     template<typename T>
     inline void write(T v) {
@@ -103,14 +103,14 @@ public:
      *      Размер массива v
      */
     template<typename T>
-    void write(const T* v, int64_t sz);
+    void write(const T* v, std::size_t sz);
 };
 
     template<typename T>
-    void odstream::write(const T* v, int64_t sz) {
+    void odstream::write(const T* v, std::size_t sz) {
         if (system::native_byte_order() != byte_order::LE) {
             T tmp;
-            for (int64_t i = 0; i < sz; ++i) {
+            for (std::size_t i = 0; i < sz; ++i) {
                 tmp = utils::bswap<T>(v[i]);
                 write(reinterpret_cast<const char*>(&tmp), sizeof(T));
             }

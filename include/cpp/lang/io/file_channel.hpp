@@ -83,7 +83,7 @@ class mapped_byte_buffer : public byte_buffer {
      * @param mode
      *      Режим открытия.
      */
-    mapped_byte_buffer(void* page_base, void* base, int64_t capacity, fmap_mode mode);
+    mapped_byte_buffer(void* page_base, void* base, std::size_t capacity, fmap_mode mode);
     
     /**
      * @internal
@@ -237,7 +237,7 @@ public:
      *      Если файл не был открыт.
      *      Если произошла ошибка ввода/вывода.
      */
-    int64_t size() const;
+    std::uintmax_t size() const;
 
     /**
      * Устанавливает новую длину файла.
@@ -252,7 +252,7 @@ public:
      *      Если файл не был открыт.
      *      Если произошла ошибка ввода/вывода.
      */
-    file_channel& truncate(int64_t length);
+    file_channel& truncate(std::uintmax_t length);
     
     /**
      * Отображает файл в память и возвращает ввиде mapped_byte_buffer.
@@ -269,7 +269,7 @@ public:
      * @throws io_exception
      *      Если произошла ошибка ввода/вывода.
      */
-    mapped_byte_buffer map(fmap_mode mode, int64_t offset, int64_t length);
+    mapped_byte_buffer map(fmap_mode mode, std::size_t offset, std::size_t length);
     
     /**
      * Проверяет, является ли этот дескриптор, дескриптором открытого файла.

@@ -11,7 +11,8 @@
 #include <initializer_list>
 #include <cassert>
 
-namespace jstd {
+namespace jstd
+{
 
 /**
  * Динамический массив с возможностью управления аллокатором.
@@ -42,12 +43,12 @@ class array_list {
     /**
      * Текущая вместимость массива (сколько элементов может быть размещено без перераспределения).
      */
-    int64_t m_capacity;
+    std::size_t m_capacity;
 
     /**
      * Текущее количество элементов в списке.
      */
-    int64_t m_size;
+    std::size_t m_size;
 
     /**
      * Вызывает деструкторы для элементов в диапазоне [start, end).
@@ -55,7 +56,7 @@ class array_list {
      * @param start Начальный индекс (включительно).
      * @param end Конечный индекс (не включительно).
      */
-    void call_destructors(int64_t start, int64_t end);
+    void call_destructors(std::size_t start, std::size_t end);
 
     /**
      * Освобождает память и сбрасывает внутреннее состояние.
@@ -70,9 +71,14 @@ class array_list {
 public:
 
     /**
+     * 
+     */
+    static const std::size_t null_val = ~((std::size_t) 0);
+
+    /**
      * Создаёт пустой список без аллокатора.
      */
-    array_list(tca::allocator* allocator = tca::get_scoped_or_default());
+    array_list(tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Создаёт список с заданным аллокатором и начальной вместимостью.
@@ -83,7 +89,7 @@ public:
      * @param init_capacity 
      *      Начальная вместимость (по умолчанию — 10).
      */
-    explicit array_list(int64_t init_capacity, tca::allocator* allocator = tca::get_scoped_or_default());
+    explicit array_list(std::size_t init_capacity, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Создаёт список с заданным аллокатором и инициализирующим листом.
@@ -94,7 +100,7 @@ public:
      * @param init_list
      *      Инициилизирующий список из которого будут добавлены элементы в этот список.
      */
-    array_list(const std::initializer_list<E>& init_list, tca::allocator* allocator = tca::get_scoped_or_default());
+    array_list(const std::initializer_list<E>& init_list, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Создаёт новый список, копируя содержимое из переданного списка.
@@ -180,7 +186,7 @@ public:
      *      Элемент для вставки.
      */
     template<typename _E>
-    void add(int64_t idx, _E&& e);
+    void add(std::size_t idx, _E&& e);
 
     /**
      * Возвращает последний индекс указанного элемента, 
@@ -192,7 +198,7 @@ public:
      * @return 
      *      Индекс, если найден; иначе -1.
      */
-    int64_t last_index_of(const E& e) const;
+    std::size_t last_index_of(const E& e) const;
 
     /**
      * Возвращает первый индекс указанного элемента, 
@@ -202,9 +208,9 @@ public:
      *      Элемент для поиска.
      * 
      * @return 
-     *      Индекс, если найден; иначе -1.
+     *      Индекс, если найден; иначе array_list<T>::null_val.
      */
-    int64_t index_of(const E& e) const;
+    std::size_t index_of(const E& e) const;
 
     /**
      * Проверяет, содержится ли указанный элемент в списке, 
@@ -218,7 +224,7 @@ public:
      */
     bool contains(const E& e) const {
         //index_of возвращает -1, если элемент не найден.
-        return index_of(e) >= 0;
+        return index_of(e) != null_val;
     }
 
     /**
@@ -244,7 +250,7 @@ public:
      * @return 
      *      true, если удаление прошло успешно.
      */
-    bool remove_at(int64_t idx, E* ret = nullptr);
+    bool remove_at(std::size_t idx, E* ret = nullptr);
 
     /**
      * Быстрое удаление по индексу без сдвига элементов, может нарушить порядок.
@@ -261,7 +267,7 @@ public:
      * @throws index_out_of_bound_exception 
      *      Если индекс не допустим.
      */
-    bool fast_remove_at(int64_t idx, E* ret = nullptr);
+    bool fast_remove_at(std::size_t idx, E* ret = nullptr);
 
     /**
      * Заменяет элемент по указанному индексу новым значением.
@@ -285,7 +291,7 @@ public:
      *      Если индекс не допустим.
      */
     template<typename _E>
-    bool set(int64_t idx, _E&& e, E* ret_old_value = nullptr);
+    bool set(std::size_t idx, _E&& e, E* ret_old_value = nullptr);
 
     /**
      * Возвращает ссылку на элемент по индексу.
@@ -299,7 +305,7 @@ public:
      * @throws index_out_of_bound_exception 
      *      Если индекс не допустим.
      */
-    E& at(int64_t idx) const;
+    E& at(std::size_t idx) const;
 
     /**
      * Возвращает количество элементов в списке.
@@ -307,7 +313,7 @@ public:
      * @return 
      *      Размер списка.
      */
-    int64_t size() const;
+    std::size_t size() const;
 
     /**
      * Гарантирует, что список может вместить не менее {@code new_capacity} элементов без перераспределения.
@@ -324,12 +330,18 @@ public:
      * @throws out_of_memory_error 
      *      Eсли не удалось выделить память.
      */
-    void reserve(int64_t new_capacity);
+    void reserve(std::size_t new_capacity);
 
     /**
      * Удаляет все элементы, но не освобождает память.
      */
     void clear();
+
+    /**
+     * Проверяет, пустой ли контейнер.
+     * true - если список пуст, иначе - false.
+     */
+    bool is_empty() const;
 
     /**
      * Проверяет, являются ли элементы внутри списка равны.
@@ -349,13 +361,13 @@ public:
      * Прототип:
      *      template<>
      *      struct jstd::hash_for<T> {
-     *          uint64_t operator() (const T& obj) const;
+     *          std::size_t operator() (const T& obj) const;
      *      };
      * 
      * @return
      *      Хеш-код всех элементов.
      */
-    uint64_t hashcode() const;
+    std::size_t hashcode() const;
 
     /**
      * Возвращает указатель на сырые данные.
@@ -402,10 +414,10 @@ public:
      *      Элемент, который необходимо найти.
      * 
      * @return 
-     *      Индекс найденного элемента, или -1, если элемент не найден.
+     *      Индекс найденного элемента, или array_list<T>::null_val, если элемент не найден.
      */
     template<typename COMPARATOR_T = compare_to<E>>
-    int64_t binary_search(const E& searched) const;
+    std::size_t binary_search(const E& searched) const;
 
     /**
      * Минимальный размер буфера для хранения строкового представления объекта.
@@ -424,15 +436,15 @@ public:
      * @return
      *      Количество записанных символов. (Не включая нуль-терминатор)
      */
-    int32_t to_string(char buf[], int32_t bufsize) const;
+    int to_string(char buf[], std::size_t bufsize) const;
 
     template<typename DATA_TYPE, typename VALUE_TYPE>
     class iterator {
         DATA_TYPE*  m_data;
-        int64_t     m_max;
-        int64_t     m_offset;
+        std::size_t m_max;
+        std::size_t m_offset;
     public:
-        iterator(DATA_TYPE* data, int64_t idx, int64_t max);
+        iterator(DATA_TYPE* data, std::size_t idx, std::size_t max);
         iterator(const iterator<DATA_TYPE, VALUE_TYPE>&);
         iterator(iterator<DATA_TYPE, VALUE_TYPE>&&);
         iterator<DATA_TYPE, VALUE_TYPE>& operator= (const iterator<DATA_TYPE, VALUE_TYPE>&);
@@ -469,7 +481,7 @@ public:
     }
 
     template<typename E>
-    array_list<E>::array_list(int64_t init_capacity, tca::allocator* allocator) : 
+    array_list<E>::array_list(std::size_t init_capacity, tca::allocator* allocator) : 
     m_allocator(allocator), 
     m_data(nullptr), 
     m_capacity(0), 
@@ -538,7 +550,7 @@ public:
         }
         array_list<E> list(allocator, m_size);
         
-        for (int64_t i = 0; i < m_size; ++i) 
+        for (std::size_t i = 0; i < m_size; ++i) 
             list.add(m_data[i]);
         
         return array_list<E>(std::move(list));
@@ -546,13 +558,16 @@ public:
 
     template<typename E>
     template<typename COMPARATOR_T>
-    int64_t array_list<E>::binary_search(const E& searched) const {
+    std::size_t array_list<E>::binary_search(const E& searched) const {
+        if (is_empty())
+            return array_list<E>::null_val;
+        
         COMPARATOR_T compare_to;
-        int64_t start   = 0;
-        int64_t end     = m_size - 1;
+        std::size_t start   = 0;
+        std::size_t end     = m_size - 1;
         while (start <= end) {
             
-            const int64_t mid           = (end - start) / 2 + start;
+            const std::size_t mid       = (end - start) / 2 + start;
             const E& mid_value          = at(mid);
             const int compare_result    = compare_to(searched, mid_value);
             
@@ -563,15 +578,16 @@ public:
             else
                 start   = mid + 1;
         }
-        return -1;
+        
+        return array_list<E>::null_val;
     }
 
     template<typename E>
     template<typename SORT_TYPE>
     void array_list<E>::intersect_sort() {
         SORT_TYPE compare_to;
-        for (int64_t i = 1; i < m_size; ++i) {
-            int64_t j = i;
+        for (std::size_t i = 1; i < m_size; ++i) {
+            std::size_t j = i;
             while (j > 0) {
                 E& a = m_data[j - 1];
                 E& b = m_data[j - 0];
@@ -587,7 +603,7 @@ public:
 
     template<typename E>
     template<typename _E>
-    bool array_list<E>::set(int64_t idx, _E&& e, E* ret_old_value) {
+    bool array_list<E>::set(std::size_t idx, _E&& e, E* ret_old_value) {
         check_index(idx, m_size);
         if (ret_old_value != nullptr)
             *ret_old_value = std::move(m_data[idx]);
@@ -597,17 +613,17 @@ public:
 
     template<typename E>
     void array_list<E>::grow() {
-        const int64_t new_capacity = m_capacity > 0 ? m_capacity * 1.5 : DEFAULT_CAPACITY;
+        const std::size_t new_capacity = m_capacity > 0 ? m_capacity + (m_capacity >> 1) : DEFAULT_CAPACITY;
         reserve(new_capacity);
     }
 
     template<typename E>
-    int64_t array_list<E>::size() const {
+    std::size_t array_list<E>::size() const {
         return m_size;
     }
 
     template<typename E>
-    E& array_list<E>::at(int64_t idx) const {
+    E& array_list<E>::at(std::size_t idx) const {
         check_index(idx, m_size);
         return m_data[idx];
     }
@@ -619,33 +635,33 @@ public:
     }
 
     template<typename E>
-    int64_t array_list<E>::last_index_of(const E& e) const {
+    std::size_t array_list<E>::last_index_of(const E& e) const {
         equal_to<E> equals;
-        for (int64_t i = m_size - 1; i >= 0; --i)
-            if (equals(e, m_data[i]))
-                return i;
-        return -1;
+        for (std::size_t i = m_size; i > 0; --i)
+            if (equals(e, m_data[i - 1]))
+                return i - 1;
+        return array_list<E>::null_val;
     }
 
     template<typename E>
-    int64_t array_list<E>::index_of(const E& e) const {
+    std::size_t array_list<E>::index_of(const E& e) const {
         equal_to<E> equals;
-        for (int64_t i = 0; i < m_size; ++i)
+        for (std::size_t i = 0; i < m_size; ++i)
             if (equals(e, m_data[i]))
                 return i;
-        return -1;
+        return array_list<E>::null_val;
     }
     
     template<typename E>
     bool array_list<E>::remove(const E& e) {
-        int64_t finded_index = index_of(e);
+        std::size_t finded_index = index_of(e);
         if (finded_index < 0)
             return false;
         return remove_at(finded_index, nullptr);
     }
     
     template<typename E>
-    bool array_list<E>::remove_at(int64_t idx, E* ret) {
+    bool array_list<E>::remove_at(std::size_t idx, E* ret) {
         check_index(idx, m_size);
 
         if (ret != nullptr)
@@ -653,7 +669,7 @@ public:
 
         m_data[idx].~E();
 
-        for (int64_t i = idx; i < m_size - 1; ++i)
+        for (std::size_t i = idx; i < m_size - 1; ++i)
             new(m_data + i) E(std::move(m_data[i + 1]));
 
         --m_size;
@@ -662,18 +678,20 @@ public:
     }
     
     template<typename E>
-    bool array_list<E>::fast_remove_at(int64_t idx, E* ret) {
+    bool array_list<E>::fast_remove_at(std::size_t idx, E* ret) {
         check_index(idx, m_size);
-        if (idx == m_size - 1) {
+        if (idx == m_size - 1)
             return remove_at(idx, ret);
-        } else {
-            std::swap(m_data[idx], m_data[m_size - 1]);
-            if (ret != nullptr)
-                *ret = std::move(m_data[m_size - 1]);
-            m_data[m_size - 1].~E();
-            --m_size;
-            return true;
-        }
+        
+        std::swap(m_data[idx], m_data[m_size - 1]);
+        
+        if (ret != nullptr)
+            *ret = std::move(m_data[m_size - 1]);
+        
+        m_data[m_size - 1].~E();
+        --m_size;
+        
+        return true;
     }
 
     template<typename E>
@@ -687,13 +705,13 @@ public:
 
     template<typename E>
     template<typename _E>
-    void array_list<E>::add(int64_t idx, _E&& e) {
+    void array_list<E>::add(std::size_t idx, _E&& e) {
         check_index(idx, m_size + 1);
         
         if (m_size + 1 > m_capacity) 
             grow();
         
-        for (int64_t i = m_size; i > idx; --i)
+        for (std::size_t i = m_size; i > idx; --i)
             new(m_data + i) E(std::move(m_data[i - 1]));
         
         new(m_data + idx) E(std::forward<_E>(e));
@@ -702,13 +720,16 @@ public:
     }
 
     template<typename E>
-    void array_list<E>::reserve(int64_t new_capacity) {
-#ifndef NDEBUG
-        if (m_allocator == nullptr)
-            throw_except<illegal_state_exception>("allocator is null");        
-        if (new_capacity < 0)
-            throw_except<illegal_argument_exception>("Capacity %li is illegal!", (long int) new_capacity);
-#endif
+    bool array_list<E>::is_empty() const {
+        return m_size == 0;
+    }
+
+    template<typename E>
+    void array_list<E>::reserve(std::size_t new_capacity) {
+        JSTD_DEBUG_CODE(
+            if (m_allocator == nullptr)
+                throw_except<illegal_state_exception>("allocator is null");
+        )
 
         if (new_capacity == 0) {
             cleanup();
@@ -723,35 +744,34 @@ public:
         
         if (m_data != nullptr) {
             if (new_capacity >= m_size) {
-                for (int64_t i = 0; i < m_size; ++i)
+                for (std::size_t i = 0; i < m_size; ++i)
                     new(new_data + i) E(std::move(m_data[i]));
             } else {
-                for (int64_t i = 0; i < new_capacity; ++i)
+                for (std::size_t i = 0; i < new_capacity; ++i)
                     new(new_data + i) E(std::move(m_data[i]));
                 call_destructors(new_capacity, m_size);
                 m_size = new_capacity;
             }
         }
     
-        m_allocator->deallocate(m_data, sizeof(E) * m_capacity);
+        m_allocator->deallocate(m_data);
         m_capacity  = new_capacity;
         m_data      = new_data;
     }
     
     template<typename E>
-    void array_list<E>::call_destructors(int64_t start, int64_t end) {
+    void array_list<E>::call_destructors(std::size_t start, std::size_t end) {
         assert(start <= end);
         assert(end >= start);
-        int64_t len = end - start;
-        for (int64_t i = 0; i < len; ++i)
-            m_data[i + start].~E();
+        while (end > start)
+            m_data[--end].~E();
     }
 
     template<typename E>
     void array_list<E>::cleanup() {
         if (m_allocator != nullptr && m_data != nullptr) {
             call_destructors(0, m_size);
-            m_allocator->deallocate((void*) m_data, sizeof(E) * m_capacity);
+            m_allocator->deallocate((void*) m_data);
         }   
         m_data      = nullptr;
         m_capacity  = 0;
@@ -762,15 +782,14 @@ public:
     bool array_list<E>::equals(const array_list<E>& other) const {
         if (size() != other.size())
             return false;
-        if (data() != nullptr && other.data() != nullptr) {
+        if (data() != nullptr && other.data() != nullptr)
             return objects::equals(data(), other.data(), size());
-        } else {
+        else
             return data() == other.data();
-        }
     }
 
     template<typename E>
-    uint64_t array_list<E>::hashcode() const {
+    std::size_t array_list<E>::hashcode() const {
         if (size() == 0)
             return 0;
         return objects::hashcode(data(), size());
@@ -782,7 +801,7 @@ public:
     }
 
     template<typename E>
-    int32_t array_list<E>::to_string(char buf[], int32_t bufsize) const {
+    int array_list<E>::to_string(char buf[], std::size_t bufsize) const {
         return std::snprintf(buf, bufsize, "[data=0x%llx, capacity=%lli, size=%lli]", (long long) m_data, (long long) m_capacity, (long long) m_size);
     }
 
@@ -791,7 +810,7 @@ public:
      */
     template<typename E>
     template<typename DATA_TYPE, typename VALUE_TYPE>
-    array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::iterator(DATA_TYPE* data, int64_t idx, int64_t max) :
+    array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::iterator(DATA_TYPE* data, std::size_t idx, std::size_t max) :
     m_data(data),
     m_max(max),
     m_offset(idx) {

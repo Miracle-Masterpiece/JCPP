@@ -7,7 +7,7 @@
 namespace jstd
 {
 
-    date::date(int32_t day, int32_t month, int32_t year, int32_t second, int32_t minute, int32_t hour) {
+    date::date(int day, int month, int year, int second, int minute, int hour) {
         std::memset(&_localTime, 0, sizeof(_localTime));
          day     = (day     == 0) ? 1 : day;
          month   = (month   == 0) ? 1 : month;
@@ -55,8 +55,10 @@ namespace jstd
         
     }
 
-    int32_t date::to_string(char buf[], int32_t bufsize) const {
-        return (int32_t) strftime(buf, bufsize, "%d.%m.%Y %H:%M:%S", &_localTime);
+    tc::string date::to_string(tca::allocator* alloc) const {
+        char buf[128];    
+        std::size_t len = strftime(buf, sizeof(buf), "%d.%m.%Y %H:%M:%S", &_localTime);
+        return tc::string(buf, alloc);
     }
 
     /*static*/ date date::now() {
@@ -69,11 +71,11 @@ namespace jstd
         return _time == date._time;
     }
 
-    uint64_t date::hashcode() const {
-        return (int64_t) _time;
+    std::size_t date::hashcode() const {
+        return (std::size_t) _time;
     }
     
-    int32_t date::compare_to(const date& date) const {
+    int date::compare_to(const date& date) const {
         if (_time < date._time) return -1;
         if (_time > date._time) return  1;
         return 0;
@@ -115,31 +117,31 @@ namespace jstd
         return _time;
     }
 
-    int32_t date::get_day() const {
+    int date::get_day() const {
         return _localTime.tm_mday;
     }
 
-    int32_t date::get_month() const {
+    int date::get_month() const {
         return _localTime.tm_mon + 1;
     }
 
-    int32_t date::get_year() const {
+    int date::get_year() const {
         return _localTime.tm_year + 1900;
     }
     
-    int32_t date::get_hour() const {
+    int date::get_hour() const {
         return _localTime.tm_hour;
     }
     
-    int32_t date::get_minute() const {
+    int date::get_minute() const {
         return _localTime.tm_min;
     }
     
-    int32_t date::get_second() const {
+    int date::get_second() const {
         return _localTime.tm_sec;
     }
 
-    int32_t date::get_week() const {
+    int date::get_week() const {
         return _localTime.tm_wday;
     }
 

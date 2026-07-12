@@ -56,7 +56,7 @@ public:
      * @param init_capacity 
      *      Начальная ёмкость.
      */
-    hash_set(tca::allocator* allocator = tca::get_scoped_or_default());
+    hash_set(tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Создаёт пустое множество с заданным аллокатором и (опционально) начальной ёмкостью.
@@ -71,7 +71,7 @@ public:
      *      Указатель на пользовательский аллокатор.
      * 
      */
-    hash_set(int64_t init_capacity, float load_factor = 0.75f, tca::allocator* allocator = tca::get_scoped_or_default());
+    hash_set(int64_t init_capacity, float load_factor = 0.75f, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Конструктор копирования.

@@ -1,9 +1,28 @@
-#ifndef _JSTD_INTERNAL_BSD_SOCKET_FUNCS_H_
-#define _JSTD_INTERNAL_BSD_SOCKET_FUNCS_H_
+#ifndef JSTD_INTERNAL_BSD_SOCKET_FUNCS_H
+#define JSTD_INTERNAL_BSD_SOCKET_FUNCS_H
 
 #include <cstdint>
 #include <cpp/lang/net/inetaddr.hpp>
 #include <cpp/lang/net/socket_option.hpp>
+
+#if defined(__linux__) || defined(__APPLE__)
+    #include <netinet/tcp.h>
+    #include <arpa/inet.h>
+    #include <netdb.h>
+    #include <sys/fcntl.h>
+    #include <unistd.h>
+    #include <sys/ioctl.h>
+    using SOCK_TYPE             = int;
+    const SOCK_TYPE NULL_SOCKET = -1;
+#elif _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #include <windows.h>
+    using SOCK_TYPE             = SOCKET;
+    const SOCK_TYPE NULL_SOCKET = INVALID_SOCKET;
+#else 
+    #error Unsupported platform!
+#endif
 
 namespace jstd
 {
@@ -15,13 +34,13 @@ namespace bsd_socket
      * @throws socket_exception 
      *      Если произошла ошибка при открытие сокета.
      */
-    int open_tcp(inet_family family);
+    SOCK_TYPE open_tcp(inet_family family);
     
     /**
      * @throws socket_exception 
      *      Если произошла ошибка при закрытии сокета.
      */
-    void close(int32_t sock);
+    void close(SOCK_TYPE sock);
 
     /**
      * @throws bind_exception 
@@ -30,19 +49,19 @@ namespace bsd_socket
      * @throws illegal_argument_exception
      *      Если тип семейства адреса не поддерживается.
      */
-    void bind(int32_t sock, const inet_address& address, int32_t port);
+    void bind(SOCK_TYPE sock, const inet_address& address, unsigned int port);
 
     /**
      * @throws socket_exception 
      *      Если произошла ошибка при установки размера максимальной очереди.
      */
-    void backlog(int32_t sock, int32_t maxq);
+    void backlog(SOCK_TYPE sock, int maxq);
 
     /**
      * @throws socket_exception 
      *      Если произошла ошибка при установки размера максимальной очереди.
      */
-    inline void listen(int32_t sock , int32_t maxq) {
+    inline void listen(SOCK_TYPE sock , int maxq) {
         return backlog(sock, maxq);
     }
 
@@ -50,13 +69,13 @@ namespace bsd_socket
      * @throws socket_exception 
      *      Если произошла ошибка при приняти клиента.
      */
-    int32_t accept(int32_t serv_sock, socket_address* client_addr);
+    SOCK_TYPE accept(SOCK_TYPE serv_sock, socket_address* client_addr);
 
     /**
      * @throws socket_exception 
      *      Если произошла ошибка при установке блокирующего/неблокирущего режима.
      */
-    void set_blocking(int32_t sock, bool block_mode);
+    void set_blocking(SOCK_TYPE sock, bool block_mode);
 
     /**
      * @throws connect_exception 
@@ -65,7 +84,7 @@ namespace bsd_socket
      * @throws illegal_argument_exception
      *      Если тип семейства адреса не поддерживается.
      */
-    void connect(int32_t client_sock, const inet_address& address, int32_t port);
+    void connect(SOCK_TYPE client_sock, const inet_address& address, unsigned int port);
 
     /**
      * @throws illegal_argument_exception
@@ -77,7 +96,7 @@ namespace bsd_socket
      * @throws unsupported_operation_exception
      *      Если опция сокета не поддерживается.
      */
-    void set_sock_opt(int32_t sock, int32_t opt, const socket_option& value);
+    void set_sock_opt(SOCK_TYPE sock, int opt, const socket_option& value);
 
     /**
      * @throws illegal_argument_exception
@@ -89,7 +108,7 @@ namespace bsd_socket
      * @throws unsupported_operation_exception
      *      Если опция сокета не поддерживается.
      */
-    void get_sock_opt(int32_t sock, int32_t opt, socket_option& value);
+    void get_sock_opt(SOCK_TYPE sock, int opt, socket_option& value);
 
     /**
      * @throws socket_exception
@@ -107,7 +126,7 @@ namespace bsd_socket
      * @return
      *      Сколько фактически отправилось байт.     
      */
-    int64_t send(int32_t sock, const char* data, int64_t length, bool is_blocking);
+    std::size_t send(SOCK_TYPE sock, const char* data, std::size_t length, bool is_blocking);
 
     /**
      * @throws socket_exception
@@ -125,7 +144,7 @@ namespace bsd_socket
      * @return
      *      Сколько фактически прочиталось байт.
      */
-    int64_t recv(int32_t sock, char* data, int64_t length, bool is_blocking);
+    std::size_t recv(SOCK_TYPE sock, char* data, std::size_t length, bool is_blocking);
 
     /**
      * @throws socket_exception
@@ -134,21 +153,22 @@ namespace bsd_socket
      * @throws unsupported_operation_exception
      *      Если имя сокета не поддерживает семейство адресов отличное от IPv4 и IPv6
      */
-    void get_sock_name(int32_t sock, socket_address& address);
+    void get_sock_name(SOCK_TYPE sock, socket_address& address);
 
     /**
      * @throws socket_exception
      *      Если произошла ошибка при заглушении чтения.
      */
-    void shutdown_in(int32_t sock);
+    void shutdown_in(SOCK_TYPE sock);
     
     /**
      * @throws socket_exception
      *      Если произошла ошибка при заглушении записи.
      */
-    void shutdown_out(int32_t sock);
+    void shutdown_out(SOCK_TYPE sock);
 
 }// namespace bsd_socket
+
 }// namespace jstd
 
 #endif//_JSTD_INTERNAL_BSD_SOCKET_FUNCS_H_

@@ -5,24 +5,25 @@
 #include <unistd.h>
 
 #if defined(JSTD_OS_LINUX) || defined(JSTD_OS_MAC) || defined(JSTD_OS_UNIX)
-#   include <sys/mman.h>
-#   include <unistd.h>
-#   include <cerrno>
-#   include <sys/types.h>
-#   include <sys/stat.h>
-#   include <fcntl.h>
-#   define JSTD_POSIX_CODE(code) code
+# include <sys/mman.h>
+# include <unistd.h>
+# include <cerrno>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <fcntl.h>
+# define JSTD_POSIX_CODE(code) code
 #else
-#   define JSTD_POSIX_CODE(code)
+# define JSTD_POSIX_CODE(code)
 #endif
 
 #if defined(JSTD_OS_WINDOWS)
-#   include <io.h>
-#   include <windows.h>
-#   include <sys/types.h>
-#   include <sys/stat.h>
-#   include <fcntl.h>
-#   define ftruncate(fd, sz) _chsize_s(fd, sz)
+# include <io.h>
+# include <windows.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <fcntl.h>
+# include <cerrno>
+# define ftruncate(fd, sz) _chsize_s(fd, sz)
 #endif
 
 
@@ -94,38 +95,43 @@ namespace jstd
             int o_prot = _O_BINARY;
             if (oflags & open_option::CREATE) o_prot |= _O_CREAT;
             if (oflags & open_option::APPEND) o_prot |= _O_APPEND;
-            if (oflags & open_option::READ_WRITE) {
-                if ((oflags & open_option::READ) && !(oflags & open_option::WRITE)) {
+            if (oflags & open_option::READ_WRITE)
+            {
+                if ((oflags & open_option::READ) && !(oflags & open_option::WRITE))
+                {
                     o_prot |= _O_RDONLY;
                 }
-                else if ((oflags & open_option::WRITE) && !(oflags & open_option::READ)) {
+                else if ((oflags & open_option::WRITE) && !(oflags & open_option::READ))
+                {
                     o_prot |= _O_WRONLY;
                 } 
-                else {
+                else
+                {
                     o_prot |= _O_RDWR;
                 }
             };
-            m_fd = std::move(internal::file_descriptor(path.str_path(), o_prot, _S_IRUSR | _S_IWUSR));
+            
+            m_fd = internal::file_descriptor(path.cstr(), o_prot, _S_IRUSR | _S_IWUSR);
         );
 
         JSTD_POSIX_CODE(
             int o_prot = 0;
             if (oflags & open_option::CREATE) o_prot |= O_CREAT;
             if (oflags & open_option::APPEND) o_prot |= O_APPEND;
-            if (oflags & open_option::READ_WRITE) {
+            if (oflags & open_option::READ_WRITE)
+            {
                 if ((oflags & open_option::READ) && !(oflags & open_option::WRITE))
                     o_prot |= O_RDONLY;
                 else if ((oflags & open_option::WRITE) && !(oflags & open_option::READ))
                     o_prot |= O_WRONLY;
                 else o_prot |= O_RDWR;
             };
-            m_fd = std::move(internal::file_descriptor(path.str_path(), o_prot, S_IRUSR | S_IWUSR));
+            m_fd = internal::file_descriptor(path.cstr(), o_prot, S_IRUSR | S_IWUSR);
         );
     }
     
-    int64_t file_channel::size() const {
+    std::uintmax_t file_channel::size() const {
         require_fd();
-        uint64_t len = 0;
         JSTD_WIN_CODE(
             struct _stat64 stat;
             if (_fstat64(m_fd.get_fd(), &stat) != 0) {
@@ -133,7 +139,7 @@ namespace jstd
                     throw_except<sequrity_exception>(std::strerror(errno));
                 throw_except<io_exception>(std::strerror(errno));
             }
-            return (int64_t) stat.st_size;
+            return (uintmax_t) stat.st_size;
         );
 
         JSTD_POSIX_CODE(
@@ -143,23 +149,26 @@ namespace jstd
                     throw_except<sequrity_exception>(std::strerror(errno));
                 throw_except<io_exception>(std::strerror(errno));
             }
-            return (int64_t) stat.st_size;
+            return (uintmax_t) stat.st_size;
         );
 
-        return len;
+        return 0;
     }
     
     bool file_channel::is_open() const {
         return m_fd != internal::file_descriptor::NULL_FD;
     }
 
-    file_channel& file_channel::truncate(int64_t length) {
+    file_channel& file_channel::truncate(std::uintmax_t length) {
         require_fd();
         
         if (!(m_oflags & open_option::WRITE))
             throw_except<io_exception>("It is not possible to change the size of a read-only file");
 
-        if (ftruncate(m_fd.get_fd(), length) != 0) {
+        if (
+            JSTD_WIN_CODE (ftruncate(m_fd.get_fd(), (long long) length) != 0)
+            JSTD_UNIX_CODE(ftruncate(m_fd.get_fd(), (off_t)     length) != 0)
+        ) {
             if (errno == EACCES) {
                 JSTD_WIN_CODE(
                     throw_except<sequrity_exception>(system::error_string(GetLastError()));
@@ -170,10 +179,11 @@ namespace jstd
             }
             throw_except<io_exception>(std::strerror(errno));
         }
+
         return *this;
     }
     
-    mapped_byte_buffer file_channel::map(fmap_mode mode, int64_t offset, int64_t length) {
+    mapped_byte_buffer file_channel::map(fmap_mode mode, std::size_t offset, std::size_t length) {
         require_fd();
         
         if (mode == fmap_mode::READ_WRITE && !(m_oflags & open_option::WRITE))
@@ -183,9 +193,12 @@ namespace jstd
             throw_except<io_exception>("File not readable");
 
         if (!(m_oflags & open_option::WRITE))
-            if ((int64_t) size() < offset + length)
+        {
+            std::uintmax_t fsize = size();
+            if ((offset >= fsize) || fsize - offset < length)
                 throw_except<io_exception>("The file is not open for writing - it is not possible to enlarge the file to the required size");
-
+        }
+        
         void* page_base = nullptr;
         void* file_view = nullptr;
 
@@ -217,15 +230,19 @@ namespace jstd
                 throw_except<io_exception>(system::error_string(GetLastError()));
 
             DWORD map_prot = 0;
-            if (mode == fmap_mode::READ_ONLY) {
-                if (m_oflags & open_option::WRITE) {
+            if (mode == fmap_mode::READ_ONLY)
+            {
+                if (m_oflags & open_option::WRITE)
+                {
                     map_prot = FILE_MAP_READ | FILE_MAP_WRITE;
                 } 
-                else {
+                else
+                {
                     map_prot = FILE_MAP_READ;
                 }
             }
-            else if (mode == fmap_mode::READ_WRITE)  {
+            else if (mode == fmap_mode::READ_WRITE)
+            {
                 map_prot = FILE_MAP_READ | FILE_MAP_WRITE;
             }
 
@@ -264,9 +281,7 @@ namespace jstd
             const std::size_t offset_for_view   = offset & ~PAGE_SIZE;
             const std::size_t page_offset       = offset - offset_for_view;
 
-            //void * mmap(void *start, size_t length, int prot , int flags, int fd, off_t offset);
-            
-            page_base = mmap(NULL, length, prot, MAP_SHARED, m_fd.get_fd(), page_offset);
+            page_base = mmap(NULL, length, prot, MAP_SHARED, m_fd.get_fd(), (off_t) page_offset);
             if (page_base == MAP_FAILED)
                 throw_except<io_exception>(std::strerror(errno));
 
@@ -315,7 +330,7 @@ namespace jstd
         return *this;
     }
 
-    mapped_byte_buffer::mapped_byte_buffer(void* page_base, void* base, int64_t capacity, fmap_mode mode) : 
+    mapped_byte_buffer::mapped_byte_buffer(void* page_base, void* base, std::size_t capacity, fmap_mode mode) : 
     byte_buffer(reinterpret_cast<char*>(base), capacity, mode == fmap_mode::READ_ONLY), 
     m_base(base) {
 
@@ -330,7 +345,7 @@ namespace jstd
         );
         JSTD_POSIX_CODE(
             //int munmap(void *start, size_t length);
-            munmap(m_base, _cap);
+            munmap(m_base, m_capacity);
         );
     }
 
@@ -340,16 +355,16 @@ namespace jstd
 
     mapped_byte_buffer& mapped_byte_buffer::force() {
         JSTD_DEBUG_CODE(
-            if (_data == nullptr)
+            if (m_data == nullptr)
                 throw_except<illegal_state_exception>("buffer is not mapped");
         );
         JSTD_WIN_CODE(
-            if (!FlushViewOfFile(m_base, _cap))
+            if (!FlushViewOfFile(m_base, m_capacity))
                 throw_except<io_exception>(system::error_string(GetLastError()));
         );
         JSTD_POSIX_CODE(
             //int msync(void *start, size_t length, int flags);
-            msync(m_base, _cap, MS_SYNC);
+            msync(m_base, m_capacity, MS_SYNC);
         );
         return *this;
     }
@@ -364,16 +379,16 @@ namespace jstd
             std::size_t get_page_size() {
                 SYSTEM_INFO sys_info;
                 GetSystemInfo(&sys_info);
-                return sys_info.dwAllocationGranularity;
+                return (std::size_t) sys_info.dwAllocationGranularity;
             }
         #endif
         
         #if defined(JSTD_OS_LINUX) || defined(JSTD_OS_MAC) || defined(JSTD_OS_UNIX)
             std::size_t get_page_size() {
                 #if defined(_SC_PAGESIZE)
-                    return sysconf(_SC_PAGESIZE);
+                    return (std::size_t) sysconf(_SC_PAGESIZE);
                 #elif defined(_SC_PAGE_SIZE)
-                    return sysconf(_SC_PAGE_SIZE);
+                    return (std::size_t) sysconf(_SC_PAGE_SIZE);
                 #else
                     #error Current platform not defined _SC_PAGESIZE or _SC_PAGE_SIZE
                 #endif

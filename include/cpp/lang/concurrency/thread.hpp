@@ -16,16 +16,50 @@ struct runnable;
 class thread {
 public:
     struct state {
-        int m_state;
+        /**
+         * 
+         */
+        unsigned int m_state;
+        
+        /**
+         * 
+         */
         static const state NEW;
+        
+        /**
+         * 
+         */
         static const state RUNNABLE;
+        
+        /**
+         * 
+         */
         static const state TERMINATED;
+        
+        /**
+         * 
+         */
         bool operator==(const state& state) const;
+        
+        /**
+         * 
+         */
         bool operator!=(const state& state) const;
-        static const int32_t TO_STRING_MIN_BUFFER_SIZE = 16;
-        int32_t to_string(char buf[], int32_t bufsize) const;
-        uint64_t hashcode() const;
+        
+        /**
+         * 
+         */
+        std::size_t hashcode() const;
+        
+        /**
+         * 
+         */
         bool equals(const state& other) const;
+        
+        /**
+         * 
+         */
+        const char* to_string() const;
     };    
 private:
     /**
@@ -42,7 +76,7 @@ private:
     /**
      * Идентификатор текущего потока.
      */
-    uint64_t m_thread_id;
+    std::size_t m_thread_id;
 
     /**
      * Имя потока.
@@ -57,7 +91,7 @@ private:
     /**
      * Статическая переменная, увеличивающаяся каждый раз, когда вызывается любой конструктор этого класса.
      */
-    static uint64_t total_threads;
+    static std::size_t total_threads;
 
     /**
      * Глобальный мьютекс для операций между потоков. 
@@ -98,7 +132,7 @@ public:
      * @param thread_name
      *      Имя потока.
      */
-    thread(runnable* task, const char* thread_name = nullptr, int32_t stack_size = 0);
+    thread(runnable* task, const char* thread_name = nullptr, std::size_t stack_size = 0);
 
     /**
      * Конструктор перемещения.

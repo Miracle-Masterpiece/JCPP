@@ -2,6 +2,7 @@
 #define JSTD_CPP_ZIP_INFLATER_H
 
 #include <zlib.h>
+#include <cstdint>
 
 namespace jstd {
 
@@ -59,7 +60,7 @@ public:
      * @param size
      *      Размер данных в байтах.
      */
-    void set_input(const void* data, size_t size);
+    void set_input(const void* data, std::size_t size);
 
     /**
      * Выполняет разжатие данных в выходной буфер.
@@ -81,7 +82,7 @@ public:
      * @throws illegal_state_exception
      *      Если произошла ошибка разжатия.
      */
-    size_t inflate(void* outBuffer, size_t outBufferSize, bool finish = false);
+    std::size_t inflate(void* outBuffer, std::size_t outBufferSize, bool finish = false);
 
     /**
      * Проверяет, нужны ли дополнительные входные данные для разжатия.
@@ -113,7 +114,7 @@ public:
      * @param dictLength
      *      Длина словаря в байтах.
      */
-    void set_dictionary(const void* dict, size_t dictLength);
+    void set_dictionary(const void* dict, std::size_t dictLength);
 };
 
 }

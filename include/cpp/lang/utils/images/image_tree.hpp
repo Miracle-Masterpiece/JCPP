@@ -15,28 +15,36 @@ namespace texturing
 {
 
 struct rect {
-    int32_t x, y, w, h;
-    int to_string(char buf[], int bufsize) const;
+    int x, y, w, h;
 };
 
-/**
- * Представляет узел дерева для размещения изображений в атласе текстур.
- *
- * Каждый узел может быть либо листом (занимает прямоугольник),
- * либо внутренним узлом, разбивающим пространство между потомками.
- */
+// 
+// Представляет узел дерева для размещения изображений в атласе текстур.
+// Каждый узел может быть либо листом (занимает прямоугольник),
+// либо внутренним узлом, разбивающим пространство между потомками.
+// 
 class node {
 public:
     /**
      * Константа, обозначающая отсутствие изображения.
      */
-    static const int32_t NULL_ID = -1;
+    static const std::size_t NULL_ID = ~((std::size_t) 0);
 private:
-    tca::allocator* m_allocator; // Аллокатор, используемый для управления памятью узлов.
-    unique_ptr<node> m_left;  // Левый дочерний узел.
-    unique_ptr<node> m_right; // Правый дочерний узел.
-    rect m_rect;   // Прямоугольник, занимаемый данным узлом.
-    int32_t m_ID;  // Идентификатор изображения в этом узле или NULL_ID, если пуст.
+    
+    // Аллокатор, используемый для управления памятью узлов.
+    tca::allocator*     m_allocator;
+
+    // Левый дочерний узел.
+    unique_ptr<node>    m_left;
+    
+    // Правый дочерний узел.
+    unique_ptr<node>    m_right;
+
+    // Прямоугольник, занимаемый данным узлом.
+    rect m_rect;
+    
+    // Идентификатор изображения в этом узле или NULL_ID, если пуст.
+    std::size_t m_ID;
 
     /**
      * 
@@ -85,7 +93,7 @@ public:
      * @param allocator 
      *      Указатель на аллокатор памяти.
      */
-    node(int32_t w, int32_t h, tca::allocator* allocator);
+    node(int w, int h, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Создаёт корневой узел с заданным прямоугольником.
@@ -96,7 +104,7 @@ public:
      * @param allocator 
      *      Указатель на аллокатор памяти.
      */
-    node(const rect& r, tca::allocator* allocator);
+    node(const rect& r, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Перемещающий конструктор.
@@ -146,21 +154,7 @@ public:
      * @return 
      *      Указатель на узел, в который помещено изображение, или nullptr, если не удалось.
      */
-    node* put_image(int32_t w, int32_t h, int32_t imageID);
-
-    /**
-     * Возвращает строковое представление узла.
-     * 
-     * @param buf
-     *      Буфер в который будет сохранена строка.
-     * 
-     * @param bufsize
-     *      Размер буфера.
-     * 
-     * @return
-     *      Кол-во записанных символов.
-     */
-    int to_string(char buf[], int bufsize) const;
+    node* put_image(int w, int h, std::size_t imageID);
 
     /**
      * Выполняет обход в глубину узлов дерева, начиная с текущего узла.
@@ -185,7 +179,7 @@ public:
     /**
      * Возвращает идентификатор узла.
      */
-    int32_t get_id() const;
+    std::size_t get_id() const;
 };
 
     template<typename CONTEXT>

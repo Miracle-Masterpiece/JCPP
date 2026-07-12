@@ -90,6 +90,7 @@ namespace jstd {
             if (array == nullptr)
                 throw_except<null_pointer_exception>("array is null");
         );
+        
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_destructible<T>::value)
             return;

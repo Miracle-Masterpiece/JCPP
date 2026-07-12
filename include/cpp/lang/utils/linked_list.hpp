@@ -223,7 +223,7 @@ class linked_list {
     /**
      * Количество элементов в списке.
      */
-    int64_t                 _size;
+    std::size_t                 _size;
 
     /**
      * Выделяет память и создаёт новый узел списка.
@@ -256,7 +256,7 @@ class linked_list {
      * @return 
      *      Указатель на найденный узел.
      */
-    list_node<T>* node_at(int64_t idx);
+    list_node<T>* node_at(std::size_t idx);
 
     /**
      * Константная версия node_at.
@@ -266,7 +266,7 @@ class linked_list {
      * @return 
      *      Константный указатель на найденный узел.
      */
-    const list_node<T>* node_at(int64_t idx) const;
+    const list_node<T>* node_at(std::size_t idx) const;
 
     /**
      * Удаляет узел из связей (не освобождает память).
@@ -279,12 +279,17 @@ class linked_list {
 public:
 
     /**
+     * 
+     */
+    static const std::size_t null_val = ~((std::size_t) 0);
+
+    /**
      * Конструктор с пользовательским аллокатором.
      * 
      * @param allocator 
      *      Указатель на пользовательский аллокатор.
      */
-    linked_list(tca::base_allocator* allocator = tca::get_scoped_or_default());
+    linked_list(tca::base_allocator* allocator = tca::get_default_allocator());
 
     /**
      * Конструктор с инициализирующим листом..
@@ -295,7 +300,7 @@ public:
      * @param allocator 
      *      Указатель на пользовательский аллокатор.
      */
-    linked_list(const std::initializer_list<T>& init_list, tca::base_allocator* allocator = tca::get_scoped_or_default());
+    linked_list(const std::initializer_list<T>& init_list, tca::base_allocator* allocator = tca::get_default_allocator());
 
     /**
      * Копирующий конструктор.
@@ -389,7 +394,7 @@ public:
      * @param value 
      *      Значение для вставки.
      */
-    template<typename _T> void add(int64_t idx, _T&& value);
+    template<typename _T> void add(std::size_t idx, _T&& value);
 
     /**
      * Удаляет элемент по индексу.
@@ -399,7 +404,7 @@ public:
      * @param _return 
      *      [optional] Указатель, куда будет записано удалённое значение.
      */
-    void remove_at(int64_t idx, T* _return = nullptr);
+    void remove_at(std::size_t idx, T* _return = nullptr);
 
     /**
      * Удаляет первый элемент.
@@ -451,7 +456,7 @@ public:
      * @return 
      *      Размер списка.
      */
-    int64_t size() const;
+    std::size_t size() const;
 
     /**
      * Проверяет, пуст ли список.
@@ -469,7 +474,7 @@ public:
      * @return 
      *      Ссылка на элемент.
      */
-    T& at(int64_t idx);
+    T& at(std::size_t idx);
 
     /**
      * Константная версия at().
@@ -479,7 +484,7 @@ public:
      * @return 
      *      Константная ссылка на элемент.
      */
-    const T& at(int64_t idx) const;
+    const T& at(std::size_t idx) const;
 
     /**
      * Проверяет, содержится ли значение в списке.
@@ -499,15 +504,15 @@ public:
     /**
      * Возвращает индекс первого вхождения элемента в списке.
      *
-     * Для сравнения используется jstd::equal_to<T>. Если элемент не найден, возвращается -1.
+     * Для сравнения используется jstd::equal_to<T>. Если элемент не найден, возвращается linked_list<T>::null_val.
      *
      * @param value 
      *      Значение для поиска.
      * 
      * @return 
-     *      Индекс (0-based), либо -1, если элемент не найден.
+     *      Индекс (0-based), либо linked_list<T>::null_val, если элемент не найден.
      */
-    int64_t index_of(const T& value) const;
+    std::size_t index_of(const T& value) const;
 
     /**
      * Создаёт глубокую копию списка.
@@ -696,7 +701,7 @@ public:
 
     template<typename T>
     template<typename _T>
-    void linked_list<T>::add(int64_t idx, _T&& t) {
+    void linked_list<T>::add(std::size_t idx, _T&& t) {
         if (idx == _size) {
             add_last(std::forward<_T>(t));
             return;
@@ -724,10 +729,10 @@ public:
     }
 
     template<typename T>
-    list_node<T>* linked_list<T>::node_at(int64_t idx) {
+    list_node<T>* linked_list<T>::node_at(std::size_t idx) {
         assert(idx >= 0 && idx < _size);
         if (idx < _size >> 1) {
-            int64_t i = 0;
+            std::size_t i = 0;
             for (list_node<T>* n = _head; n != nullptr; n = n->get_next()) {
                 if (i == idx)
                     return n;
@@ -736,7 +741,7 @@ public:
         } 
         
         else {
-            int64_t i = _size - 1;
+            std::size_t i = _size - 1;
             for (list_node<T>* n = _tail; n != nullptr; n = n->get_prev()) {
                 if (i == idx)
                     return n;
@@ -839,7 +844,7 @@ public:
     }
 
     template<typename T>
-    void linked_list<T>::remove_at(int64_t idx, T* _return) {
+    void linked_list<T>::remove_at(std::size_t idx, T* _return) {
 #ifndef NDEBUG
         if (idx < 0 || idx > _size)
             throw_except<index_out_of_bound_exception>("Index %li out of bound for length %li", (long int) idx, (long int) _size);
@@ -880,13 +885,13 @@ public:
     }
 
     template<typename T>
-    const list_node<T>* linked_list<T>::node_at(int64_t idx) const {
+    const list_node<T>* linked_list<T>::node_at(std::size_t idx) const {
         linked_list<T>* _this = const_cast<linked_list<T>*>(this);
         return _this->node_at(idx);
     }
 
     template<typename T>
-    int64_t linked_list<T>::size() const {
+    std::size_t linked_list<T>::size() const {
         return _size;
     }
 
@@ -905,7 +910,7 @@ public:
     }
 
     template<typename T>
-    T& linked_list<T>::at(int64_t idx) {
+    T& linked_list<T>::at(std::size_t idx) {
         check_index(idx, _size);
         list_node<T>* node = node_at(idx);
         assert(node != nullptr);
@@ -913,7 +918,7 @@ public:
     }
     
     template<typename T>
-    const T& linked_list<T>::at(int64_t idx) const {
+    const T& linked_list<T>::at(std::size_t idx) const {
         check_index(idx, _size);
         const list_node<T>* node = node_at(idx);
         assert(node != nullptr);
@@ -930,14 +935,14 @@ public:
     }
 
     template<typename T>
-    int64_t linked_list<T>::index_of(const T& t) const {
-        int64_t idx = 0;
+    std::size_t linked_list<T>::index_of(const T& t) const {
+        std::size_t idx = 0;
         equal_to<T> equals;
         for (const list_node<T>* i = _head; i != nullptr; i = i->get_next(), ++idx) {
             if (equals(t, i->get_value()))
                 return idx;
         }
-        return -1;
+        return linked_list<T>::null_val;
     }
 
     template<typename T>

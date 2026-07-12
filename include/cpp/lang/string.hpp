@@ -1,1034 +1,929 @@
-#ifndef _ALLOCATORS_STRING_H
-#define _ALLOCATORS_STRING_H
+#ifndef A6379E4D_4085_4DC3_B5E7_3C4A783981AF
+#define A6379E4D_4085_4DC3_B5E7_3C4A783981AF
 
-#include <allocators/allocator.hpp>
-#include <cpp/lang/system.hpp>
-#include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/utils/utils.hpp>
 #include <cpp/lang/utils/objects.hpp>
-
-#include <cassert>
-#include <cstring>
+#include <cpp/lang/utils/utils.hpp>
+#include <allocators/allocator.hpp>
+#include <cpp/lang/exceptions.hpp>
+#include <cpp/lang/math.hpp>
 #include <utility>
-#include <exception>
-#include <algorithm>
+#include <cstring>
+#include <cassert>
+#include <cstdio>
+#include <cwchar>
 
-namespace jstd {
+namespace jstd
+{
 
-template<typename CHAR_TYPE>
-class tstring;
-
-/**
- * Этот класс представляет динамически выделенную строку, поддерживающую различные операции, такие как
- * добавление, замена, подсчёт вхождений и извлечение подстрок. Он предоставляет гибкий
- * интерфейс для работы со строками с учётом типа символов и стратегий выделения памяти.
- * Класс параметризован, что позволяет использовать разные типы символов, обеспечивая гибкость в использовании
- * памяти и манипуляциях с ней, а также поддерживает порядок байтов для систем с различным порядком байтов.
- * 
- * @tparam CHAR_TYPE Тип символа, используемого для строки (например, char, wchar_t и т.д.).
- */
-template<typename CHAR_TYPE>
+template<typename TCHAR>
 class tstring {
-protected:
     /**
-     * Аллокатор памяти для хранения строки.
+     * 
      */
-    tca::allocator* _allocator;
+    static const std::size_t INLINE_BUFFER_SIZE = 16;
+    
     /**
      * 
      */
     union {
-        CHAR_TYPE* _data;                // Указатель на данные строки.
-        const CHAR_TYPE* _const_data;    // Указатель на константные данные строки.
+        TCHAR*  data;
+        TCHAR   inline_data[INLINE_BUFFER_SIZE];
     };
     
+    tca::allocator* allocator;
+    std::size_t     cap;
+    std::size_t     size;
+
     /**
-     * Вместимость выделенной памяти.
+     * 
      */
-    int32_t _capacity;
-    
+    std::size_t rem() const {
+        assert(cap >= size);
+        return cap - size;
+    }
+
     /**
-     * Текущий размер (длина) строки.
+     * 
      */
-    int32_t _size;
-    
+    bool is_inline_string() const {
+        return cap  <= INLINE_BUFFER_SIZE;
+    }
+
     /**
-     * Порядок байтов строки (младший порядок или старший порядок).
+     * 
      */
-    char _order;
+    void ensure_cap(std::size_t new_size);
+
+    /**
+     * 
+     */
+    static bool match(const TCHAR* a, const TCHAR* b, std::size_t blen) {
+        for (std::size_t i = 0; i < blen; ++i)
+            if (a[i] != b[i]) return false;
+        return true;
+    }
+
+    /**
+     * 
+     */
+    static std::size_t normalize_length(const TCHAR* s, std::size_t len) {
+        return len == npos() ? str_len(s) : len;
+    }
 
 public:
-    using CHAR_T = CHAR_TYPE;
 
-     /**
-     * Вспомогательная функция для вычисления длины строки.
-     * @param str Строка, длину которой нужно вычислить.
-     * @return Длина строки.
+    /**
+     * 
      */
-    static int32_t strlen(const CHAR_TYPE* str) {
-        int32_t len = 0;
-        while (*(str + len)) 
-            ++len;
+    static std::size_t str_len(const TCHAR* s) {
+        std::size_t len = 0;
+        while(*s++) ++len;
         return len;
     }
 
     /**
-     * Проверяет, является ли это строка обёрткой над константной си-строкой.
-     * И, если тот объект - обёртка, кидает исключение.
      * 
-     * @throws unsupported_operation_exception
-     *      Если этот объект неизменяемый.
-     * 
-     * @since 1.1
      */
-    void check_const_or_except() {
-        JSTD_DEBUG_CODE(
-            if (is_constant_string())
-                throw_except<unsupported_operation_exception>("String is constant!");
-        );
-    }
-
-protected:
-    /**
-     * Нормализует параметр длины. Если длина отрицательная, используется фактическая длина строки.
-     * 
-     * @param s
-     *      Строка для измерения.
-     * 
-     * @param len
-     *      Длина для нормализации.
-     * 
-     * @return
-     *      Нормализованная длина.
-     */
-    static int32_t normalize_length(const CHAR_TYPE* s, int32_t len) {
-        if (len < 0)
-            return tstring<CHAR_TYPE>::strlen(s);
-        return len;
+    static std::size_t npos() {
+        return ~(std::size_t) 0;
     }
 
     /**
-     * Удаляет ресурсы текущей строки, освобождая память.
-     */
-    void dispose();        
-    
-    /**
-     * Изменяет размер строки до заданного значения.
      * 
-     * @remark Учитывает нулевой символ.
+     */
+    explicit tstring(tca::allocator* allocator = tca::get_default_allocator());
+    
+    /**
      * 
-     * @param sz Новый размер строки.
      */
-    void resize_for(int32_t sz);
+    tstring(const TCHAR* s, tca::allocator* alloc = tca::get_default_allocator());
     
     /**
-     * Изменяет размер строки, выделяя новую память.
      * 
-     * @remark Не учитывает нулевой символ.
+     */
+    tstring(const tstring<TCHAR>& s, tca::allocator* allocator = tca::get_default_allocator());
+    
+    /**
      * 
-     * @param new_size Новый размер для строки.
      */
-    void resize(int32_t new_size);
+    tstring(tstring<TCHAR>&& s);
     
     /**
-     * Проверяет, что аллокатор валиден (не равен нулю).
-     * @throws illegal_state_exception Если аллокатор равен null.
-     */
-    void check_allocator() const {
-        if (_allocator == nullptr)
-            throw_except<illegal_state_exception>("Allocator is null!");
-    }
-    
-    /**
-     * Конструирует строку из переданной строки, выделяя память и копируя данные.
      * 
-     * @param str 
-     *      Исходная строка.
+     */
+    tstring<TCHAR>& operator=(const tstring<TCHAR>& s);
+    
+    /**
      * 
-     * @param allocator 
-     *      Аллокатор памяти.
-     * @param in
-     *      Порядок байтов исходной строки.
+     */
+    tstring<TCHAR>& operator=(tstring<TCHAR>&& s);
+    
+    /**
      * 
-     * @param out
-     *      Порядок байтов для созданной строки.
-     */
-    void construct_string(const CHAR_TYPE* str, tca::allocator* allocator, byte_order in, byte_order out) {
-        int32_t len = tstring<CHAR_TYPE>::strlen(str);
-        CHAR_TYPE* data = (CHAR_TYPE*) allocator->allocate_align(sizeof(CHAR_TYPE) * (len + 1), alignof(CHAR_TYPE));
-        if (data == nullptr)
-            throw_except<out_of_memory_error>("Out of memory!");
-        _allocator  = allocator;
-        _data       = data;
-        _capacity   = sizeof(CHAR_TYPE) * (len + 1);
-        _size       = len;
-        _order      = out;
-        if (sizeof(CHAR_TYPE) == sizeof(char) || in == out) {
-            std::memcpy(_data, str, sizeof(CHAR_TYPE) * len);
-        } else {
-            utils::copy_swap_memory<CHAR_TYPE>(_data, str, len);
-        }
-        _data[_size] = 0;
-    }
-
-    /**
-     * Устанавливает символ в заданном индексе, учитывая порядок байтов.
-     * @param idx Индекс для установки символа.
-     * @param ch Символ для установки.
-     * @param ch_order Порядок байтов символа.
-     */
-    void set_char(int32_t idx, CHAR_TYPE ch, byte_order ch_order) {
-        check_index(idx, _capacity);
-        if (sizeof(CHAR_TYPE) == sizeof(char) || ch_order == _order) {
-            _data[idx] = ch;
-        } else {
-            _data[idx] = utils::bswap<CHAR_TYPE>(ch);
-        }
-    }
-
-    /**
-     * Получает символ в заданном индексе, учитывая порядок байтов.
-     * @param idx Индекс для получения символа.
-     * @param ret_order Порядок байтов для возвращаемого символа.
-     * @return Символ в указанном индексе.
-     */
-    CHAR_TYPE get_char(int32_t idx, byte_order ret_order) const {
-        check_index(idx, _capacity);
-        if (sizeof(CHAR_TYPE) == sizeof(char) || ret_order == _order) {
-            return _const_data[idx];
-        } else {
-            return utils::bswap<CHAR_TYPE>(_const_data[idx]);
-        }
-    }
-
-public:
-    /**
-     * Конструктор по умолчанию. Инициализирует пустую строку.
-     */
-    tstring();
-    
-    /**
-     * Конструктор, инициализирующий строку с заданным аллокатором.
-     * @param allocator Аллокатор для управления памятью.
-     */
-    tstring(tca::allocator* allocator);
-   
-    /**
-     * Конструктор, инициализирующий строку с заданным аллокатором и исходной строкой.
-     * @param allocator Аллокатор для управления памятью.
-     * @param str Строка для инициализации.
-     * @param in Порядок байтов исходной строки.
-     * @param out Порядок байтов для созданной строки.
-     */    
-    tstring(tca::allocator* allocator, const CHAR_TYPE* str, byte_order in = system::native_byte_order(), byte_order out = system::native_byte_order());
-    
-    /**
-     * Конструктор копирования.
-     * @param str Строка для копирования.
-     */
-    tstring(const tstring<CHAR_TYPE>& str);
-    
-    /**
-     * Конструктор перемещения.
-     * @param str Строка для перемещения.
-     */
-    tstring(tstring<CHAR_TYPE>&& str);
-    
-    /**
-     * Оператор копирования.
-     * @param str Строка для копирования.
-     * @return Ссылка на текущую строку.
-     */
-    tstring& operator= (const tstring<CHAR_TYPE>& str);
-
-    /**
-     * Оператор перемещения.
-     * @param str Строка для перемещения.
-     * @return Ссылка на текущую строку.
-     */
-    tstring& operator= (tstring<CHAR_TYPE>&& str);
-    
-    /**
-     * Деструктор, который освобождает выделенную память.
      */
     ~tstring();
+
+    /**
+     * 
+     */
+    TCHAR* cstr();
     
     /**
-     * Добавляет строку к текущей строке.
-     * @param str Строка для добавления.
-     * @param slen Длина добавляемой строки. Если -1, используется вся строка.
-     * @param str_order Порядок байтов добавляемой строки.
-     * @return Ссылка на текущую строку.
+     * 
      */
-    tstring<CHAR_TYPE>& append(const CHAR_TYPE* str, int32_t slen = -1, byte_order str_order = system::native_byte_order());
+    const TCHAR* cstr() const;
+
+    /**
+     * 
+     */
+    tstring<TCHAR>& reserve(std::size_t newcap); 
+
+    /**
+     * 
+     */
+    tstring<TCHAR>& append(std::size_t idx, const TCHAR* s, std::size_t len = npos());
     
     /**
-     * Добавляет строку к текущей строке с заданного индекса.
-     * @param idx Индекс, с которого нужно добавить.
-     * @param str Строка для добавления.
-     * @param slen Длина добавляемой строки. Если -1, используется вся строка.
-     * @param str_order Порядок байтов добавляемой строки.
-     * @return Ссылка на текущую строку.
+     * 
      */
-    tstring<CHAR_TYPE>& append(int32_t idx, const CHAR_TYPE* str, int32_t slen = -1, byte_order str_order = system::native_byte_order());
-    
-    /**
-     * Добавляет строку к текущей строке с заданного индекса.
-     * @param idx Индекс, с которого нужно добавить.
-     * @param str Строка для добавления.
-     * @return Ссылка на текущую строку.
-     */
-    tstring<CHAR_TYPE>& append(int32_t idx, const tstring<CHAR_TYPE>& str);
+    tstring<TCHAR>& replace_all(const TCHAR* matcher, const TCHAR* replacement);
 
     /**
-     * Добавляет строку к текущей строке.
-     * @param str Строка для добавления.
-     * @return Ссылка на текущую строку.
+     * 
      */
-    tstring<CHAR_TYPE>& append(const tstring<CHAR_TYPE>& str);
-
-    /**
-     * Заменяет вхождения подстроки на другую строку.
-     * @param regex Подстрока для замены.
-     * @param replacement Строка для замены.
-     * @param regex_length Длина заменяймой подстроки.
-     * @param replacement_length Длина заменяющей строки.
-     * @param regex_order Порядок байтов заменяймой подстроки.
-     * @param replacement_order Порядок байтов заменяющей.
-     * @return Ссылка на текущую строку.
-     */
-    tstring<CHAR_TYPE>& replace(
-        const CHAR_TYPE* regex, 
-        const CHAR_TYPE* replacement, 
-        int32_t regex_length             = -1, 
-        int32_t replacement_length       = -1, 
-        byte_order regex_order       = system::native_byte_order(), 
-        byte_order replacement_order = system::native_byte_order());
-
-    tstring<CHAR_TYPE>& replace(
-        int32_t idx,
-        const CHAR_TYPE* regex, 
-        const CHAR_TYPE* replacement, 
-        int32_t regex_length             = -1, 
-        int32_t replacement_length       = -1, 
-        byte_order regex_order       = system::native_byte_order(), 
-        byte_order replacement_order = system::native_byte_order());
-
-    /**
-     * Подсчитывает количество вхождений подстроки в текущую строку.
-     * @param str Подстрока для подсчёта.
-     * @param len Длина подстроки. Если -1, используется вся строка.
-     * @param str_order Порядок байтов подстроки.
-     * @return Количество вхождений подстроки.
-     */
-    int32_t count_contains(const CHAR_TYPE* str, int32_t len = -1, byte_order str_order = system::native_byte_order()) const;
-    
-    /**
-     * Проверяет, содержит ли текущая строка подстроку.
-     * @param str Подстрока для проверки.
-     * @param len Длина подстроки. Если -1, используется вся строка.
-     * @param str_order Порядок байтов подстроки.
-     * @return true, если подстрока найдена, false в противном случае.
-     */
-    bool contains(const CHAR_TYPE* str, int32_t len = -1, byte_order = system::native_byte_order()) const;
-
-    /**
-     * Находит индекс первого вхождения подстроки.
-     * @param str Подстрока для поиска.
-     * @param len Длина подстроки. Если -1, используется вся строка.
-     * @param str_order Порядок байтов подстроки.
-     * @return Индекс первого вхождения подстроки или -1, если не найдено.
-     */
-    int32_t index_of(const CHAR_TYPE* str, int32_t len = -1, byte_order = system::native_byte_order()) const;
-    
-    /**
-     * Находит индекс последнего вхождения подстроки.
-     * @param str Подстрока для поиска.
-     * @param len Длина подстроки. Если -1, используется вся строка.
-     * @param str_order Порядок байтов подстроки.
-     * @return Индекс последнего вхождения подстроки или -1, если не найдено.
-     */
-    int32_t last_index_of(const CHAR_TYPE* str, int32_t len = -1, byte_order = system::native_byte_order()) const;
-
-    /**
-     * Проверяет, начинается ли строка с указанной подстроки.
-     * @param str Подстрока для проверки.
-     * @param len Длина подстроки. Если -1, используется вся строка.
-     * @param str_order Порядок байтов подстроки.
-     * @return true, если строка начинается с подстроки, false в противном случае.
-     */
-    bool starts_with(const CHAR_TYPE* str, int32_t len = -1, byte_order = system::native_byte_order()) const;
-    
-    /**
-     * Проверяет, заканчивается ли строка на указанную подстроку.
-     * @param str Подстрока для проверки.
-     * @param len Длина подстроки. Если -1, используется вся строка.
-     * @param str_order Порядок байтов подстроки.
-     * @return true, если строка заканчивается на подстроку, false в противном случае.
-     */
-    bool ends_with(const CHAR_TYPE* str, int32_t len = -1, byte_order = system::native_byte_order()) const;
-
-    /**
-     * Возвращает необработанное представление строки как C-строки.
-     * @return Указатель на C-строку.
-     */
-    const CHAR_TYPE* c_string() const {
-        return _data;
+    tstring<TCHAR>& append(const TCHAR* s, std::size_t len = npos()) {
+        return append(size, s, len);
     }
 
     /**
-     * Возвращает порядок байтов строки.
-     * @return Порядок байтов строки.
+     * 
      */
-    byte_order order() const {
-        return (byte_order)  _order;
+    tstring<TCHAR>& remove(std::size_t start, std::size_t end);
+
+    /**
+     * 
+     */
+    tstring<TCHAR>& operator<< (const TCHAR* s) {
+        return append(s);
     }
     
     /**
-     * Устанавливает порядок байтов строки.
-     * Данная функция не переконвертирует уже находящиеся символы в строке из одного порядка в другой. 
-     * Но новые символы будут кодироваться в соотвествии с текущим порядком байт.
+     * 
      */
-    void order(byte_order order) {
-        _order = (char) order;
+    tstring<TCHAR>& operator<< (const tstring<TCHAR>& s) {
+        return append(s.cstr());
     }
 
     /**
-     * Возвращает вместимость (выделенный размер) строки. (НЕ В БАЙТАХ!!!)
-     * @return Вместимость строки.
+     * 
      */
-    int32_t capacity() const {
-        return _capacity;
+    TCHAR& operator[] (std::size_t idx) {
+        check_index(idx, length());
+        return cstr()[idx];
+    }
+    
+    /**
+     * 
+     */
+    const TCHAR& operator[] (std::size_t idx) const {
+        check_index(idx, length());
+        return cstr()[idx];
     }
 
     /**
-     * Возвращает текущую длину строки. (НЕ В БАЙТАХ!!!)
-     * @return Длина строки.
+     * 
      */
-    int32_t length() const {
-        return _size;
+    std::size_t length() const {
+        return size;
+    }
+    
+    /**
+     * 
+     */
+    std::size_t capacity() const {
+        return cap;
     }
 
     /**
-     * Резервирует память для строки, изменяя её вместимость.
      * 
-     * @note
-     *      К передаваемому размеру всегда добавляется +1 для нулевого символа.
-     * 
-     * @param size
-     *      Размер для резервирования.
-     * 
-     * @return
-     *      Ссылка на текущую строку.
      */
-    tstring<CHAR_TYPE>& reserve(int32_t size);
-    
-    /**
-     * Обрезает ведущие и хвостовые пробелы в строке.
-     * @return Ссылка на текущую строку.
-     */
-    tstring<CHAR_TYPE>& trim();
-    
-    /**
-     * Обрезает строку до её текущего размера (освобождает неиспользуемую память).
-     * @return Ссылка на текущую строку.
-     */
-    tstring<CHAR_TYPE>& trim_to_size();
-    
-    /**
-     * Зануляет память между this->_size и this->_capacity
-     * @return Ссылка на текущую строку.
-     */
-    tstring<CHAR_TYPE>& wipe_extra();
-    
-    /**
-     * Очищает строку, устанавливая её размер в ноль.
-     * @remark Выделенная память не освобождается!
-     * @return Ссылка на текущую строку.
-     */
-    tstring<CHAR_TYPE>& clear();
-    
-     /**
-     * Безопасно очищает строку, зануляя её память.
-     * @remark Выделенная память не освобождается!
-     * @return Ссылка на текущую строку.
-     */
-    tstring<CHAR_TYPE>& secure_clear();
-
-    /**
-     * Удаляет часть строки, начиная с заданного индекса.
-     * @param start Начальный индекс для удаления.
-     * @param end Конечный индекс для удаления.
-     * 
-     * @remark подстрока удаляется до символа end, не включительно!
-     * 
-     * @return Ссылка на текущую строку.
-     */
-    tstring<CHAR_TYPE>& remove(int32_t start, int32_t end);
-    
-    /**
-     * Клонирует строку. И аллоцирует её содержимое в передаваемом аллокаторе.
-     * Если в аргумент аллокатора передаётся nullptr, то метод будет использовать внутренний аллокатор текущей строки.
-     * 
-     * @param allocator
-     *       Аллокатор который будет отвечать за распределение памяти новой строки.
-     * @return
-     *      Копия текущей строки.
-     */
-    tstring<CHAR_TYPE> clone(tca::allocator* allocator = nullptr) const;
-    
-    /**
-     * Возвращает содержимое подстроки текущей строки.
-     * @param start     Индекс начала
-     * @param end       Индекс конца(не включительно!)
-     * @param allocator Аллокатор, в который будет отвечать за распределение памяти для новой строки.
-     *                  Если nullptr, то будет взят аллокатор текущей строки.
-     * @return Новая строка, содержащая подстроку.
-     */
-    tstring<CHAR_TYPE> substr(int32_t start, int32_t end, tca::allocator* allocator = nullptr);
-
-    /**
-     * Получить символ по заданному индексу.
-     * @param idx Индекс для получения символа.
-     * @return Символ по заданному индексу.
-     */
-    CHAR_TYPE char_at(int32_t idx) const {
-        return get_char(idx, system::native_byte_order());
+    tca::allocator* get_allocator() const {
+        return allocator;
     }
 
     /**
-     * Вычисляет хеш-код строки.
+     * 
      */
-    uint64_t hashcode() const;
+    TCHAR char_at(std::size_t idx) const;
     
     /**
-     * Проверяет, идентичны ли строки.
      * 
-     * @return  
-     *      true - если строки равны, иначе false.
      */
-    bool equals(const tstring<CHAR_TYPE>& str) const;
+    std::size_t index_of(const TCHAR* s, std::size_t = npos()) const;
+    
+    /**
+     * 
+     */
+    std::size_t last_index_of(const TCHAR* s, std::size_t = npos()) const;
 
     /**
-     * Проверяет, идентичны ли строки.
      * 
-     * @return  
-     *      true - если строки равны, иначе false.
      */
-    bool equals(const CHAR_TYPE* str, int32_t slen = -1, byte_order str_order = system::native_byte_order()) const;
+    bool contains(const TCHAR* s, std::size_t = npos()) const;
 
     /**
-     * Является ли строка константной.
-     * Константная строка - это строка, которая является обёрткой вокруг константной Си-строки.
      * 
-     * @return
-     *      true - если строка является константной; иначе - false.
      */
-    bool is_constant_string() const {
-        return _allocator == nullptr && _data != nullptr;
+    bool starts_with(const TCHAR* s, std::size_t = npos()) const;
+    
+    /**
+     * 
+     */
+    bool ends_with(const TCHAR* s, std::size_t = npos()) const;
+
+    /**
+     * 
+     */
+    tstring<TCHAR>& append(const tstring<TCHAR>& s);
+
+    /**
+     * 
+     */
+    void clear();
+
+    /**
+     * 
+     */
+    void is_empty() const;
+
+
+    /**
+     * 
+     */
+    bool equals(const tstring<TCHAR>& s) const;
+    
+    /**
+     * 
+     */
+    bool operator==(const tstring<TCHAR>& s) const {
+        return equals(s);
     }
 
     /**
-     * ==============================================================
-     *                  D E B U G  F U N CS
-     * ==============================================================
+     * 
      */
-    void print() const;
+    std::size_t hashcode() const;
+
+    /**
+     * 
+     */
+    int compare_to(const tstring<TCHAR>& r);
+
+    /**
+     * 
+     */
+    tstring<TCHAR>& trim();
+
+    /**
+     * 
+     */
+    tstring<TCHAR> sub_string(std::size_t start, std::size_t end, tca::allocator* allocator = tca::get_default_allocator());
 };
 
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>::tstring() : _allocator(nullptr), _data(nullptr), _capacity(0), _size(0), _order(-1) {
+    template<typename TCHAR>
+    /*static*/ const std::size_t tstring<TCHAR>::INLINE_BUFFER_SIZE;
+
+    template<typename TCHAR>
+    tstring<TCHAR>::tstring(tca::allocator* allocator) : data(nullptr), allocator(allocator), cap(INLINE_BUFFER_SIZE), size(0) {
+
+    }
+
+    template<typename TCHAR>
+    tstring<TCHAR>::tstring(const TCHAR* s, tca::allocator* alloc) : data(nullptr), allocator(alloc), cap(INLINE_BUFFER_SIZE), size(0) {
+        append(0, s);
     }
     
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>::tstring(tca::allocator* allocator) : _allocator(allocator), _data(nullptr), _capacity(0), _size(0), _order(-1) {
-    }
-    
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>::tstring(tca::allocator* allocator, const CHAR_TYPE* str, byte_order in, byte_order out) : tstring<CHAR_TYPE>() {
-        if (str != nullptr) {
-            construct_string(str, allocator, in, out);
-        } else {
-            _order      = out;
-            _allocator  = allocator;
-        }
-    }
-
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>::tstring(const tstring<CHAR_TYPE>& str) : tstring() {
-        if (str.is_constant_string()) {
-            _data       = str._data;
-            _capacity   = _size = str._size;
-            _order      = str._order;
-            _allocator  = nullptr;
-        } else if (str._allocator != nullptr) {
-            construct_string(str._data, str._allocator, (byte_order) str._order, (byte_order) str._order);
-        }
-    }
-    
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>::tstring(tstring<CHAR_TYPE>&& str) : 
-    _allocator(str._allocator), 
-    _data(str._data), 
-    _capacity(str._capacity), 
-    _size(str._size), 
-    _order(str._order) {
-        str._allocator  = nullptr;
-        str._data       = nullptr;
-        str._capacity   = 0;
-        str._size       = 0;
-    }
-    
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::operator= (const tstring<CHAR_TYPE>& str) {
-        if (&str != this) {
-            if (str.is_constant_string()) {
-                _data       = str._data;
-                _capacity   = _size = str._size;
-                _order      = str._order;
-                _allocator  = nullptr;
-            } 
-            else {
-                tstring<CHAR_TYPE> tmp(str);
-                this->operator=(std::move(tmp));
-            }
-        }
-        return *this;
-    }
-    
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::operator= (tstring<CHAR_TYPE>&& str) {
-        if (&str != this) {
-            dispose();
-            _allocator  = str._allocator;
-            _data       = str._data;
-            _capacity   = str._capacity;
-            _size       = str._size;
-            _order      = str._order;
-            str._allocator  = nullptr;
-            str._data       = nullptr;
-            str._capacity   = 0;
-            str._size       = 0;
-        }
-        return *this;
-    }
-    
-    template<typename CHAR_TYPE>
-    void tstring<CHAR_TYPE>::dispose() {
-        if (_allocator != nullptr && _data != nullptr) {
-            _allocator->deallocate(_data, sizeof(CHAR_TYPE) * _capacity);
-            _data       = nullptr;
-            _capacity   = 0;
-            _size       = 0;
-        }
-    }
-
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>::~tstring() {
-        dispose();
-    }
-
-    template<typename CHAR_TYPE>
-    void tstring<CHAR_TYPE>::resize(int32_t sz) {
-        check_const_or_except();
-        check_allocator();
-        CHAR_TYPE* data = (CHAR_TYPE*) _allocator->allocate_align(sizeof(CHAR_TYPE) * sz, alignof(CHAR_TYPE));
-        if (data == nullptr)
-            throw_except<out_of_memory_error>("Out of memory!");
-        //std::memset(data, '\0', sizeof(CHAR_TYPE) * sz);
-        std::memcpy(data, _data, sizeof(CHAR_TYPE) * _size);
-        _allocator->deallocate(_data, sizeof(CHAR_TYPE) * _capacity);
-        _data       = data;
-        _capacity   = sz;
-    }
-
-    template<typename CHAR_TYPE>
-    void tstring<CHAR_TYPE>::resize_for(int32_t new_size) {
-        check_const_or_except();
-        if (new_size == 1) {
-            if (_capacity < new_size) 
-                resize(new_size);
-        } else {
-            int32_t newCapacity = std::max(_capacity, 2);
-            while (new_size > newCapacity) {
-                newCapacity = (int32_t) (newCapacity * 1.5);
-            }
-            resize(newCapacity);
-        }
-    }
-
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::reserve(int32_t size) {
-        check_const_or_except();
-        resize(size + 1);
-        return *this;
-    }
-
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::append(const CHAR_TYPE* str, int32_t slen, byte_order str_order) {
-        return append(_size, str, slen, str_order);
-    }
-    
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::append(int32_t idx, const CHAR_TYPE* str, int32_t slen, byte_order str_order) {
-        check_const_or_except();
-        check_index(idx, _size + 1);
-        int32_t len = normalize_length(str, slen);
-        if (_size + len + 1 > _capacity)
-            resize_for(_size + len + 1);
-        if (idx != _size) {
-            CHAR_TYPE* dst = _data + idx + len;
-            CHAR_TYPE* src = _data + idx;
-            std::memmove(dst, src, sizeof(CHAR_TYPE) * (_size - idx));
-        }
-        for (int32_t i = 0; i < len; ++i) {
-            set_char(idx + i, str[i], str_order);
-            ++_size;
-        }
-        _data[_size] = 0;
-        return *this;
-    }
-
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::append(int32_t idx, const tstring<CHAR_TYPE>& str) {
-        return append(idx, str.c_string(), str.length(), (byte_order) str._order);
-    }
-    
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::append(const tstring<CHAR_TYPE>& str) {
-        return append(str._data, str._size, (byte_order) str._order);
-    }
-
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::replace(
-        const CHAR_TYPE* regex, 
-        const CHAR_TYPE* replacement, 
-        int32_t regex_length, 
-        int32_t replacement_length, 
-        byte_order regex_order, 
-        byte_order replacement_order) 
-    {
-        check_const_or_except();
-        regex_length        = normalize_length(regex, regex_length);
-        replacement_length  = normalize_length(replacement, replacement_length);    
-        int32_t count_equal     = count_contains(regex, regex_length, regex_order);
-
-        if (regex_length > _size || count_equal == 0)
-            return *this;
+    template<typename TCHAR>
+    tstring<TCHAR>::tstring(const tstring<TCHAR>& s, tca::allocator* allocator) : tstring<TCHAR>(s.cstr(), allocator) {
         
-        int32_t size = _size - (regex_length * count_equal) + (replacement_length * count_equal); 
-        if (size + 1 > _capacity)
-            resize_for(size + 1);
-
-        for (int32_t i = 0; i < _size;) {
-            if (i + regex_length > _size)
-                break;
-            bool contains = true;
-            for (int32_t j = 0; j < regex_length; ++j) {
-                const CHAR_TYPE ch1 = get_char(i + j, regex_order);
-                const CHAR_TYPE ch2 = regex[j];
-                if (ch1 != ch2){
-                    contains = false;
-                    break;
-                }
+    }
+    
+    template<typename TCHAR>
+    tstring<TCHAR>::tstring(tstring<TCHAR>&& s) : tstring<TCHAR>(tca::get_default_allocator()) {
+        std::swap(allocator,    s.allocator);
+        std::swap(cap,          s.cap);
+        std::swap(size,         s.size);
+        if (!s.is_inline_string())  std::swap(data, s.data);
+        else                        std::memcpy(inline_data, s.inline_data, INLINE_BUFFER_SIZE * sizeof(TCHAR));
+    }
+    
+    template<typename TCHAR>
+    tstring<TCHAR>& tstring<TCHAR>::operator=(const tstring<TCHAR>& s) {
+        if (&s != this)
+        {
+            if (s.length() < INLINE_BUFFER_SIZE)
+            {
+                if (!is_inline_string())
+                    allocator->deallocate(data);
+                
+                assert(s.length() < INLINE_BUFFER_SIZE);
+                
+                std::memcpy(cstr(), s.cstr(), s.length() + 1);
             }
-            if (contains) {
-                replace(i, regex, replacement, regex_length, replacement_length, regex_order, replacement_order);
-                i += replacement_length;
-            } else {
-                ++i;
+            else
+            {
+                assert(allocator != nullptr);
+                
+                std::size_t new_cap = (s.length() + 1);
+                TCHAR* new_data = static_cast<TCHAR*>(
+                                                        allocator->allocate_align(new_cap * sizeof(TCHAR), alignof(TCHAR))
+                                                    );
+                if (!new_data)
+                    throw_except<out_of_memory_error>("Out of memory");
+                
+                std::memcpy(new_data, s.cstr(), s.length() * sizeof(TCHAR));
+
+                if (!is_inline_string())
+                    allocator->deallocate(data);
+                
+                data    = new_data;
+                cap     = new_cap;
+                size    = s.length();
             }
         }
-
-        size = _size;
-        _data[size] = 0;
-
         return *this;
     }
+    
+    template<typename TCHAR>
+    void tstring<TCHAR>::ensure_cap(std::size_t new_size) {
+        std::size_t new_cap = new_size + 1;
+        TCHAR* new_data     = static_cast<TCHAR*>( allocator->allocate_align(sizeof(TCHAR) * new_cap, alignof(TCHAR)) );
+        if (!new_data)
+            throw_except<out_of_memory_error>("Out of memory");
 
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::replace(
-        int32_t idx,
-        const CHAR_TYPE* regex, 
-        const CHAR_TYPE* replacement, 
-        int32_t regex_length, 
-        int32_t replacement_length, 
-        byte_order regex_order, 
-        byte_order replacement_order) 
-    {
-        check_const_or_except();
-        check_index(idx, _size);
-        regex_length        = normalize_length(regex, regex_length);
-        replacement_length  = normalize_length(replacement, replacement_length);
-        int32_t size = _size - regex_length + replacement_length;
+        std::memcpy(new_data, cstr(), (size + 1) * sizeof(TCHAR));
+
+        //Если предыдущий буфер строки не встроен в строку, освобождаем
+        if (!is_inline_string())
+            allocator->deallocate(data);
         
-        //[......................|...|..|.....]
+        data = new_data;
+        cap  = new_cap;
+    }
 
-        CHAR_TYPE* in   = _data + idx + regex_length;
-        CHAR_TYPE* out  = _data + idx + replacement_length;
-        int32_t off         = _size - (idx + regex_length);
-        std::memmove(out, in, sizeof(CHAR_TYPE) * off);
-
-        for (int32_t i = 0; i < replacement_length; ++i)
-            set_char(idx + i, replacement[i], replacement_order);
-
-        _size = size;
-        _data[_size] = 0;
+    template<typename TCHAR>
+    tstring<TCHAR>& tstring<TCHAR>::operator=(tstring<TCHAR>&& s) {
+        if (&s != this)
+        {
+            std::swap(allocator,    s.allocator);
+            std::swap(cap,          s.cap);
+            std::swap(size,         s.size);
+            if (!s.is_inline_string())  std::swap(data, s.data);
+            else                        std::memcpy(inline_data, s.inline_data, INLINE_BUFFER_SIZE * sizeof(TCHAR)); 
+        }
         return *this;
     }
-
-    template<typename CHAR_TYPE>
-    int32_t tstring<CHAR_TYPE>::count_contains(const CHAR_TYPE* str, int32_t len, byte_order str_order) const {
-        len = normalize_length(str, len);
-        if (len > _size)
-            return 0;
-
-        int32_t count_contains = 0;
-        for (int32_t i = 0; i < _size; ) {
-            if (i + len > _size)
-                return count_contains;
-            bool contains = true;
-            for (int32_t j = 0; j < len; ++j) {
-                const CHAR_TYPE ch1 = get_char(i + j, str_order);
-                const CHAR_TYPE ch2 = str[j];
-                if (ch1 != ch2) {
-                    contains = false;
-                    break;
-                }
-            }
-            if (contains) {
-                ++count_contains;
-                i += len;
-            } else {
-                ++i;
-            }
+    
+    template<typename TCHAR>
+    tstring<TCHAR>::~tstring() {
+        if (!is_inline_string() && data)
+        {
+            allocator->deallocate(data);
         }
-
-        return count_contains;
     }
 
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::trim() {
-        check_const_or_except();
+    template<typename TCHAR>
+    TCHAR* tstring<TCHAR>::cstr() {
+        return is_inline_string() ? inline_data : data;
+    }
+
+    template<typename TCHAR>
+    const TCHAR* tstring<TCHAR>::cstr() const {
+        return is_inline_string() ? inline_data : data;
+    }
+
+    template<typename TCHAR>
+    tstring<TCHAR>& tstring<TCHAR>::reserve(std::size_t sz) {
+        if (sz >= INLINE_BUFFER_SIZE)
+        {
+            std::size_t new_cap = sz + 1;
+            std::size_t len     = math::min(length(), sz);
+
+            TCHAR* new_data = static_cast<TCHAR*>( allocator->allocate_align(new_cap * sizeof(TCHAR), alignof(TCHAR)) );
+            if (!new_data)
+                throw_except<out_of_memory_error>("Out of memory");
+            
+            std::memcpy(new_data, cstr(), len * sizeof(TCHAR));
+            new_data[len] = 0;
+            
+            if (!is_inline_string())
+                allocator->deallocate(data);
+            
+            data    = new_data;
+            cap     = new_cap;
+            size    = len;
+        }
+        else
+        {
+            if (!is_inline_string())
+            {
+                TCHAR* data = cstr();
+                std::memcpy(inline_data, data, math::min(INLINE_BUFFER_SIZE, size) * sizeof(TCHAR));
+                cap = INLINE_BUFFER_SIZE;
+                allocator->deallocate(data);
+            }
+            size    = math::min(size, sz);
+            inline_data[sz] = 0;
+        }
+        return *this;
+    }
+    
+    template<typename TCHAR>
+    tstring<TCHAR>& tstring<TCHAR>::append(std::size_t idx, const TCHAR* s, std::size_t len) {
+        JSTD_DEBUG_CODE(
+            if (idx > size)
+                throw_except<index_out_of_bound_exception>("Index %zu out of bound for length %zu!", idx, size);
+        )
         
-        if (_size == 0)
-            return *this;
+        len = normalize_length(s, len);
+
+        if (rem() <= len)
+            ensure_cap(size + len);
         
-        {//начало
-            int32_t end = 0;
-            for (int32_t i = 0; i < _size; ++i) {
-                if (get_char(i, system::native_byte_order()) <= ' ') {
-                    ++end;
-                } else {
-                    break;
-                }
-            }
-            if (end > 0)
-                remove(0, end);
-        }
-
-        {//конец
-            int32_t start = _size;
-            for (int32_t i = _size - 1; i >= 0; --i) {
-                if (get_char(i, system::native_byte_order()) <= ' ') {
-                    --start;
-                } else {
-                    break;
-                }
-            }
-            if (start != _size)
-                remove(start, _size);
-        }
+        TCHAR* str = cstr();
+        
+        std::memmove(
+                    str + (idx + len), 
+                    str + idx, 
+                    (size - idx) * sizeof(TCHAR)
+        );
+        
+        std::memcpy(
+            str + idx, 
+            s, 
+            len * sizeof(TCHAR)
+        );
+        
+        size += len;
+        str[size] = 0;
 
         return *this;
+    }
+
+
+    template<typename TCHAR>
+    tstring<TCHAR>& tstring<TCHAR>::append(const tstring<TCHAR>& s) {
+        append(s.cstr(), s.length());
+        return *this;
+    }
+
+    template<typename TCHAR>
+    TCHAR tstring<TCHAR>::char_at(std::size_t idx) const {
+        check_index(idx, size);
+        return cstr()[idx];
     }
     
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::trim_to_size() {
-        check_const_or_except();
-        if (_size != 0) {
-            resize(_size + 1);
-            _data[_size] = 0;
-        }
-        else {
-            dispose();
-        }
-        return *this;
-    }
-    
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::wipe_extra() {
-        check_const_or_except();
-        if (_size != 0)
-            std::memset(_data + _size, 0, sizeof(CHAR_TYPE) * (_capacity - _size));
-        return *this;
-    }
-    
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::clear() {
-        check_const_or_except();
-        _size = 0;
-        if (_data != nullptr && _capacity > 0)
-            _data[0] = 0;
-        return *this;
-    }
-    
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::secure_clear() {
-        check_const_or_except();
-        if (_size != 0) {
-            clear();
-            std::memset(_data, 0, sizeof(CHAR_TYPE) * _capacity);
-        }
-        return *this;
-    }
-
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE>& tstring<CHAR_TYPE>::remove(int32_t start, int32_t end) {
-        check_const_or_except();
-        check_index(start,  _size + 1);
-        check_index(end,    _size + 1);
-        if (start > end)
-            throw_except<illegal_argument_exception>("start = %i > end = %i", start, end);
-        int32_t len = end - start;
-        std::memmove(_data + start, _data + end, sizeof(CHAR_TYPE) * (_size - end));
-        _size -= len;
-        _data[_size] = 0;
-        return *this;
-    }
-
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE> tstring<CHAR_TYPE>::clone(tca::allocator* allocator) const {
-        if (is_constant_string()) {
-            return tstring<CHAR_TYPE>(*this);
-        } 
-        else {
-            if (_allocator == nullptr && allocator == nullptr) 
-                return tstring<CHAR_TYPE>();
-            else if (allocator != nullptr) 
-                return tstring<CHAR_TYPE>(allocator, _data);
-            return tstring<CHAR_TYPE>(_allocator, _data);
-        }
-    }
-
-    template<typename CHAR_TYPE>
-    bool tstring<CHAR_TYPE>::contains(const CHAR_TYPE* str, int32_t in_len, byte_order str_order) const {
-        return index_of(str, in_len, str_order) != -1;
-    }
-
-    template<typename CHAR_TYPE>
-    int32_t tstring<CHAR_TYPE>::index_of(const CHAR_TYPE* str, int32_t in_len, byte_order str_order) const {
-        in_len = normalize_length(str, in_len);
-        if (in_len > _size)
-            return -1;
-        for (int32_t i = 0; i < _size; ++i) {
-            if (i + in_len > _size)
-                return -1;
-            bool contains = true;    
-            for (int32_t j = 0; j < in_len; ++j) {
-                if (get_char(i + j, str_order) != str[j]) {
-                    contains = false;
+    template<typename TCHAR>
+    std::size_t tstring<TCHAR>::index_of(const TCHAR* s, std::size_t len) const {
+        len = normalize_length(s, len);
+        if (len == 0 || len > length()) return npos();
+        for (std::size_t i = 0; i <= length() - len; ++i)
+        {
+            bool match = true;
+            for (std::size_t j = 0; j < len; ++j)
+            {
+                assert(j < len);
+                assert(i + j < size);
+                if (cstr()[i + j] != s[j])
+                {
+                    match = false;
                     break;
                 }
             }   
-            if (contains)
-                return i;
+            if (match) return i;
         }
-        return -1;
+        return npos();
     }
     
-    template<typename CHAR_TYPE>
-    int32_t tstring<CHAR_TYPE>::last_index_of(const CHAR_TYPE* str, int32_t in_len, byte_order str_order) const {
-        in_len = normalize_length(str, in_len);
-        if (in_len > _size)
-            return -1;
+    template<typename TCHAR>
+    std::size_t tstring<TCHAR>::last_index_of(const TCHAR* s, std::size_t len) const {
+        len = normalize_length(s, len);
+    
+        if (len == 0 || len > length()) return npos();
         
-        for (int32_t i = _size - 1; i >= 0; --i) {
-            if (i - in_len < 0)
-                return -1;
-            bool contains = true;
-            for (int32_t j = in_len - 1; j >= 0; --j) {
-                if (get_char(i + j, str_order) != str[j]) {
-                    contains = false;
+        for (std::size_t i = length() - len + 1; i > 0;)
+        {
+            --i;
+            bool match = true;
+            for (std::size_t j = 0; j < len; ++j)
+            {
+                if (cstr()[i + j] != s[j])
+                {
+                    match = false;
                     break;
                 }
-                if (contains)
-                    return i;
+            }
+            
+            if (match) return i;
+        }
+        
+        return npos();
+    }
+
+    template<typename TCHAR>
+    void tstring<TCHAR>::clear() {
+        cstr()[0]   = '\0';
+        size        = 0;
+    }
+
+    template<typename TCHAR>
+    void tstring<TCHAR>::is_empty() const {
+        return length() == 0;
+    }
+
+    template<typename TCHAR>
+    tstring<TCHAR>& tstring<TCHAR>::remove(std::size_t start, std::size_t end) {
+       JSTD_DEBUG_CODE(
+            if (end < start)    throw_except<illegal_argument_exception>("'start' can't less 'end' where [start: %zu, end: %zu]", start, end);
+            if (end > length()) throw_except<illegal_argument_exception>("'end' must be less or equal 'length' where [start: %zu, length: %zu]", start, length());
+        )
+        std::size_t len = end - start;
+        TCHAR* str      = cstr();
+        
+        std::size_t s = start;                          //start
+        std::size_t e = end;                            //end
+        std::size_t l = (size - end) * sizeof(TCHAR);   //length
+
+        if (l > 0)
+        {
+            std::memmove(str + s, str + e, l);
+        }
+
+        size -= len;    
+        str[size] = 0;
+
+        return *this;
+    }
+
+    template<typename TCHAR>
+    bool tstring<TCHAR>::contains(const TCHAR* s, std::size_t len) const {
+        return index_of(s, len) != npos();
+    }
+
+    template<typename TCHAR>
+    bool tstring<TCHAR>::starts_with(const TCHAR* s, std::size_t len) const {
+        
+        len = normalize_length(s, len);
+        if (len == 0 || len > length())
+            return false;
+
+        for (std::size_t i = 0; i < len; ++i)
+            if (cstr()[i] != s[i])
+                return false;
+
+        return true;
+    }
+    
+    template<typename TCHAR>
+    bool tstring<TCHAR>::ends_with(const TCHAR* s, std::size_t len) const {
+        len = normalize_length(s, len);
+        if (len == 0 || len > length())
+            return false;
+        
+        std::size_t start   = length() - len;
+        std::size_t end     = length();
+
+        for (std::size_t i = start, j = 0; j < len; ++i, ++j)
+            if (cstr()[i] != s[j])
+                return false;
+
+        return true;
+    }
+
+    template<typename TCHAR>
+    tstring<TCHAR>& tstring<TCHAR>::replace_all(const TCHAR* matcher, const TCHAR* replacement) {
+        std::size_t matcher_len     = str_len(matcher);
+        std::size_t replacement_len = str_len(replacement);
+        
+        if (matcher_len == 0 || matcher_len > length())
+            return *this;
+
+        for (std::size_t i = 0; i <= length() - matcher_len; )
+        {
+            bool matched = match(cstr() + i, matcher, matcher_len);
+            if (matched)
+            {
+                remove(i, i + matcher_len);
+                append(i, replacement, replacement_len);
+                i += replacement_len;
+            }
+            else
+            {
+                ++i;
             }
         }
-            
-        return -1;
+
+        return *this;
     }
 
-    template<typename CHAR_TYPE>
-    bool tstring<CHAR_TYPE>::starts_with(const CHAR_TYPE* str, int32_t in_len, byte_order str_order) const {
-        in_len = normalize_length(str, in_len);
-        if (in_len > _size)
+    template<typename TCHAR>
+    tstring<TCHAR> tstring<TCHAR>::sub_string(std::size_t start, std::size_t end, tca::allocator* allocator) {
+        JSTD_DEBUG_CODE(
+            if (end < start)    throw_except<illegal_argument_exception>("'start' can't less 'end' where [start: %zu, end: %zu]", start, end);
+            if (end > length()) throw_except<illegal_argument_exception>("'end' must be less or equal 'length' where [start: %zu, length: %zu]", start, length());
+        )
+        
+        std::size_t len = end - start;
+
+        tstring<TCHAR> sub(allocator);
+        sub.reserve(len);
+        sub.append(cstr() + start, len);
+        
+        return tstring<TCHAR>(std::move(sub));
+    }
+
+    template<typename TCHAR>
+    bool tstring<TCHAR>::equals(const tstring<TCHAR>& s) const {
+        if (length() != s.length())
             return false;
-        for (int32_t i = 0; i < in_len; ++i)
-            if (get_char(i, str_order) != str[i])
-                return false;
-        return true;
+        return objects::equals(cstr(), s.cstr(), length());
     }
 
-    template<typename CHAR_TYPE>
-    bool tstring<CHAR_TYPE>::ends_with(const CHAR_TYPE* str, int32_t in_len, byte_order str_order) const {
-        in_len = normalize_length(str, in_len);
-        if (in_len > _size)
-            return false;
-        for (int32_t i = _size - 1, off = in_len - 1; off >= 0; --i, --off)
-            if (get_char(i, str_order) != str[off])
-                return false;
-        return true;
+    template<typename TCHAR>
+    std::size_t tstring<TCHAR>::hashcode() const {
+        return objects::hashcode(cstr(), length());
     }
-
-    template<typename CHAR_TYPE>
-    tstring<CHAR_TYPE> tstring<CHAR_TYPE>::substr(int32_t start, int32_t end, tca::allocator* allocator) {
-        check_const_or_except();
-        check_index(start,  _size + 1);
-        check_index(end,    _size + 1);
-        if (start > end)
-            throw_except<illegal_argument_exception>("start = %i > end = %i", start, end);
-        int32_t len = end - start;
-        tstring<CHAR_TYPE> result(allocator != nullptr ? allocator : _allocator);
-        if (len != 0 && result._allocator != nullptr)
-            result.reserve(len).append(_data + start, len, (byte_order) _order);
-        return tstring<CHAR_TYPE>(std::move(result));
+    
+    template<typename TCHAR>
+    int tstring<TCHAR>::compare_to(const tstring<TCHAR>& r) {
+        std::size_t len = math::min(length(), r.length());
+        for (std::size_t i = 0; i < len; ++i)
+            if (char_at(i) < r.char_at(i))
+                return -1;
+            else if (char_at(i) > r.char_at(i))
+                return 1;
+        if (length() < r.length()) return -1;
+        if (length() > r.length()) return 1;
+        return 0;
     }
+    
+    template<typename TCHAR>
+    tstring<TCHAR>& tstring<TCHAR>::trim() {
+        std::size_t start   = 0;
+        std::size_t end     = length();
 
-    template<typename CHAR_TYPE>
-    uint64_t tstring<CHAR_TYPE>::hashcode() const {
-        if (_size != 0)
-            return 0;
-        return objects::hashcode<CHAR_TYPE>(_data, _size);
-    }
-
-    template<typename CHAR_TYPE>
-    bool tstring<CHAR_TYPE>::equals(const tstring<CHAR_TYPE>& str) const {
-        if (_size != str._size)
-            return false;
-        for (int32_t i = 0; i < _size; ++i)
-            if (get_char(i, (byte_order) str._order) != str.get_char(i, (byte_order) str._order))
-                return false;
-        return true;
-    }
-
-    template<typename CHAR_TYPE>    
-    bool tstring<CHAR_TYPE>::equals(const CHAR_TYPE* str, int32_t slen, byte_order str_order) const {
-        slen = normalize_length(str, slen);
-        if (slen != _size)
-            return false;
-        for (int32_t i = 0; i < _size; ++i) {
-            if (get_char(i, str_order) != str[i])
-                return false;
+        for (std::size_t i = 0; i < length();)
+        {
+            if (char_at(i++) <= 0x20)
+                ++start;
+            else 
+                break;
         }
-        return true;
+        
+        for (std::size_t i = end; i > 0; )
+        {
+            if (char_at(--i) <= 0x20)
+                --end;
+            else
+                break;
+        }
+        
+        std::size_t len = end - start;
+
+        TCHAR* str = cstr();
+        std::memmove(str, str + start, len * sizeof(TCHAR));
+        
+        size        = len;
+        str[size]   = 0;
+
+        return *this;
     }
 
-    template<typename CHAR_TYPE>
-    void tstring<CHAR_TYPE>::print() const {
-        std::printf("[_allocator: %p, _data: %p, _capacity: %i, _size %i, _order: %s]\n", _allocator, _data, _capacity, _size, _order == byte_order::LE ? "Little-Endian" : "Big-Endian");
+namespace internal
+{
+    
+    static const std::size_t CHAR_BUF = 32;
+    template<typename E>
+    tstring<char> to_string0(const E& e, const char* ext, tca::allocator* allocator) {
+        tstring<char> str(allocator);
+        char buf[CHAR_BUF];    
+        int len = std::snprintf(buf, CHAR_BUF, ext, e);
+        if (len > 0)
+            str.append(buf, static_cast<std::size_t>(len));
+        return tstring<char>( std::move(str) );
     }
 
+    template<typename E>
+    tstring<wchar_t> to_wstring0(const E& e, const wchar_t* ext, tca::allocator* allocator) {
+        tstring<wchar_t> str(allocator);
+        wchar_t buf[CHAR_BUF];    
+        int len = std::swprintf(buf, CHAR_BUF, ext, e);
+        if (len > 0)
+            str.append(buf, static_cast<std::size_t>(len));
+        return tstring<wchar_t>( std::move(str) );
+    }
 }
-#endif//_ALLOCATORS_STRING_H
+
+    template<typename E>
+    tstring<char> to_string(const E& e, tca::allocator* allocator = tca::get_default_allocator());
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    template<>
+    inline tstring<char> to_string<char>(const char& e, tca::allocator* allocator) {
+        return internal::to_string0<char>(e, "%c", allocator);
+    }
+    
+    template<>
+    inline tstring<char> to_string<unsigned char>(const unsigned char& e, tca::allocator* allocator) {
+        return internal::to_string0<unsigned char>(e, "%c", allocator);
+    }
+    
+    template<>
+    inline tstring<char> to_string<signed char>(const signed char& e, tca::allocator* allocator) {
+        return internal::to_string0<signed char>(e, "%c", allocator);
+    }
+
+    template<>
+    inline tstring<char> to_string<int>(const int& e, tca::allocator* allocator) {
+        return internal::to_string0<int>(e, "%i", allocator);
+    }
+    
+    template<>
+    inline tstring<char> to_string<unsigned int>(const unsigned int& e, tca::allocator* allocator) {
+        return internal::to_string0<unsigned int>(e, "%u", allocator);
+    }
+    
+    template<>
+    inline tstring<char> to_string<short>(const short& e, tca::allocator* allocator) {
+        return internal::to_string0<int>(e, "%i", allocator);
+    }
+    
+    template<>
+    inline tstring<char> to_string<unsigned short>(const unsigned short& e, tca::allocator* allocator) {
+        return internal::to_string0<unsigned int>(e, "%u", allocator);
+    }
+
+    template<>
+    inline tstring<char> to_string<long>(const long& e, tca::allocator* allocator) {
+        return internal::to_string0<long>(e, "%li", allocator);
+    }
+    
+    template<>
+    inline tstring<char> to_string<unsigned long>(const unsigned long& e, tca::allocator* allocator) {
+        return internal::to_string0<unsigned long>(e, "%lu", allocator);
+    }
+
+    template<>
+    inline tstring<char> to_string<long long>(const long long& e, tca::allocator* allocator) {
+        return internal::to_string0<long long>(e, "%lli", allocator);
+    }
+    
+    template<>
+    inline tstring<char> to_string<unsigned long long>(const unsigned long long& e, tca::allocator* allocator) {
+        return internal::to_string0<unsigned long long>(e, "%llu", allocator);
+    }
+
+    template<>
+    inline tstring<char> to_string<float>(const float& e, tca::allocator* allocator) {
+        return internal::to_string0<float>(e, "%g", allocator);
+    }
+    
+    template<>
+    inline tstring<char> to_string<double>(const double& e, tca::allocator* allocator) {
+        return internal::to_string0<double>(e, "%g", allocator);
+    }
+    
+    template<typename T>
+    inline tstring<char> to_string(T* e, tca::allocator* allocator = tca::get_default_allocator()) {
+        return internal::to_string0<const void*>(e, "%p", allocator);
+    }
+    
+    template<>
+    inline tstring<char> to_string<char>(char* e, tca::allocator* allocator) {
+        return internal::to_string0<const char*>(e, "%s", allocator);
+    }
+    
+    template<>
+    inline tstring<char> to_string<const char>(const char* e, tca::allocator* allocator) {
+        return internal::to_string0<const char*>(e, "%s", allocator);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    template<typename E>
+    inline tstring<wchar_t> to_wstring(const E& e, tca::allocator* allocator = tca::get_default_allocator());
+
+    template<>
+    inline tstring<wchar_t> to_wstring<wchar_t>(const wchar_t& e, tca::allocator* allocator) {
+        return internal::to_wstring0<wchar_t>(e, L"%lc", allocator);
+    }
+    
+    template<>
+    inline tstring<wchar_t> to_wstring<unsigned char>(const unsigned char& e, tca::allocator* allocator) {
+        return internal::to_wstring0<unsigned char>(e, L"%c", allocator);
+    }
+    
+    template<>
+    inline tstring<wchar_t> to_wstring<signed char>(const signed char& e, tca::allocator* allocator) {
+        return internal::to_wstring0<signed char>(e, L"%c", allocator);
+    }
+
+    template<>
+    inline tstring<wchar_t> to_wstring<int>(const int& e, tca::allocator* allocator) {
+        return internal::to_wstring0<int>(e, L"%i", allocator);
+    }
+    
+    template<>
+    inline tstring<wchar_t> to_wstring<unsigned int>(const unsigned int& e, tca::allocator* allocator) {
+        return internal::to_wstring0<unsigned int>(e, L"%u", allocator);
+    }
+    
+    template<>
+    inline tstring<wchar_t> to_wstring<short>(const short& e, tca::allocator* allocator) {
+        return internal::to_wstring0<int>(e, L"%i", allocator);
+    }
+    
+    template<>
+    inline tstring<wchar_t> to_wstring<unsigned short>(const unsigned short& e, tca::allocator* allocator) {
+        return internal::to_wstring0<unsigned int>(e, L"%u", allocator);
+    }
+
+    template<>
+    inline tstring<wchar_t> to_wstring<long>(const long& e, tca::allocator* allocator) {
+        return internal::to_wstring0<long>(e, L"%li", allocator);
+    }
+    
+    template<>
+    inline tstring<wchar_t> to_wstring<unsigned long>(const unsigned long& e, tca::allocator* allocator) {
+        return internal::to_wstring0<unsigned long>(e, L"%lu", allocator);
+    }
+
+    template<>
+    inline tstring<wchar_t> to_wstring<long long>(const long long& e, tca::allocator* allocator) {
+        return internal::to_wstring0<long long>(e, L"%lli", allocator);
+    }
+    
+    template<>
+    inline tstring<wchar_t> to_wstring<unsigned long long>(const unsigned long long& e, tca::allocator* allocator) {
+        return internal::to_wstring0<unsigned long long>(e, L"%llu", allocator);
+    }
+
+    template<>
+    inline tstring<wchar_t> to_wstring<float>(const float& e, tca::allocator* allocator) {
+        return internal::to_wstring0<float>(e, L"%g", allocator);
+    }
+    
+    template<>
+    inline tstring<wchar_t> to_wstring<double>(const double& e, tca::allocator* allocator) {
+        return internal::to_wstring0<double>(e, L"%g", allocator);
+    }
+    
+    template<typename T>
+    inline tstring<wchar_t> to_wstring(T* e, tca::allocator* allocator = tca::get_default_allocator()) {
+        return internal::to_string0<const void*>(e, L"%p", allocator);
+    }
+    
+    template<>
+    inline tstring<wchar_t> to_wstring<wchar_t>(wchar_t* e, tca::allocator* allocator) {
+        return internal::to_wstring0<const wchar_t*>(e, L"%s", allocator);
+    }
+    
+    template<>
+    inline tstring<wchar_t> to_wstring<const wchar_t>(const wchar_t* e, tca::allocator* allocator) {
+        return internal::to_wstring0<const wchar_t*>(e, L"%s", allocator);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+using u8string  = tstring<char>;
+using u16string = tstring<unsigned short>;
+using u32string = tstring<unsigned long>;
+using wstring   = tstring<wchar_t>;
+using string    = u8string;
+
+template<typename T>
+struct hash_for<tstring<T>> {
+    std::size_t operator() (const tstring<T>& s) const {
+        return s.hashcode();
+    }
+};
+
+template<typename T>
+struct equal_to<tstring<T>> {
+    bool operator() (const tstring<T>& a, const tstring<T>& b) const {
+        return a.equals(b);
+    }
+};
+
+template<typename T>
+struct compare_to<tstring<T>> {
+    int operator() (const tstring<T>& a, const tstring<T>& b) const {
+        return a.compare_to(b);
+    }
+};
+
+}//namespace jstd
+namespace tc = jstd;
+
+#endif /* A6379E4D_4085_4DC3_B5E7_3C4A783981AF */

@@ -47,11 +47,13 @@ namespace jstd
     }
 
     void wav_data::load_from(/*!non null!*/istream* in) {
-        const int HEADER_SIZE = 44;
+        const std::size_t HEADER_SIZE = 44;
         char header[HEADER_SIZE];    
-        int64_t readed = in->read(header, HEADER_SIZE);
+        
+        std::size_t readed = in->read(header, HEADER_SIZE);
         if (readed != HEADER_SIZE)
             throw_except<eof_exception>("Invalid wav data!");
+        
         byte_buffer header_buffer(header, HEADER_SIZE);
         header_buffer.order(byte_order::BE);
         
@@ -143,11 +145,4 @@ namespace jstd
     int16_t wav_data::get_bits_per_sample() const {
         return bitsPerSample;
     }
-
-    int32_t wav_data::to_string(char buf[], int32_t bufsize) const {
-        return std::snprintf(buf, bufsize, 
-        "chunkId = 0x%llx\nchunkSize = %llu\nformat = 0x%llx\nsubchunk1Id = 0x%llx\nsubchunk1Size = %llu\naudioFormat = %lli\nnumChannels = %lli\nsampleRate = %lli\nbyteRate = %lli\nblockAlign = %lli\nbitsPerSample = %lli\nsubchunk2Id = 0x%llx\nsubchunk2Size = %llu\ndata = %llx",
-         (long long) chunkId,     (long long) chunkSize,     (long long) format,     (long long) subchunk1Id,     (long long) subchunk1Size,     (unsigned long long) audioFormat,     (long long) numChannels,     (long long) sampleRate,     (long long) byteRate,    (long long) blockAlign,     (long long) bitsPerSample,     (long long) subchunk2Id,     (unsigned long long) subchunk2Size,     (unsigned long long) data);
-    }
-
 }

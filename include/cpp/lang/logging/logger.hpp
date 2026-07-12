@@ -118,10 +118,6 @@ namespace jstd
              * 
              * @param msg
              *      Строка, которая будет записана в лог в качестве исключения.
-             *      Строка должна оканчиваться на нуль-терминатор!
-             * 
-             * @throws null_pointer_exception
-             *      Если msg равно nullptr;
              */
             void except(const throwable&);
         };

@@ -1,8 +1,11 @@
-#ifndef _JSTD_CPP_LANG_IO_IOUTILITY_H_
-#define _JSTD_CPP_LANG_IO_IOUTILITY_H_
-#include <cpp/lang/io/constants.hpp>
+#ifndef JSTD_CPP_LANG_IO_IOUTILITY_H
+#define JSTD_CPP_LANG_IO_IOUTILITY_H
 
-namespace jstd {
+#include <cpp/lang/io/constants.hpp>
+#include <cstdint>
+
+namespace jstd
+{
 
 /**
  * file_filter — базовый класс для фильтрации файлов.
@@ -21,7 +24,7 @@ public:
      * @return 
      *      true, если файл подходит.
      */
-    virtual bool apply(const char* path, int path_length) const = 0;
+    virtual bool apply(const char* path, std::size_t path_length) const = 0;
 
     /**
      * 
@@ -33,8 +36,12 @@ public:
 class accept_all_filter : public file_filter {
 public:
     // Всегда возвращает true.     
-    bool apply(const char*, int) const {return true;} 
+    bool apply(const char*, std::size_t) const {
+        return true;
+    } 
 };
 
 }
-#endif//_JSTD_CPP_LANG_IO_IOUTILITY_H_
+namespace tc = jstd;
+
+#endif//JSTD_CPP_LANG_IO_IOUTILITY_H

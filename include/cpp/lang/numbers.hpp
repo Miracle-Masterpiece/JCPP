@@ -5,145 +5,352 @@
 #include <climits>
 #include <cpp/lang/math/math.hpp>
 #include <cpp/lang/utils/traits.hpp>
+#include <cpp/lang/exceptions.hpp>
 
 namespace jstd 
 {
 
+#if __SIZEOF_FLOAT__ == __SIZEOF_INT__
+ typedef unsigned int uint_float_bits;
+ typedef signed   int sint_float_bits;
+#elif __SIZEOF_FLOAT__ == __SIZEOF_LONG__
+ typedef unsigned long uint_float_bits;
+ typedef signed   long sint_float_bits;
+#elif __SIZEOF_FLOAT__ == __SIZEOF_LONG_LONG__
+ typedef unsigned long long uint_float_bits;
+ typedef signed   long long sint_float_bits;
+#else
+ #error None of the integer types are suitable for storing 'float' bits.
+#endif
+
+#if __SIZEOF_DOUBLE__ == __SIZEOF_INT__
+ typedef unsigned int uint_double_bits;
+ typedef signed   int sint_double_bits;
+#elif __SIZEOF_DOUBLE__ == __SIZEOF_LONG__
+ typedef unsigned long uint_double_bits;
+ typedef signed   long sint_double_bits;
+#elif __SIZEOF_DOUBLE__ == __SIZEOF_LONG_LONG__
+ typedef unsigned long long uint_double_bits;
+ typedef signed   long long sint_double_bits;
+#else
+ #error None of the integer types are suitable for storing 'double' bits.
+#endif
+
 namespace num 
 {
 
+class q16 {
+    using store_type = signed long;
+    using op_type    = signed long long;
+    
     /**
-     * Преобразует значение float в его побитовое представление как int32_t.
+     * 
+     */
+    static const int SCALE         = 0x10000;
+    
+    /**
+     * 
+     */
+    static const int SCALE_SHIFT   = 16;
+    
+    /**
+     * 
+     */
+    store_type val;
+
+public:  
+    
+    /**
+     * 
+     */
+    q16() : val(0) {}
+
+    /**
+     * 
+     */
+    q16(float v) : val((store_type) (v * SCALE)) {
+        
+    }
+    
+    /**
+     * 
+     */
+    q16(double v) : val((store_type) (v * SCALE)) {
+        
+    }
+
+    /**
+     * 
+     */
+    q16(long v) : val(v * SCALE) {
+        
+    }
+    
+    /**
+     * 
+     */
+    q16(int v) : val(v * SCALE) {
+        
+    }
+
+    /**
+     * 
+     */
+    q16(const q16&) = default;
+    
+    /**
+     * 
+     */
+    q16& operator= (const q16&) = default;
+    
+    /**
+     * 
+     */
+    operator float () const {
+        return (float) val / (float) SCALE;
+    }
+    
+    /**
+     * 
+     */
+    q16 operator+ (const q16& q) const {
+        return of_raw( val + q.val );
+    }
+    
+    /**
+     * 
+     */
+    q16 operator- (const q16& q) const {
+        return of_raw( val - q.val );
+    }
+    
+    /**
+     * 
+     */
+    q16 operator* (const q16& q) const {
+        op_type a = val;
+        op_type b = q.val;
+        op_type r = (a * b) >> SCALE_SHIFT;
+        return of_raw( (store_type) r );
+    }
+    
+    /**
+     * 
+     */
+    q16 operator/ (const q16& q) const {
+        op_type a = val;
+        op_type b = q.val;
+        op_type r = ((a << SCALE_SHIFT) / b);
+        return of_raw( (store_type) r );
+    }
+
+    /**
+     * 
+     */
+    q16& operator+= (const q16& q) {
+        val += q.val;
+        return *this;
+    }
+    
+    /**
+     * 
+     */
+    q16& operator-= (const q16& q) {
+        val -= q.val;
+        return *this;
+    }
+    
+    /**
+     * 
+     */
+    q16& operator*= (const q16& q) {
+        const op_type a = val;
+        const op_type b = q.val;
+        const op_type r = (a * b) >> SCALE_SHIFT;
+        val = (store_type) r;
+        return *this;
+    }
+    /**
+     * 
+     */
+    q16& operator/= (const q16& q) {
+        const op_type a = val;
+        const op_type b = q.val;
+        const op_type r = ((a << SCALE_SHIFT) / b);
+        val = (store_type) r;
+        return *this;
+    }
+    
+    static q16 of_raw(store_type x) {
+        q16 v;
+        v.val = x;
+        return v;
+    }
+};
+
+    /**
+     * Преобразует значение float в его побитовое представление как uint_float_bits.
      *
-     * Эта функция копирует байты из значения float в int32_t без изменения битов.
+     * Эта функция копирует байты из значения float в uint_float_bits без изменения битов.
      * Используется, когда необходимо проанализировать или сохранить точное битовое
      * представление числа с плавающей точкой.
      *
      * @param v 
-     *      Значение типа float, которое нужно интерпретировать как int32_t.
+     *      Значение типа float, которое нужно интерпретировать как uint_float_bits.
      * 
      * @return 
-     *      Побитовое представление float в виде int32_t.
+     *      Побитовое представление float в виде uint_float_bits.
      * 
      * @since 1.0
      */
-    int32_t float_to_int_bits(float v);
+    uint_float_bits float_to_uint_bits(float v);
 
     /**
-     * Преобразует значение double в его побитовое представление как int64_t.
+     * Преобразует значение double в его побитовое представление как uint_double_bits.
      *
-     * Эта функция копирует байты из значения double в int64_t без изменения битов.
+     * Эта функция копирует байты из значения double в uint_double_bits без изменения битов.
      * Используется, когда необходимо сохранить или передать точное битовое
      * представление double.
      *
      * @param v 
-     *      Значение типа double, которое нужно интерпретировать как int64_t.
+     *      Значение типа double, которое нужно интерпретировать как uint_double_bits.
      * 
      * @return 
-     *      Побитовое представление double в виде int64_t.
+     *      Побитовое представление double в виде uint_double_bits.
      * 
      * @since 1.0
      */
-    int64_t double_to_long_bits(double v);
+    uint_double_bits double_to_uint_bits(double v);
 
     /**
-     * Преобразует строковое представление числа в int.
-     * 
-     * @param str
-     *      Строка, представляющая число.
-     * 
-     * @param radix
-     *      Система счисления в которой записано строковое число.
-     *      2  - двоичная.
-     *      8  - восьмиричная.
-     *      10 - десятиричная.
-     *      16 - шеснадцатеричная.
-     * 
-     * @return
-     *      Преобразованное число из строки.
-     * 
-     * @throws numper_format_exception
-     *      Если строка не может быть преобразована в тип int.
-     * 
-     * @since 1.1
+     * Является ли сивол числом в 10-ричной системе счисления.
      */
-    int64_t parse_int(const char* str, int radix = 10);
-
-    /**
-     * Преобразует строковое представление числа с правающей точкой в float.
-     * 
-     * @param str
-     *      Строка, представляющая число с плавающей точкой.
-     * 
-     * @return
-     *      Преобразованное число с плавающей точкой из строки.
-     * 
-     * @throws numper_format_exception
-     *      Если строка не может быть преобразована в тип float.
-     * 
-     * @since 1.1
-     */
-    float parse_float(const char* value);
+    template<typename CHAR_T>
+    bool is_digit10(const CHAR_T& ch) {
+        return ch >= (CHAR_T) '0' && ch <= (CHAR_T) '9';
+    }
     
     /**
-     * Преобразует строковое представление числа двойной точности в double.
-     * 
-     * @param str
-     *      Строка, представляющая число с двойной точностью.
-     * 
-     * @return
-     *      Преобразованное число двойной точности из строки.
-     * 
-     * @throws numper_format_exception
-     *      Если строка не может быть преобразована в тип double.
-     * 
-     * @since 1.1
+     * Является ли сивол числом в 16-ричной системе счисления.
      */
-    double parse_double(const char* value);
+    template<typename CHAR_T>
+    bool is_digit16(const CHAR_T& ch) {
+        return
+            (ch >= (CHAR_T) '0' && ch <= (CHAR_T) '9') ||
+            (ch >= (CHAR_T) 'a' && ch <= (CHAR_T) 'f') ||
+            (ch >= (CHAR_T) 'A' && ch <= (CHAR_T) 'F');
+    }
 
     /**
-     * Проверяет, является ли {@param c} цифрой из шеснадцатеричной системы счисления.
-     * 
-     * @return
-     *      true - если символ является цифрой в шеснадцатеричной системе счисления; иначе - false.
-     * 
-     * @since 1.1
+     * Является ли сивол знаком минуса.
      */
-    bool is_hex_digit(char c);
+    template<typename CHAR_T>
+    bool is_sign(const CHAR_T& ch) {
+        return ch == (CHAR_T) '-';
+    }
 
+namespace internal
+{
     /**
-     * Проверяет, является ли {@param c} цифрой из десятиричной системы счисления.
      * 
-     * @return
-     *      true - если символ является цифрой в десятиричной системе счисления; иначе - false.
-     * 
-     * @since 1.1
      */
-    bool is_digit(char c);
+    template<typename CHAR_T>
+    std::size_t str_len(const CHAR_T* s) {
+        std::size_t len = 0;
+        while (*s++) ++len;
+        return len;
+    }
+}
+    template<typename INT_T, typename STR_T>
+    INT_T parse_int(const STR_T* s, std::size_t len = ~(std::size_t) 0) {
+        if (len == ~(std::size_t) 0)
+        {
+            len = internal::str_len(s);
+        }
+        
+        INT_T result     = 0;
+        INT_T digit      = 1;
+        bool is_negative = false;
 
-    /**
-     * @since 2.0
-     */
-    template<typename T, typename = typename enable_if<is_primitive<T>::value>::type>
-    int32_t to_binary_string(char buf[], int32_t bufsize, const T& v) {
-        const std::size_t bits = sizeof(T) * CHAR_BIT;
-        bool has_add = false;
-        int32_t offset = 0;
-        for (int32_t i = bits - 1; i >= 0; --i) {
-            unsigned char bit = ((v >> i) & 0x1);
-            if (bit)
-                has_add = true;
-            if (has_add) {
-                if (offset < bufsize)    
-                    buf[offset++] = '0' + bit;
-                else
-                    break;
+        for (std::size_t i = len; i > 0;)
+        {
+            --i;
+            if (!is_digit10(s[i]))
+            {
+                if (i == 0 && is_sign(s[i]))
+                {
+                    is_negative = true;
+                    continue;
+                }
+                throw_except<number_format_exception>("Invalid integer string");
+            }
+            result += (INT_T) ((s[i] - 48) * digit);
+            digit *= 10;
+        }
+
+        return is_negative ? -result : result;
+    }
+
+    template<typename FLOAT_T, typename STR_T>
+    FLOAT_T parse_float(const STR_T* s, std::size_t len = ~(std::size_t) 0) {
+        if (len == ~(std::size_t) 0)
+        {
+            len = internal::str_len(s);
+        }
+
+        static const STR_T DOT       = 46;
+        static const STR_T START_NUM = 48;
+
+        bool is_negative      = false;
+        FLOAT_T result        = 0;
+        std::size_t dot_index = len;
+
+        for (std::size_t i = 0; i < len; ++i)
+        {
+            if (s[i] == DOT)
+            {
+                dot_index = i;
+                break;
             }
         }
-        buf[math::min(offset, bufsize - 1)] = '\0';
-        return 0;
+
+        {//parse ceil part
+            FLOAT_T digit = 1;
+            for (std::size_t i = dot_index; i > 0; )
+            {
+                --i;
+                if (!is_digit10(s[i]))
+                {
+                    if (i == 0 && is_sign(s[i]))
+                    {
+                        is_negative = true;
+                        continue;
+                    }
+                    throw_except<number_format_exception>("Invalid floating string");
+                }
+                result += (s[i] - START_NUM) * digit;
+                digit  *= 10;
+            }
+        }
+
+        {//parse fract part
+            if (dot_index < len)
+            {
+                FLOAT_T digit = (FLOAT_T) 0.1;
+                for (std::size_t i = dot_index + 1; i < len; ++i)
+                {
+                    if (!is_digit10(s[i]))
+                        throw_except<number_format_exception>("Invalid floating string");
+                        
+                    result += (s[i] - START_NUM) * digit;
+                    digit  *= (FLOAT_T) 0.1;
+                }
+            }
+        }
+
+        return is_negative ? -result : result;
     }
-   
+
 }//namespace num
 
 }//namespace jstd

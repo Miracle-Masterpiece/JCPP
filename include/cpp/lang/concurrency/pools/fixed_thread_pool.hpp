@@ -14,8 +14,8 @@ namespace concurrency
 class fixed_thread_pool : public thread_pool {
 
     class worker : public thread {
-        worker(const worker&) = delete;
-        worker& operator= (const worker&) = delete;
+        worker(const worker&)               = delete;
+        worker& operator= (const worker&)   = delete;
         thread_pool*    m_owner;
         bool            m_alive;
         bool            m_sleeping;
@@ -46,12 +46,39 @@ class fixed_thread_pool : public thread_pool {
     mutex                   m_tp_mutex;
     bool                    m_terminated;
 public:
-    fixed_thread_pool(int32_t count_threads, tca::allocator* allocator = tca::get_scoped_or_default());
+    // 
+    // 
+    // 
+    fixed_thread_pool(std::size_t count_threads, tca::allocator* allocator = tca::get_scoped_or_default());
+    
+    // 
+    // 
+    // 
     void submit(task*) override;
-    void submit(task* tasks[], int32_t bufsize) override;
+    
+    // 
+    // 
+    // 
+    void submit(task* tasks[], std::size_t bufsize) override;
+    
+    // 
+    // 
+    // 
     task* get_task() override;
+    
+    // 
+    // 
+    // 
     void join_all() override;
+    
+    // 
+    // 
+    // 
     void shutdown() override;
+    
+    // 
+    // 
+    // 
     void force_shutdown() override;
 };
 

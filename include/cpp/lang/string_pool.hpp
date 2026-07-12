@@ -5,7 +5,7 @@
 #include <cpp/lang/utils/hash_map.hpp>
 #include <cpp/lang/utils/shared_ptr.hpp>
 #include <cpp/lang/cstr.hpp>
-#include <cpp/lang/ustring.hpp>
+#include <cpp/lang/string.hpp>
 
 namespace jstd 
 {
@@ -31,7 +31,7 @@ public:
      * @param allocator
      *      Распределитель памяти для пула (Опционально).
      */
-    string_const_pool(tca::allocator* allocator = tca::get_scoped_or_default());
+    string_const_pool(tca::allocator* allocator = tca::get_default_allocator());
     
     /**
      * 
@@ -39,7 +39,7 @@ public:
     ~string_const_pool();
     
     /**
-     * Возвращает указатель на jstd::string из пула.
+     * Возвращает указатель на tc::string из пула.
      * Если строки в пуле нет, создаёт её и добавляет в пул.
      * 
      * @warning
@@ -52,7 +52,7 @@ public:
      * @return 
      *      Строка идентичная переданной строке, но ввиде объекта jstd::string
      */
-    shared_ptr<const string> get(const char* str);
+    shared_ptr<const string>& get(const char* str);
     
     /**
      * Добавляет строку в пул.
@@ -85,16 +85,6 @@ public:
      * Распечатывает на консоль строки, содержищиеся в пуле.
      */
     void print_log() const;
-    
-    /**
-     * Минимальный размер буфера для функции this::to_string(char[], int32_t)
-     */
-    static const int TO_STRING_MIN_BUFFER_SIZE = 48;
-    
-    /**
-     * Возвращает строковое представление объекта.
-     */
-    int32_t to_string(char buf[], int32_t bufsize) const;
     
     /**
      * Полностью очищает пул от всех строк.
@@ -131,7 +121,7 @@ public:
     /**
      * @see jstd::string_const_pool::get(const char*)
      */
-    shared_ptr<const string> get(const char* str);
+    shared_ptr<const string>& get(const char* str);
     
     /**
      * @see jstd::string_const_pool::intern(const char*)
@@ -154,20 +144,12 @@ public:
     void print_log() const;
     
     /**
-     * @see jstd::string_const_pool::TO_STRING_MIN_BUFFER_SIZE
-     */
-    static const int TO_STRING_MIN_BUFFER_SIZE = string_const_pool::TO_STRING_MIN_BUFFER_SIZE;
-    
-    /**
-     * @see jstd::string_const_pool::to_string(char[], int32_t)
-     */
-    int32_t to_string(char buf[], int32_t bufsize) const;
-
-    /**
      * @see jstd::string_const_pool::clear()
      */
     void clear();
 };
 
 }
+namespace tc = jstd;
+
 #endif//JSTD_CPP_LANG_STRING_POOL_H
