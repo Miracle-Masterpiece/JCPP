@@ -117,10 +117,10 @@ _Yes, compiling this library manually is a dark ritual. Good luck._ :D
 <summary> Windows </summary>
 
 ##### C++11
-`g++ -g -std=c++11 -O2 -Wextra -pedantic -Wall -Wnon-virtual-dtor -shared -o libjcpp.dll -I"include" ./src/*.cpp -L./depended/zlib/bin/win/ -lws2_32 -lzlib`
+`g++ -g -std=c++11 -O2 -Wextra -pedantic -Wall -Wnon-virtual-dtor -shared -o libtc.dll -I"include" ./src/*.cpp -lws2_32`
 
 ##### C++23
-`g++ -g -std=c++23 -O2 -Wextra -pedantic -Wall -Wnon-virtual-dtor -shared -o libjcpp.dll -I"include" ./src/*.cpp -L./depended/zlib/bin/win/ -lws2_32 -lzlib -lstdc++exp`
+`g++ -g -std=c++23 -O2 -Wextra -pedantic -Wall -Wnon-virtual-dtor -shared -o libtc.dll -I"include" ./src/*.cpp -lws2_32 -lstdc++exp`
 
 </details>
 
@@ -130,10 +130,10 @@ _Yes, compiling this library manually is a dark ritual. Good luck._ :D
 <summary> Linux </summary>
 
 ##### C++11
-`g++ -g -std=c++11 -O2 -Wextra -pedantic -Wall -Wnon-virtual-dtor -shared -fPIC -o libjcpp.so -Wl,-rpath='$ORIGIN' -I"include" ./src/*.cpp -L./depended/zlib/bin/linux/ -lzlib`
+`g++ -g -std=c++11 -O2 -Wextra -pedantic -Wall -Wnon-virtual-dtor -shared -fPIC -o libtc.so -Wl,-rpath='$ORIGIN' -I"include" ./src/*.cpp`
 
 ##### C++23
-`g++ -g -std=c++23 -O2 -Wextra -pedantic -Wall -Wnon-virtual-dtor -shared -fPIC -o libjcpp.so -Wl,-rpath='$ORIGIN' -I"include" ./src/*.cpp -L./depended/zlib/bin/linux/ -lzlib -lstdc++exp`
+`g++ -g -std=c++23 -O2 -Wextra -pedantic -Wall -Wnon-virtual-dtor -shared -fPIC -o libtc.so -Wl,-rpath='$ORIGIN' -I"include" ./src/*.cpp -lstdc++exp`
 
 </details>
 
