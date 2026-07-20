@@ -4,7 +4,8 @@
 #include <cpp/lang/io/istream.hpp>
 #include <allocators/allocator.hpp>
 
-namespace jstd {
+namespace jstd
+{
 
 /**
  * Класс предназначен для буферезированного чтения данных.
@@ -34,20 +35,15 @@ class ibstream : public istream {
     // 
     istream* _in;
 
-    //особождает память, выделенную под буфер.
-    //если аллокатор != nullptr.
-    //если аллокатор == nullptr - значит использовался внешний буфер.
+    // Особождает память, выделенную под буфер.
+    // Если аллокатор != nullptr.
+    // Если аллокатор == nullptr - значит использовался внешний буфер.
     void free();
 
     // 
     // 
     // 
     void fill_buffer();
-
-    // 
-    // 
-    // 
-    std::size_t read_from_buffer(char* v, std::size_t len);
 
 public:
     /**
@@ -65,7 +61,7 @@ public:
      * @param buf_size
      *          Необязательный параметр, задающий размер внутреннего буфера.
      */
-    ibstream(istream* stream, tca::allocator* allocator, std::size_t buf_size = DEFAULT_BUFFER_SIZE);
+    ibstream(istream* stream, std::size_t buf_size = DEFAULT_BUFFER_SIZE, tca::allocator* allocator = tca::get_default_allocator());
     
     /**
      * @param stream

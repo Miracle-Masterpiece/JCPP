@@ -15,6 +15,8 @@ namespace jstd {
             if (allocator == nullptr)   throw_except<null_pointer_exception>("allocator is null!");
         )
         char* data  = (char*) allocator->allocate(buf_size);
+        if (!data)
+            throw_except<out_of_memory_error>("Out of memory!");
         _allocator  = allocator;
         _buffer     = data;
         _capacity   = buf_size;
@@ -69,7 +71,7 @@ namespace jstd {
     }
 
     obstream::~obstream() {
-
+		free();
     }
 
     void obstream::write(char c) {
@@ -79,15 +81,14 @@ namespace jstd {
     void obstream::write(const char* data, std::size_t sz) {
         JSTD_DEBUG_CODE(
             if (_out == nullptr)
-                throw_except<io_exception>("Stream is null!");
+                throw_except<io_exception>("stream is null!");
         )
         assert(_capacity >= _offset);
         std::size_t rem = _capacity - _offset;
         
         if (rem < sz)
         {
-            _out->write(_buffer, _offset);
-            _offset = 0;
+            flush();
         }
         
         if (sz > _capacity)
@@ -104,7 +105,7 @@ namespace jstd {
     void obstream::flush() {
         JSTD_DEBUG_CODE(
             if (_out == nullptr)
-                throw_except<io_exception>("Stream is null!");
+                throw_except<io_exception>("stream is null!");
         )
         if (_offset > 0)
         {
@@ -116,16 +117,15 @@ namespace jstd {
     void obstream::close() {
         if (_out == nullptr) 
             return;
-        try
-        {
+        try {
             flush();
-        } catch (const io_exception& flush_except) {
+        } catch (...) {
             try {
                 _out->close();
             } catch (const io_exception& close_except) {}
             _out = nullptr;
             free();
-            throw flush_except;    
+            throw;    
         }
         
         free();

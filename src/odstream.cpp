@@ -28,13 +28,7 @@ namespace jstd {
     }
     
     odstream::~odstream() {
-        if (_out != nullptr) {
-            try {
-                close();
-            } catch (const io_exception& e) {
-                std::cout << e.cause() << "\n";
-            }
-        }
+
     }
 
     void odstream::write(const char* data, std::size_t sz) {

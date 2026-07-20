@@ -175,8 +175,7 @@ namespace jstd
     
     std::size_t lz4_compressor::write_tok(char buf[], std::size_t sz) {
         if (sz == 0) return 0;
-        
-        char tok        = 0x00;
+    
         char lit_tok    = 0;
         char match_tok  = 0;
 

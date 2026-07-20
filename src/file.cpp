@@ -52,16 +52,34 @@ namespace jstd {
         
     }
     
-    bool file::exists() const {
-        return filesystem::exists(_path);
-    }
-
     bool file::is_file() const {
+        if (_path[0] == '\0')
+            return false;
         return filesystem::is_file(_path);
     }
 
+    bool file::exists() const {
+        if (_path[0] == '\0')
+            return filesystem::exists(".");
+        return filesystem::exists(_path);
+    }
+
     bool file::is_dir() const {
+        if (_path[0] == '\0')
+            return filesystem::is_dir(".");
         return filesystem::is_dir(_path);
+    }
+
+    bool file::mkdir() {
+        if (_path[0] == '\0')
+            return true;
+        return filesystem::mkdir(_path);
+    }
+
+    bool file::mkdirs() {
+        if (_path[0] == '\0')
+            return true;
+        return filesystem::mkdirs(_path);
     }
 
     std::uintmax_t file::length() const {
@@ -82,14 +100,6 @@ namespace jstd {
 
     bool file::create_new_file() {
         return filesystem::create_new_file(_path);
-    }
-
-    bool file::mkdir() {
-        return filesystem::mkdir(_path);
-    }
-
-    bool file::mkdirs() {
-        return filesystem::mkdirs(_path);
     }
 
     bool file::remove() {
@@ -128,55 +138,6 @@ namespace jstd {
         return _path;
     }
 
-    // Принято решение о том, что данная функция уже ненужна, поскольку она не безопасна с точки зрения логики.
-    // Так как буфера может не хватить.
-    #if 0
-    /**
-     * Копирует имя файла в передаваемый буфер. 
-     * А так же заканчивает строку нуль-терминатором.
-     * 
-     * @param buf
-     *      Буфер в который будет скопировано название файла.
-     * 
-     * @param bufsize
-     *      Размер передаваемого буфера.
-     * 
-     * @return
-     *      Сколько было скопировано символов. (Не включает нулевой).
-     */
-    std::size_t       get_name(char buf[], std::size_t bufsize) const;
-    std::size_t file::get_name(char buf[], std::size_t bufsize) const {
-        if (bufsize == 0)
-            return 0;
-    
-        char path[sizeof(_path)];
-        std::memcpy(path, _path, sizeof(path));
-        filesystem::normalize_path(path);
-
-        const std::size_t len = std::strlen(path);
-        std::size_t idx = 0;
-        for (std::size_t i = len; i > 0; ) {
-            --i;
-            if (filesystem::is_separator(path[i]))
-            {
-                idx = i + 1;
-                break;    
-            }
-        }
-
-        std::size_t rp = idx;
-        std::size_t wp = 0;
-        while (rp < len && wp < (bufsize - 1))
-        {
-            buf[wp++] = path[rp++];
-        }
-
-        buf[wp] = '\0';
-
-        return wp;
-    }
-    #endif
-
     tc::string file::get_name(tca::allocator* alloc) const {
         tc::string str_path(alloc);
      
@@ -205,11 +166,13 @@ namespace jstd {
 
     array<file> file::list_files(const file_filter& filter, tca::allocator* allocator) const {
 
-        std::size_t count_files = filesystem::count_files_in_directory(_path, filter);
+        const char* path = _path[0] != '\0' ? _path : ".";
+
+        std::size_t count_files = filesystem::count_files_in_directory(path, filter);
         
         array<file> files(count_files, allocator);
 
-        directory_iterator begin(_path);
+        directory_iterator begin(path);
         directory_iterator end;
 
         std::size_t i = 0;
@@ -221,7 +184,10 @@ namespace jstd {
             
             if (filter.apply(entry.get_name(), path_length))
             {
-                std::snprintf(path_buf, sizeof(path_buf), "%s/%s", _path, entry.get_name());
+                if (_path[0] != '\0')
+                    std::snprintf(path_buf, sizeof(path_buf), "%s/%s", path, entry.get_name());
+                else
+                    std::snprintf(path_buf, sizeof(path_buf), "%s", entry.get_name());
                 files[i++]  = file(path_buf);
             }
             

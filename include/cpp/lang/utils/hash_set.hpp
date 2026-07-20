@@ -217,28 +217,28 @@ public:
     /**
      * 
      */
-    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>::iterator<const entry> begin() const {
+    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>:: template iterator<const entry> begin() const {
         return m_storage.begin();
     }
     
     /**
      * 
      */
-    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>::iterator<const entry> end() const {
+    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>:: template iterator<const entry> end() const {
         return m_storage.end();
     }
     
     /**
      * 
      */
-    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>::iterator<entry> begin() {
+    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>:: template iterator<entry> begin() {
         return m_storage.begin();
     }
     
     /**
      * 
      */
-    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>::iterator<entry> end() {
+    typename hash_map<K, char, KEY_HASH, KEY_EQUAL>:: template iterator<entry> end() {
         return m_storage.end();
     }
 };
@@ -304,7 +304,7 @@ public:
 
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
     bool hash_set<K, KEY_HASH, KEY_EQUAL>::contains(const K& key) const {
-        return m_storage.contains(key);
+        return m_storage.contains_key(key);
     }
 
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>

@@ -147,12 +147,45 @@ public:
      * 
      */
     tstring<TCHAR>& replace_all(const TCHAR* matcher, const TCHAR* replacement);
+    
+    /**
+     * 
+     */
+    tstring<TCHAR>& replace(std::size_t start, std::size_t end, const TCHAR* replacement);
+    
+    /**
+     * 
+     */
+    tstring<TCHAR>& replace(std::size_t start, std::size_t end, const tstring<TCHAR>& replacement) {
+        return replace(start, end, replacement.cstr());
+    }
+    
+    /**
+     * 
+     */
+    tstring<TCHAR>& replace_all(const tstring<TCHAR>& matcher, const tstring<TCHAR>& replacement) {
+        return replace_all(matcher.cstr(), replacement.cstr());
+    }
 
     /**
      * 
      */
     tstring<TCHAR>& append(const TCHAR* s, std::size_t len = npos()) {
         return append(size, s, len);
+    }
+    
+    /**
+     * 
+     */
+    tstring<TCHAR>& append(const TCHAR s) {
+        return append(&s, 1);
+    }
+    
+    /**
+     * 
+     */
+    tstring<TCHAR>& append(std::size_t idx, const TCHAR s) {
+        return append(idx, &s, 1);
     }
 
     /**
@@ -200,6 +233,11 @@ public:
     /**
      * 
      */
+    void set_length(std::size_t newlen, const TCHAR& ch = 0);
+
+    /**
+     * 
+     */
     std::size_t capacity() const {
         return cap;
     }
@@ -219,7 +257,7 @@ public:
     /**
      * 
      */
-    std::size_t index_of(const TCHAR* s, std::size_t = npos()) const;
+    std::size_t index_of(const TCHAR* s, std::size_t from_index = 0, std::size_t = npos()) const;
     
     /**
      * 
@@ -240,6 +278,13 @@ public:
      * 
      */
     bool ends_with(const TCHAR* s, std::size_t = npos()) const;
+    
+    /**
+     * 
+     */
+    bool ends_with(const tstring<TCHAR>& s) const {
+        return ends_with(s.cstr(), s.length());
+    }
 
     /**
      * 
@@ -254,7 +299,7 @@ public:
     /**
      * 
      */
-    void is_empty() const;
+    bool is_empty() const;
 
 
     /**
@@ -328,7 +373,9 @@ public:
                 
                 assert(s.length() < INLINE_BUFFER_SIZE);
                 
-                std::memcpy(cstr(), s.cstr(), s.length() + 1);
+                std::memcpy(cstr(), s.cstr(), (s.length() + 1) * sizeof(TCHAR));
+                cap  = INLINE_BUFFER_SIZE;
+                size = s.length();
             }
             else
             {
@@ -484,10 +531,15 @@ public:
     }
     
     template<typename TCHAR>
-    std::size_t tstring<TCHAR>::index_of(const TCHAR* s, std::size_t len) const {
+    std::size_t tstring<TCHAR>::index_of(const TCHAR* s, std::size_t from_index, std::size_t len) const {
+        JSTD_DEBUG_CODE(
+            if (from_index >= length()) throw_except<illegal_argument_exception>("from_index can't be greater length");
+        )
+        
         len = normalize_length(s, len);
-        if (len == 0 || len > length()) return npos();
-        for (std::size_t i = 0; i <= length() - len; ++i)
+        if (len == 0 || len > (length() - from_index)) return npos();
+
+        for (std::size_t i = from_index; i <= length() - len; ++i)
         {
             bool match = true;
             for (std::size_t j = 0; j < len; ++j)
@@ -502,6 +554,7 @@ public:
             }   
             if (match) return i;
         }
+
         return npos();
     }
     
@@ -537,7 +590,7 @@ public:
     }
 
     template<typename TCHAR>
-    void tstring<TCHAR>::is_empty() const {
+    bool tstring<TCHAR>::is_empty() const {
         return length() == 0;
     }
 
@@ -591,8 +644,7 @@ public:
             return false;
         
         std::size_t start   = length() - len;
-        std::size_t end     = length();
-
+    
         for (std::size_t i = start, j = 0; j < len; ++i, ++j)
             if (cstr()[i] != s[j])
                 return false;
@@ -627,6 +679,18 @@ public:
     }
 
     template<typename TCHAR>
+    tstring<TCHAR>& tstring<TCHAR>::replace(std::size_t start, std::size_t end, const TCHAR* replacement) {
+        JSTD_DEBUG_CODE(
+            if (start >= length())  throw_except<illegal_argument_exception>("start can't be equal or greater length()");
+            if (end   >  length())  throw_except<illegal_argument_exception>("end can't be greater length()");
+            if (end   <  start)     throw_except<illegal_argument_exception>("end can't be less start");
+        );
+        remove(start, end);
+        append(start, replacement);
+        return *this;
+    }
+
+    template<typename TCHAR>
     tstring<TCHAR> tstring<TCHAR>::sub_string(std::size_t start, std::size_t end, tca::allocator* allocator) {
         JSTD_DEBUG_CODE(
             if (end < start)    throw_except<illegal_argument_exception>("'start' can't less 'end' where [start: %zu, end: %zu]", start, end);
@@ -644,7 +708,7 @@ public:
 
     template<typename TCHAR>
     bool tstring<TCHAR>::equals(const tstring<TCHAR>& s) const {
-        if (length() != s.length())
+		if (length() != s.length())
             return false;
         return objects::equals(cstr(), s.cstr(), length());
     }
@@ -697,6 +761,26 @@ public:
         str[size]   = 0;
 
         return *this;
+    }
+
+    template<typename TCHAR>
+    void tstring<TCHAR>::set_length(std::size_t newlen, const TCHAR& ch) {
+        if (newlen >= capacity() - 1)
+        {
+            reserve(newlen);
+        }
+
+        if (newlen > length())
+        {
+            while (size < newlen)
+                cstr()[size++] = ch;
+            cstr()[size] = 0;
+        }
+        else
+        {
+            cstr()[newlen] = 0;
+            size = newlen;
+        }
     }
 
 namespace internal

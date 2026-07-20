@@ -70,6 +70,7 @@ namespace jstd {
 
         int reader;
         char ch;
+        bool parse_key = true;
         while ((reader = in.read()) != -1)
         {
             if (reader == '#') {
@@ -83,11 +84,13 @@ namespace jstd {
                 buffer.clear();
             }
             
-            ch = (char) (reader & 0xff);
-            if (reader == '=') {
+            ch = (char) reader;
+            if (reader == '=' && parse_key)
+            {
                 key.clear();
                 key.append(buffer.cstr());
                 buffer.clear();
+                parse_key = false;
             } 
             else if (reader == '\n')
             {
@@ -100,11 +103,11 @@ namespace jstd {
                         value.trim();
                         m_values.put(key, value);
                     }
-                }
-                
+                }    
                 buffer.clear();
                 value.clear();
                 key.clear();
+                parse_key = true;
             } 
             else
             {

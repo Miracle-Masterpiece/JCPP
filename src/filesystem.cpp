@@ -130,7 +130,7 @@ namespace jstd
      */
     std::size_t get_parent_from_absolute(char path[], std::size_t path_length = filesystem::npos()) {
         path_length = normlen(path, path_length);
-        for (std::size_t i = path_length; i > 0; --i)
+        for (std::size_t i = path_length; i > 0; )
         {
             if (fs::is_separator(path[--i]))
             {
@@ -164,30 +164,40 @@ namespace jstd
         return get_parent_from_absolute(out_path, path_length);
     }
 
-    bool fs::mkdirs(const char* path, std::size_t path_length) {
-        //      /home/miracle/test
-        //      C:/user/miracle/test
+    bool fs::mkdirs(const char* path, std::size_t path_length)
+    {
         std::size_t length = normlen(path, path_length);
 
-        bool firstSeparator = false;
-        for (std::size_t i = 0; i < length; ++i)
+        if (length == 0)
+            return true;
+
+        std::size_t start = 0;
+        if (is_absolute(path, length))
         {
-            char _ch = path[i];
-            if (is_separator(_ch) && !firstSeparator)
+            if (is_separator(path[0]))
             {
-                firstSeparator = true;
-                continue;
+                start = 1;
             }
-            
-            if (is_separator(_ch) || i + 1 >= length)
+            else if (length >= 3 && path[1] == ':' && is_separator(path[2]))
             {
-                if (exists(path, i + 1))
-                    continue;
-                bool created = mkdir(path, i + 1);
-                if (!created)
-                    return false;
+                start = 3;
             }
         }
+
+        for (std::size_t i = start; i < length; ++i)
+        {
+            if (is_separator(path[i]) || i + 1 == length)
+            {
+                std::size_t part_length = i + 1;
+
+                if (!exists(path, part_length))
+                {
+                    if (!mkdir(path, part_length))
+                        return false;
+                }
+            }
+        }
+
         return true;
     }
 
@@ -699,6 +709,9 @@ namespace jstd
     }
     
     timepoint fs::last_modified(const char* path, std::size_t path_length) {
+        if (!fs::exists(path, path_length))
+            return 0;
+        
         path_length = normlen(path, path_length);
 
         wchar_t wpath[io::constants::MAX_LENGTH_PATH];

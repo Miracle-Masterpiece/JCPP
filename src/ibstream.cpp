@@ -9,7 +9,7 @@ namespace jstd {
 
     }
 
-    ibstream::ibstream(istream* stream, tca::allocator* allocator, std::size_t buf_size) : ibstream() {
+    ibstream::ibstream(istream* stream, std::size_t buf_size, tca::allocator* allocator) : ibstream() {
         char* data = (char*) allocator->allocate(buf_size);
         _allocator  = allocator;
         _buffer     = data;
@@ -69,68 +69,41 @@ namespace jstd {
     
     void ibstream::fill_buffer() {
         std::size_t readed = _in->read(_buffer, _capacity);
-        _limit  = readed;
+        _limit  = (readed == istream::eof_value()) ? 0 : readed;
         _offset = 0;
     }
 
-    /**
-     * @return
-     *      Count readed bytes.
-     */
-    std::size_t ibstream::read_from_buffer(char* v, std::size_t len) {
-        assert(_limit >= _offset);
-        std::size_t rem     = _limit - _offset;
-        std::size_t readed  = rem < len ? rem : len;
-        if (readed > 0)
-        {
-            memcpy(v, _buffer + _offset, readed);
-            _offset += readed;
-        }
-        return readed;
-    }
-
     std::size_t ibstream::read(char* buf, std::size_t sz) {
-        assert(_limit >= _offset);
-        std::size_t buf_rem = _limit - _offset;
-        std::size_t readed  = 0;
-
-        /**
-         * 1. Попытаться прочитать данные из буфера.
-         * 2. Если в буфере данных меньше, чем нужно:
-         *      2.1 Читаем часть из буфера
-         *      2.2 Если длина остаточной части больше, чем размер буфера, читаем сразу из файла, иначе читаем в буфер, а затем из буфера.
-         */
-
-        if (buf_rem >= sz)
+        JSTD_DEBUG_CODE(
+            if (_in == nullptr) throw_except<io_exception>("input is null")
+        );
+        
+        std::size_t total_readed = 0;
+        
+        while (total_readed < sz)
         {
-            readed = read_from_buffer(buf, sz);
-        }
-        else
-        {
-            std::size_t total_readed   = 0;
-            std::size_t need_read      = sz;
-            if (buf_rem > 0)
+            if (_offset >= _limit)
             {
-                std::size_t readed = read_from_buffer(buf, need_read);
-                total_readed    += readed;
-                need_read       -= readed;
+                fill_buffer();
+                if (_limit == 0)
+                    break; // EOF
             }
-            if (need_read > _capacity)
+            
+            std::size_t available = _limit - _offset;
+            std::size_t to_read = std::min(available, sz - total_readed);
+            
+            if (to_read > 0)
             {
-                std::size_t readed = _in->read(buf + total_readed, need_read);
-                total_readed += readed;
+                memcpy(buf + total_readed, _buffer + _offset, to_read);
+                _offset += to_read;
+                total_readed += to_read;
             }
-            else
-            {
-                ibstream::fill_buffer();
-                total_readed = read_from_buffer(buf + total_readed, need_read);
-            }
-            readed = total_readed;
         }
         
-        return readed;
+        return total_readed > 0 ? 
+                                    total_readed : istream::eof_value();
     }
-
+   
     std::size_t ibstream::skip(std::size_t n) {
         JSTD_DEBUG_CODE(
             if (_in == nullptr)
@@ -154,7 +127,7 @@ namespace jstd {
     }
 
     ibstream::~ibstream() {
-
+		free();
     }
 
     void ibstream::close() {

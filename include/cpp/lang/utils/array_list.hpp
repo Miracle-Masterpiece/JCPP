@@ -196,7 +196,7 @@ public:
      *      Элемент для поиска.
      * 
      * @return 
-     *      Индекс, если найден; иначе -1.
+     *      Индекс, если найден; иначе array_list<E>::null_val.
      */
     std::size_t last_index_of(const E& e) const;
 
@@ -223,7 +223,6 @@ public:
      *      true, если элемент присутствует в спискe, иначе false.
      */
     bool contains(const E& e) const {
-        //index_of возвращает -1, если элемент не найден.
         return index_of(e) != null_val;
     }
 
@@ -400,7 +399,7 @@ public:
      * Метод предполагает, что список отсортирован в порядке, определённом компаратором {@code COMPARATOR_T},
      * который по умолчанию равен {@code compare_to<E>}.
      * Поиск осуществляется методом деления пополам. Возвращает индекс найденного элемента
-     * или -1, если элемент не найден.
+     * или array_list<E>::null_val, если элемент не найден.
      *
      * Требование: список должен быть предварительно отсортирован тем же компаратором,
      * иначе результат будет неопределён.
@@ -655,7 +654,7 @@ public:
     template<typename E>
     bool array_list<E>::remove(const E& e) {
         std::size_t finded_index = index_of(e);
-        if (finded_index < 0)
+        if (finded_index == array_list<E>::null_val)
             return false;
         return remove_at(finded_index, nullptr);
     }

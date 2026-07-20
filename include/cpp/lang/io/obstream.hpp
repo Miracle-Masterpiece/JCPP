@@ -3,8 +3,10 @@
 
 #include <cpp/lang/io/ostream.hpp>
 #include <allocators/base_allocator.hpp>
+#include <allocators/allocator.hpp>
 
-namespace jstd {
+namespace jstd
+{
 
 /**
  * Класс предназначен для буферезированной записи данных.
@@ -60,7 +62,7 @@ public:
      *      Если stream == nullptr
      *      Если allocator == nullptr
      */
-    obstream(ostream* stream, tca::base_allocator* allocator, std::size_t buf_size = DEFAULT_BUFFER_SIZE);
+    obstream(ostream* stream, tca::base_allocator* allocator = tca::get_default_allocator(), std::size_t buf_size = DEFAULT_BUFFER_SIZE);
 
     /**
      * @param stream

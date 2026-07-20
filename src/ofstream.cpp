@@ -36,12 +36,7 @@ namespace jstd {
     }
     
     ofstream::~ofstream() {
-        try {
-            if (_handle != nullptr)
-                close();
-        } catch (const io_exception& e) {
-            std::cout << e.cause() << std::endl;
-        }
+
     }
     
     void ofstream::write(char c) {
@@ -63,7 +58,8 @@ namespace jstd {
     }
     
     void ofstream::close() {
-        if (_handle != nullptr) {
+        if (_handle != nullptr)
+		{
             try {
                 flush();
                 filesystem::close(_handle);
@@ -72,7 +68,9 @@ namespace jstd {
                 throw e;
             }
             _handle     = nullptr;
-        } else {
+        }
+		else
+		{
             throw_except<io_exception>("Stream already closed!");
         }
     }    

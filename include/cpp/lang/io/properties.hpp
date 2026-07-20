@@ -150,6 +150,20 @@ public:
     const_entry_iterator end() const {
         return m_values.end();
     }
+
+    /**
+     * 
+     */
+    bool contains(const string& key) const {
+        return m_values.contains_key(key);
+    }
+
+    /**
+     * 
+     */
+    bool contains(const char* key) const {
+        return m_values.contains_key(string(key, m_allocator));
+    }
 };
 
 }
