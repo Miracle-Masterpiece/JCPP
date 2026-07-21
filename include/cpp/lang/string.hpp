@@ -388,7 +388,7 @@ public:
                 if (!new_data)
                     throw_except<out_of_memory_error>("Out of memory");
                 
-                std::memcpy(new_data, s.cstr(), s.length() * sizeof(TCHAR));
+                std::memcpy(new_data, s.cstr(), (s.length() + 1) * sizeof(TCHAR));
 
                 if (!is_inline_string())
                     allocator->deallocate(data);
@@ -401,6 +401,19 @@ public:
         return *this;
     }
     
+    template<typename TCHAR>
+    tstring<TCHAR>& tstring<TCHAR>::operator=(tstring<TCHAR>&& s) {
+        if (&s != this)
+        {
+            std::swap(allocator,    s.allocator);
+            std::swap(cap,          s.cap);
+            std::swap(size,         s.size);
+            if (!s.is_inline_string())  std::swap(data, s.data);
+            else                        std::memcpy(inline_data, s.inline_data, INLINE_BUFFER_SIZE * sizeof(TCHAR)); 
+        }
+        return *this;
+    }
+
     template<typename TCHAR>
     void tstring<TCHAR>::ensure_cap(std::size_t new_size) {
         std::size_t new_cap = new_size + 1;
@@ -416,19 +429,6 @@ public:
         
         data = new_data;
         cap  = new_cap;
-    }
-
-    template<typename TCHAR>
-    tstring<TCHAR>& tstring<TCHAR>::operator=(tstring<TCHAR>&& s) {
-        if (&s != this)
-        {
-            std::swap(allocator,    s.allocator);
-            std::swap(cap,          s.cap);
-            std::swap(size,         s.size);
-            if (!s.is_inline_string())  std::swap(data, s.data);
-            else                        std::memcpy(inline_data, s.inline_data, INLINE_BUFFER_SIZE * sizeof(TCHAR)); 
-        }
-        return *this;
     }
     
     template<typename TCHAR>

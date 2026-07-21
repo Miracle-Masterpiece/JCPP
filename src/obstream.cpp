@@ -5,7 +5,7 @@
 
 namespace jstd {
 
-    obstream::obstream() : _allocator(nullptr), _buffer(nullptr), _capacity(0), _offset(0) {
+    obstream::obstream() : _allocator(nullptr), _buffer(nullptr), _capacity(0), _offset(0), _out(nullptr) {
 
     }
 
