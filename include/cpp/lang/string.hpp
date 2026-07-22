@@ -272,7 +272,28 @@ public:
     /**
      * 
      */
-    bool starts_with(const TCHAR* s, std::size_t = npos()) const;
+    bool starts_with(std::size_t offset, const TCHAR* s, std::size_t = npos()) const;
+    
+    /**
+     * 
+     */
+    bool starts_with(const TCHAR* s, std::size_t len = npos()) const {
+        return starts_with(0, s, len);
+    }
+    
+    /**
+     * 
+     */
+    bool starts_with(std::size_t offset, const tstring<TCHAR>& s) const {
+        return starts_with(offset, s.cstr());
+    }
+    
+    /**
+     * 
+     */
+    bool starts_with(const tstring<TCHAR>& s) const {
+        return starts_with(s.cstr(), s.length());
+    }
     
     /**
      * 
@@ -624,15 +645,26 @@ public:
     }
 
     template<typename TCHAR>
-    bool tstring<TCHAR>::starts_with(const TCHAR* s, std::size_t len) const {
-        
+    bool tstring<TCHAR>::starts_with(std::size_t offset, const TCHAR* s, std::size_t len) const {
+        JSTD_DEBUG_CODE (
+            if (offset >= length())
+                throw_except<index_out_of_bound_exception>("'offset' %zu out of bound 'length' %zu", offset, length());
+        );
+
         len = normalize_length(s, len);
-        if (len == 0 || len > length())
-            return false;
+        
+        if (len == 0 || len > length()) return false;
+        if (length() - offset < len)    return false;
 
         for (std::size_t i = 0; i < len; ++i)
-            if (cstr()[i] != s[i])
+        {
+            assert( 
+                (offset < length()) && 
+                (i < length() - offset) 
+            );
+            if (cstr()[i + offset] != s[i])
                 return false;
+        }
 
         return true;
     }
