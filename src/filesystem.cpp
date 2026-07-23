@@ -114,6 +114,7 @@ namespace jstd
         return wp;
     }
     
+    #if 0
     /**
      * Заменяет все разделители на константу зависящую от системы.
      * @see filesystem::FILE_SEPARATOR
@@ -124,6 +125,7 @@ namespace jstd
                 path[i] = filesystem::FILE_SEPARATOR;
         }
     }
+    #endif
 
     /**
      * 

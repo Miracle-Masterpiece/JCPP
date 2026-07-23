@@ -59,70 +59,69 @@ namespace jstd {
         }
     }
 
-    void properties::load(istream& in) {
-        JSTD_DEBUG_CODE(
-            if (m_allocator == nullptr) throw_except<illegal_state_exception>("allocator must be != null")
-        );
-        
-        string buffer (m_allocator);
-        string key    (m_allocator);
-        string value  (m_allocator);
+    void properties::put_property(string& key, string& value) {
+        key.trim();
+        value.trim();
 
+        if (!key.is_empty())
+            m_values.put(key, value);
+
+        key.clear();
+        value.clear();
+    }
+
+    void properties::load(istream& in)
+    {
+        JSTD_DEBUG_CODE(
+            if (m_allocator == nullptr)
+                throw_except<illegal_state_exception>("allocator must be != null");
+        )
+
+        enum struct state {KEY, VALUE, COMMENT};
+        
         int reader;
-        char ch;
-        bool parse_key = true;
+        state state = state::KEY;
+
+        string key (m_allocator);
+        string val (m_allocator);
+
         while ((reader = in.read()) != -1)
         {
-            if (reader == '#') {
-                while ((reader = in.read()) != -1)
+            if (state == state::KEY)
+            {
+                if (reader == '#')
                 {
-                    if (reader == '\n')
-                        break;
+                    state = state::COMMENT;
+                    continue;
                 }
-                key.clear();
-                value.clear();
-                buffer.clear();
-            }
-            
-            ch = (char) reader;
-            if (reader == '=' && parse_key)
-            {
-                key.clear();
-                key.append(buffer.cstr());
-                buffer.clear();
-                parse_key = false;
-            } 
-            else if (reader == '\n')
-            {
-                if (buffer.length() != 0)
+                if (reader == '=')
                 {
-                    value.append(buffer.cstr());
-                    if (key.length() != 0 && value.length() != 0)
-                    {
-                        key.trim();
-                        value.trim();
-                        m_values.put(key, value);
-                    }
-                }    
-                buffer.clear();
-                value.clear();
-                key.clear();
-                parse_key = true;
-            } 
-            else
+                    state = state::VALUE;
+                    continue;
+                }
+                key.append((char) reader);
+            }
+            else if (state == state::VALUE)
             {
-                buffer.append(&ch, 1);
+                if (reader == '\n')
+                {
+                    put_property(key, val);
+                    state = state::KEY;
+                    continue;
+                }
+                val.append((char) reader);
+            }
+            else if (state == state::COMMENT)
+            {
+                if (reader == '\n')
+                {
+                    state = state::KEY;
+                    continue;
+                }
             }
         }
-        if (key.length() != 0)
-        {
-            if (buffer.length() != 0)
-            {
-                value.append(buffer.cstr());
-                key.trim();
-                value.trim();
-                m_values.put(key, value);
-            }
-        }
+        
+        put_property(key, val);
+        
     }
 }

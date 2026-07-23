@@ -25,6 +25,11 @@ class properties {
      */
     hash_map<string, string> m_values;
 
+    /**
+     * 
+     */
+    void put_property(string& key, string& value);
+
 public:
     /**
      * 
@@ -163,6 +168,11 @@ public:
      */
     bool contains(const char* key) const {
         return m_values.contains_key(string(key, m_allocator));
+    }
+
+    // 
+    void put_all(const hash_map<string, string>& map) {
+        m_values.put_all(map);
     }
 };
 

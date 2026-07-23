@@ -353,7 +353,7 @@ public:
     /**
      * 
      */
-    tstring<TCHAR> sub_string(std::size_t start, std::size_t end, tca::allocator* allocator = tca::get_default_allocator());
+    tstring<TCHAR> sub_string(std::size_t start, std::size_t end, tca::allocator* allocator = tca::get_default_allocator()) const;
 };
 
     template<typename TCHAR>
@@ -646,14 +646,11 @@ public:
 
     template<typename TCHAR>
     bool tstring<TCHAR>::starts_with(std::size_t offset, const TCHAR* s, std::size_t len) const {
-        JSTD_DEBUG_CODE (
-            if (offset >= length())
-                throw_except<index_out_of_bound_exception>("'offset' %zu out of bound 'length' %zu", offset, length());
-        );
 
         len = normalize_length(s, len);
         
         if (len == 0 || len > length()) return false;
+        if (offset >= length())         return false;
         if (length() - offset < len)    return false;
 
         for (std::size_t i = 0; i < len; ++i)
@@ -723,7 +720,7 @@ public:
     }
 
     template<typename TCHAR>
-    tstring<TCHAR> tstring<TCHAR>::sub_string(std::size_t start, std::size_t end, tca::allocator* allocator) {
+    tstring<TCHAR> tstring<TCHAR>::sub_string(std::size_t start, std::size_t end, tca::allocator* allocator) const {
         JSTD_DEBUG_CODE(
             if (end < start)    throw_except<illegal_argument_exception>("'start' can't less 'end' where [start: %zu, end: %zu]", start, end);
             if (end > length()) throw_except<illegal_argument_exception>("'end' must be less or equal 'length' where [start: %zu, length: %zu]", start, length());
@@ -765,32 +762,22 @@ public:
     
     template<typename TCHAR>
     tstring<TCHAR>& tstring<TCHAR>::trim() {
-        std::size_t start   = 0;
-        std::size_t end     = length();
+        std::size_t start = 0;
+        std::size_t end = length();
 
-        for (std::size_t i = 0; i < length();)
-        {
-            if (char_at(i++) <= 0x20)
-                ++start;
-            else 
-                break;
-        }
-        
-        for (std::size_t i = end; i > 0; )
-        {
-            if (char_at(--i) <= 0x20)
-                --end;
-            else
-                break;
-        }
-        
-        std::size_t len = end - start;
+        while (start < end && char_at(start) <= 0x20)
+            ++start;
 
-        TCHAR* str = cstr();
-        std::memmove(str, str + start, len * sizeof(TCHAR));
-        
-        size        = len;
-        str[size]   = 0;
+        while (end > start && char_at(end - 1) <= 0x20)
+            --end;
+
+        const std::size_t len = end - start;
+
+        if (start != 0 && len != 0)
+            std::memmove(cstr(), cstr() + start, len * sizeof(TCHAR));
+
+        size = len;
+        cstr()[size] = 0;
 
         return *this;
     }
